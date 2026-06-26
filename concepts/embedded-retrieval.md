@@ -48,13 +48,13 @@ Embedding fits applications and agents that want retrieval *inside* the process
 over data they already keep in object storage — RAG, agent memory, in-app
 search. If you specifically need a long-running network service that many
 external clients connect to over a socket, that's the server model Infino
-deliberately isn't. See [Tradeoffs and limits](../tradeoffs.md).
+deliberately isn't. See [Tradeoffs and limits](/tradeoffs).
 
 ## See also
 
-- [Object-storage-native retrieval](object-storage-native-retrieval.md) — why
+- [Object-storage-native retrieval](/concepts/object-storage-native-retrieval) — why
   state lives in object storage, which is what makes embedding scale.
-- [Retrieval for agents](retrieval-for-agents.md) — the workload embedding
+- [Retrieval for agents](/concepts/retrieval-for-agents) — the workload embedding
   serves best.
-- [Architecture overview → Opening Infino](../architecture/overview.md#opening-infino)
-  and the [FAQ](../faq.md).
+- [Architecture overview → Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino)
+  and the [FAQ](/faq).

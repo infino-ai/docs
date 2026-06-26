@@ -28,13 +28,13 @@ to notice becomes decisive across a single agent task, and dominant across many.
   in a sandbox or inside an agent runtime.
 - **Multi-modal in one engine.** BM25, vector, and SQL run over one copy of the
   data, and hybrid (keyword + vector) retrieval is a single query — see
-  [Hybrid search](hybrid-search.md).
+  [Hybrid search](/concepts/hybrid-search).
 - **Object-storage-native economics.** Data lives as Parquet on S3, Azure, or
   local disk; storage is flat-priced and compute is stateless — see
-  [Object-storage-native retrieval](object-storage-native-retrieval.md).
+  [Object-storage-native retrieval](/concepts/object-storage-native-retrieval).
 - **Fast where it counts.** On a 1-million-document index a warm BM25 query
   returns in the **microsecond range**; repeated retrievals run from cached
-  bytes. See [`benches/README.md`](../../benches/README.md) for current figures
+  bytes. See [`benches/README.md`](https://github.com/infino-ai/infino/blob/main/benches/README.md) for current figures
   and the hardware.
 
 ```python
@@ -52,10 +52,10 @@ hits = db.query_sql("""
 This is the sweet spot: agent memory, RAG over a document corpus, and tool-call
 retrieval where the data lives in (or can live in) object storage. It is not a
 transactional database for high-rate row-level updates; see
-[Tradeoffs and limits](../tradeoffs.md).
+[Tradeoffs and limits](/tradeoffs).
 
 ## See also
 
-- [Hybrid search](hybrid-search.md) and
-  [Object-storage-native retrieval](object-storage-native-retrieval.md).
-- [FAQ](../faq.md) — operational answers for evaluating Infino.
+- [Hybrid search](/concepts/hybrid-search) and
+  [Object-storage-native retrieval](/concepts/object-storage-native-retrieval).
+- [FAQ](/faq) — operational answers for evaluating Infino.

@@ -43,10 +43,10 @@ isn't.
 
 The current, full performance picture — warm vs. cold, ingest throughput, index
 size, and the hardware it was recorded on — lives in
-[`benches/README.md`](../benches/README.md).
+[`benches/README.md`](https://github.com/infino-ai/infino/blob/main/benches/README.md).
 
 ## See also
 
-- [Object-storage-native retrieval](concepts/object-storage-native-retrieval.md)
+- [Object-storage-native retrieval](/concepts/object-storage-native-retrieval)
   — the model and why it makes these tradeoffs.
-- [Architecture overview](architecture/overview.md) — where Infino fits best.
+- [Architecture overview](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md) — where Infino fits best.

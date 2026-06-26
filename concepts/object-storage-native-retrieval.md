@@ -60,7 +60,7 @@ Search, vector, and SQL all run over that one copy of the data, in-process —
 **no server, no daemon, no managed service.** On a 1-million-document index, a
 warm single-term BM25 query returns in the **microsecond range**, and a 1M-doc
 index builds in a couple of seconds with parallel writers (roughly **470K
-documents per second**); see [`benches/README.md`](../../benches/README.md) for
+documents per second**); see [`benches/README.md`](https://github.com/infino-ai/infino/blob/main/benches/README.md) for
 the full, current figures and the hardware they were recorded on.
 
 ```python
@@ -81,12 +81,12 @@ in (or can live in) object storage and you want search and retrieval over it
 without standing up and paying for a separate storage tier — agent memory, RAG
 over a document corpus, and search over data lakes are the sweet spot. It is
 not built to be a transactional database for high-rate row-level updates. See
-[Tradeoffs and limits](../tradeoffs.md) for the honest envelope.
+[Tradeoffs and limits](/tradeoffs) for the honest envelope.
 
 ## See also
 
-- [Architecture overview](../architecture/overview.md) — the plain-language tour.
-- [Superfile format](../architecture/superfile.md) — the single-file format and
+- [Architecture overview](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md) — the plain-language tour.
+- [Superfile format](https://github.com/infino-ai/infino/blob/main/docs/architecture/superfile.md) — the single-file format and
   its Parquet compatibility.
-- [Supertable layer](../architecture/supertable.md) — the table layer, manifest,
+- [Supertable layer](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md) — the table layer, manifest,
   and skip-pruning.

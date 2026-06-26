@@ -48,10 +48,10 @@ alone is enough; when it's purely conceptual, vector search alone is enough.
 
 ## See also
 
-- [Object-storage-native retrieval](object-storage-native-retrieval.md) — the
+- [Object-storage-native retrieval](/concepts/object-storage-native-retrieval) — the
   storage model the indexes sit on.
-- [Retrieval for agents](retrieval-for-agents.md) — why hybrid retrieval
+- [Retrieval for agents](/concepts/retrieval-for-agents) — why hybrid retrieval
   matters for agent workloads.
-- [Supertable layer → Queries](../architecture/supertable.md#queries) — the
+- [Supertable layer → Queries](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#queries) — the
   search table functions and how they compose in SQL.
-- [FAQ](../faq.md) and [Tradeoffs and limits](../tradeoffs.md).
+- [FAQ](/faq) and [Tradeoffs and limits](/tradeoffs).

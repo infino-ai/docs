@@ -11,7 +11,7 @@ your application. You add it as a library (`cargo add infino`,
 root from your own code; the engine, including SQL (DataFusion under the hood),
 executes in your process. There is no wire protocol yet, so external SQL clients
 can't attach — SQL is reached through the connection's `query_sql`. See
-[Opening Infino](architecture/overview.md#opening-infino).
+[Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino).
 
 ## How do concurrent writes work?
 
@@ -23,9 +23,9 @@ guarded: the pointer to the current manifest is swapped only if it hasn't moved,
 so a writer working from a stale manifest can't overwrite another's commit — a
 conflicting publish refreshes from the current manifest and retries with
 backoff, up to a bounded number of attempts before surfacing a contention error.
-See [Write](architecture/supertable.md#write),
-[Commit pipeline](architecture/supertable.md#commit-pipeline), and
-[Concurrency](architecture/supertable.md#concurrency).
+See [Write](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#write),
+[Commit pipeline](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#commit-pipeline), and
+[Concurrency](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#concurrency).
 
 ## How fresh are reads? What is the consistency model?
 
@@ -34,8 +34,8 @@ and never observes a partially applied commit; publication is atomic, so a read
 returns the table as of its pinned snapshot. Read freshness under concurrent
 writers is governed by the table's configured consistency policy and applied by
 the engine on every read — callers never refresh by hand. See
-[Manifest](architecture/supertable.md#manifest) and
-[Lifecycle](architecture/supertable.md#lifecycle).
+[Manifest](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#manifest) and
+[Lifecycle](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#lifecycle).
 
 ## How do multiple processes or hosts share a table?
 
@@ -47,8 +47,8 @@ Concurrent writers from different processes are serialized by that guarded
 pointer update (see concurrent writes above), so multiple processes or hosts can
 read and write the same table on shared object storage with no separate service.
 Verified by
-[`tests/supertable_concurrent_processes.rs`](../tests/supertable_concurrent_processes.rs);
-see [Storage](architecture/supertable.md#storage).
+[`tests/supertable_concurrent_processes.rs`](https://github.com/infino-ai/infino/blob/main/tests/supertable_concurrent_processes.rs);
+see [Storage](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#storage).
 
 ## Are writes durable and crash-safe?
 
@@ -56,7 +56,7 @@ Yes. Nothing is persisted until a commit, and a commit publishes atomically, so
 a crash mid-write leaves the previously committed snapshot intact — there is no
 half-applied state. Committed superfiles surviving an abort mid-flight is
 verified by
-[`tests/supertable_commit_crash_localfs.rs`](../tests/supertable_commit_crash_localfs.rs).
+[`tests/supertable_commit_crash_localfs.rs`](https://github.com/infino-ai/infino/blob/main/tests/supertable_commit_crash_localfs.rs).
 
 ## Can DuckDB, pyarrow, or DataFusion read Infino's files?
 
@@ -65,7 +65,7 @@ and ends with a standard Parquet footer — so DataFusion, DuckDB, and pyarrow c
 open it as a normal table and project columns, filter rows, and run SQL over the
 columnar data with no Infino-specific support. Compatibility is a property of
 the bytes, not a conversion step. See
-[Parquet compatibility](architecture/superfile.md#parquet-compatibility).
+[Parquet compatibility](https://github.com/infino-ai/infino/blob/main/docs/architecture/superfile.md#parquet-compatibility).
 
 ## Are the search indexes visible to ordinary Parquet readers?
 
@@ -79,7 +79,7 @@ that same footer to locate the indexes when search is requested.
 structures, reading a superfile and rewriting it through a generic Parquet
 writer preserves the columns but **drops the index regions** — the output is
 still valid Parquet, but no longer searchable by Infino without re-indexing. See
-[Parquet compatibility](architecture/superfile.md#parquet-compatibility).
+[Parquet compatibility](https://github.com/infino-ai/infino/blob/main/docs/architecture/superfile.md#parquet-compatibility).
 
 ## How does SQL run with no server?
 
@@ -98,4 +98,4 @@ FROM bm25_search('docs', 'body', 'cancel subscription', 50)
 GROUP BY source
 ```
 
-See [Queries](architecture/supertable.md#queries).
+See [Queries](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#queries).
