@@ -22,14 +22,12 @@
           {
             "group": "Guides",
             "pages": [
-              "guides/index",
               "guides/tables",
               "guides/embeddings",
               "guides/indexing",
               {
                 "group": "Search",
                 "pages": [
-                  "guides/search/index",
                   "guides/search/full-text",
                   "guides/search/vector",
                   "guides/search/hybrid"
@@ -51,7 +49,6 @@
           {
             "group": "Integrations",
             "pages": [
-              "integrations/index",
               "integrations/langchain",
               "integrations/ai-sdk",
               "integrations/crewai",
