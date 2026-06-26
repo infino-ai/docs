@@ -1,0 +1,42 @@
+---
+title: Indexing
+description: Declare full-text (BM25) and vector (IVF) indexes, and tune them.
+---
+
+You declare indexes once, at table creation, with an `IndexSpec`. Two index types:
+
+- **`fts(column)`** — a full-text (BM25) index over a text column, for keyword search.
+- **`vector(column, dim, n_cent, metric)`** — a vector index over a fixed-width vector
+  column, for kNN.
+
+<CodeGroup>
+
+```python Python
+spec = (
+    infino.IndexSpec()
+    .fts("body")                               # BM25 over `body`
+    .vector("embedding", 384, 64, "cosine")    # vector index over `embedding`
+)
+```
+
+```typescript Node.js
+const spec = new IndexSpec()
+  .fts("body")                                 // BM25 over `body`
+  .vector("embedding", 384, 64, "cosine");     // vector index over `embedding`
+```
+
+</CodeGroup>
+
+## Vector index parameters
+
+- **`dim`** — the embedding dimension. Must match your model's output and the values you append.
+- **`n_cent`** — the number of IVF partitions (centroids). More partitions = finer
+  buckets and faster search at scale; the engine clamps it sensibly for small datasets.
+  A few dozen is reasonable to start; raise it as the table grows.
+- **`metric`** — `cosine` (normalized embeddings), `l2sq` (Euclidean), or `negdot` (dot product).
+
+<Note>
+You can index more than one text column (call `fts` per column) and more than one
+vector column. Scalar columns need **no** index declaration — filter them with SQL
+(`query_sql`) or as a pushdown pre-filter on vector search (see [Search](/guides/search)).
+</Note>

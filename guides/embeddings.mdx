@@ -1,0 +1,51 @@
+---
+title: Embeddings
+description: Bring your own embeddings — Infino indexes the vectors you supply.
+---
+
+Infino is **bring-your-own-embeddings**: it does not call an embedding model for you.
+You compute vectors with whatever model you like, store them in a vector column, and
+Infino builds the vector index over them.
+
+## The pattern
+
+1. Declare a fixed-width vector column whose dimension matches your model's output.
+2. Declare a vector index on it with the **same dimension** and a distance **metric**
+   (`cosine` for normalized embeddings, `l2sq` for Euclidean, `negdot` for dot product).
+3. Embed your text and append the vectors alongside the rows.
+
+<CodeGroup>
+
+```python Python
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("all-MiniLM-L6-v2")   # 384-dim
+def embed(text): return model.encode(text).tolist()
+
+# dim (384) must match the model and the index spec:
+docs = db.create_table(
+    "docs", schema,
+    infino.IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+)
+docs.append([{"doc_id": "1", "body": text, "embedding": embed(text)}])
+```
+
+```typescript Node.js
+import { pipeline } from "@huggingface/transformers";
+const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2"); // 384-dim
+const embed = async (text) => Array.from((await extractor(text, { pooling: "mean", normalize: true })).data);
+
+// dim (384) must match the model and the index spec:
+const docs = db.createTable(
+  "docs",
+  { doc_id: "large_utf8", body: "large_utf8", embedding: { vector: 384 } },
+  new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+);
+docs.append([{ doc_id: "1", body: text, embedding: await embed(text) }]);
+```
+
+</CodeGroup>
+
+<Note>
+Embed your **queries** with the same model at search time, and pass the query vector to
+`vector_search` (see [Search](/guides/search)). Use `cosine` with normalized embeddings.
+</Note>

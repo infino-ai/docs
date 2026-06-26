@@ -1,0 +1,116 @@
+---
+title: Tables
+description: Create tables, append rows, update and delete by predicate, and compact.
+---
+
+A table is a **schema** plus an **index spec** (which columns are full-text- and
+vector-indexed — see [Indexing](/guides/indexing)). Create it once, then append rows.
+
+## Create and append
+
+<CodeGroup>
+
+```python Python
+import infino
+import pyarrow as pa
+
+# Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+db = infino.connect("./data")
+
+schema = pa.schema([
+    pa.field("doc_id", pa.large_utf8(), nullable=False),
+    pa.field("body", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), 384), nullable=False),
+])
+docs = db.create_table(
+    "docs", schema,
+    infino.IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+)
+
+# One append is one atomic commit — durable when the call returns.
+docs.append([
+    {"doc_id": "1", "body": "To cancel, open Settings then Billing.", "embedding": embed("...")},
+])
+```
+
+```typescript Node.js
+import { connect, IndexSpec } from "@infino-ai/infino";
+
+// Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+const db = connect("./data");
+
+const docs = db.createTable(
+  "docs",
+  { doc_id: "large_utf8", body: "large_utf8", embedding: { vector: 384 } },
+  new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+);
+
+// One append is one atomic commit — durable when the call returns.
+docs.append([
+  { doc_id: "1", body: "To cancel, open Settings then Billing.", embedding: embed("...") },
+]);
+```
+
+</CodeGroup>
+
+<Note>
+One `append` == one atomic commit, durable on return. Append in batches rather than
+row-by-row for throughput.
+</Note>
+
+## Update and delete
+
+`update` and `delete` match rows by a **SQL predicate**. `update` replaces matched rows
+1:1 with the new rows you supply.
+
+<CodeGroup>
+
+```python Python
+# Replace the row(s) matching the predicate (1:1 with the new rows):
+docs.update("doc_id = '1'", [
+    {"doc_id": "1", "body": "Refunds go to the original payment method.", "embedding": embed("...")},
+])
+
+# Delete rows matching a predicate:
+stats = docs.delete("doc_id = '1'")
+print(stats.matched, stats.n_tombstoned)
+```
+
+```typescript Node.js
+// Replace the row(s) matching the predicate (1:1 with the new rows):
+docs.update("doc_id = '1'", [
+  { doc_id: "1", body: "Refunds go to the original payment method.", embedding: embed("...") },
+]);
+
+// Delete rows matching a predicate:
+const stats = docs.delete("doc_id = '1'");
+console.log(stats.matched, stats.nTombstoned);
+```
+
+</CodeGroup>
+
+<Warning>
+`update` and `delete` require **durable storage** — a path or `s3://` URI, not
+`memory://`. `update` is 1:1: the matched row count must equal the replacement count.
+</Warning>
+
+(In Rust, `update` / `delete` take a DataFusion `Expr` rather than a SQL string — see
+[docs.rs](https://docs.rs/infino).)
+
+## Compact, list, and drop
+
+<CodeGroup>
+
+```python Python
+docs.optimize()                 # merge small / underfilled superfiles
+db.list_tables()                # ["docs"]
+db.drop_table("docs", purge=True)  # purge=True also deletes the table's storage
+```
+
+```typescript Node.js
+docs.optimize();                // merge small / underfilled superfiles
+db.listTables();                // ["docs"]
+db.dropTable("docs", true);     // purge=true also deletes the table's storage
+```
+
+</CodeGroup>

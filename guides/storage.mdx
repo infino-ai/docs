@@ -1,0 +1,66 @@
+---
+title: Storage
+description: In-memory, local disk, and object storage (S3 / Azure) — chosen by the connect URI.
+---
+
+Where your data lives is chosen by the `connect` URI:
+
+<CodeGroup>
+
+```python Python
+db = infino.connect("memory://")              # in-process, ephemeral
+db = infino.connect("./data")                 # local disk (durable)
+db = infino.connect("s3://bucket/prefix")     # object storage (durable)
+```
+
+```typescript Node.js
+const db = connect("memory://");              // in-process, ephemeral
+const db = connect("./data");                 // local disk (durable)
+const db = connect("s3://bucket/prefix");     // object storage (durable)
+```
+
+</CodeGroup>
+
+Data is stored as standard Apache Parquet at that location — anything that reads Parquet
+can read it.
+
+<Warning>
+`memory://` is in-process and ephemeral. `update` and `delete` require **durable**
+storage (a path or `s3://` URI).
+</Warning>
+
+## Object-storage configuration
+
+For S3-compatible stores, pass credentials and a local read cache via connect options:
+
+<CodeGroup>
+
+```python Python
+db = infino.connect(
+    "s3://bucket/prefix",
+    endpoint="https://s3.us-east-1.amazonaws.com",
+    region="us-east-1",
+    access_key="...",
+    secret_key="...",
+    cache_dir="/var/cache/infino",   # local disk cache for remote-backed tables
+    cache_budget_bytes=2_000_000_000,
+)
+```
+
+```typescript Node.js
+const db = connect("s3://bucket/prefix", {
+  endpoint: "https://s3.us-east-1.amazonaws.com",
+  region: "us-east-1",
+  accessKey: "...",
+  secretKey: "...",
+  cacheDir: "/var/cache/infino",   // local disk cache for remote-backed tables
+  cacheBudgetBytes: 2_000_000_000,
+});
+```
+
+</CodeGroup>
+
+<Note>
+Credentials can also come from the standard AWS environment. The cache keeps hot
+superfiles on local disk so warm queries don't re-fetch from object storage.
+</Note>

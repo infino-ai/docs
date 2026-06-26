@@ -1,0 +1,108 @@
+---
+title: Search
+description: BM25 keyword, vector kNN, hybrid, pushdown filtering, and SQL — over one table.
+---
+
+Infino retrieves from the same table four ways. All return Arrow rows; pass a
+`projection` to choose which columns come back (`_id`, scalar columns, or `score`).
+
+## Full-text (BM25)
+
+<CodeGroup>
+
+```python Python
+hits = docs.bm25_search("body", "cancel subscription", 5)        # column, query, k
+```
+
+```typescript Node.js
+const hits = docs.bm25Search("body", "cancel subscription", 5);  // column, query, k
+```
+
+</CodeGroup>
+
+## Vector kNN
+
+<CodeGroup>
+
+```python Python
+hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
+# Higher recall: raise nprobe (IVF partitions probed)
+hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
+```
+
+```typescript Node.js
+const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
+// Higher recall: raise nprobe (IVF partitions probed)
+const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
+```
+
+</CodeGroup>
+
+### Pushdown filter
+
+Restrict the kNN to rows whose FTS-indexed column matches a text predicate — a
+**pre-filter** (the kNN ranks only matching rows), not a post-filter.
+
+<CodeGroup>
+
+```python Python
+hits = docs.vector_search("embedding", embed("..."), 5,
+                          filter_column="body", filter_query="billing")
+```
+
+```typescript Node.js
+const hits = docs.vectorSearch("embedding", embed("..."), 5,
+  { filter: { column: "body", query: "billing" } });
+```
+
+</CodeGroup>
+
+## Hybrid (BM25 + vector)
+
+Hybrid search fuses BM25 and vector results with reciprocal-rank fusion (RRF). It runs
+through `query_sql` via the `hybrid_search` table function — pass the query text and the
+query vector (as a comma-separated literal):
+
+<CodeGroup>
+
+```python Python
+vec = ",".join(map(str, embed("cancel subscription")))
+rows = db.query_sql(
+    f"SELECT doc_id, body, score FROM "
+    f"hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) "
+    f"ORDER BY score DESC"
+)
+```
+
+```typescript Node.js
+const vec = embed("cancel subscription").join(",");
+const rows = db.querySql(
+  `SELECT doc_id, body, score FROM ` +
+  `hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '${vec}', 5) ` +
+  `ORDER BY score DESC`,
+);
+```
+
+</CodeGroup>
+
+## SQL
+
+`query_sql` runs SQL across the catalog — filter, aggregate, and join over the same
+rows. (SQL is for querying; mutate with `append` / `update` / `delete`.)
+
+<CodeGroup>
+
+```python Python
+rows = db.query_sql("SELECT body FROM docs WHERE doc_id = '1'")
+```
+
+```typescript Node.js
+const rows = db.querySql("SELECT body FROM docs WHERE doc_id = '1'");
+```
+
+</CodeGroup>
+
+<Note>
+`token_match` and `exact_match` give **unranked** lookups (every row matching a token or
+an exact value) when you don't need scoring.
+</Note>

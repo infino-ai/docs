@@ -24,6 +24,17 @@
             ]
           },
           {
+            "group": "Guides",
+            "pages": [
+              "guides/index",
+              "guides/tables",
+              "guides/embeddings",
+              "guides/indexing",
+              "guides/search",
+              "guides/storage"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": ["faq", "tradeoffs"]
           }
