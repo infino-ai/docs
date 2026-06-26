@@ -1,7 +1,37 @@
 ---
 title: Quickstart
-description: Index a small knowledge base and retrieve over it three ways — BM25 keyword, vector kNN, and SQL — over one table, in Python, Node.js, or Rust.
+description: Install Infino, then index a small knowledge base and retrieve over it three ways — BM25, vector, and SQL — in Python, Node.js, or Rust.
 ---
+
+## Install
+
+<CodeGroup>
+
+```bash Python
+pip install infino
+# Or with uv (https://docs.astral.sh/uv/):
+uv pip install infino
+```
+
+```bash Node.js
+npm install @infino-ai/infino
+```
+
+```bash Rust
+cargo add infino
+```
+
+</CodeGroup>
+
+The full Rust API reference is on [docs.rs/infino](https://docs.rs/infino).
+
+<Note>
+Infino installs the [mimalloc](https://github.com/microsoft/mimalloc) global allocator
+by default. If you embed Infino in a process that already sets a global allocator, turn
+it off: `infino = { version = "0.1", default-features = false }`.
+</Note>
+
+## Index and query your data
 
 Index a small knowledge base and retrieve over it three ways — BM25 keyword search,
 vector kNN, and SQL — all over **one table**. `"memory://"` runs in-process; use
@@ -138,6 +168,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 </CodeGroup>
 
-Each search returns Arrow rows. From here, feed the retrieved passages to your model
-as grounding context — see the [concepts](/concepts/retrieval-for-agents) for how the
-three retrieval modes fit an agent loop.
+Each search returns Arrow rows. Next: the [Guides](/guides) for tables, embeddings,
+indexing, search, and storage, or [How Infino works](/how-it-works) for the model.
