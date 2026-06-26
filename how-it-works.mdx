@@ -1,0 +1,63 @@
+---
+title: How Infino works
+description: The mental model — one copy of your data as Parquet, indexed and queryable four ways, all in-process.
+---
+
+Infino keeps **one copy of your data** as Apache Parquet on object storage, splices
+search indexes directly into it, and lets you query it four ways — all in-process,
+with no separate search server or vector database.
+
+```text
+       write rows   ──►  ┌─────────────── supertable ───────────────┐
+  (text · vectors ·      │  manifest: snapshot reads, atomic commits │
+       scalars)          │                                           │
+                         │    superfile ── superfile ── superfile    │
+                         │      each = one Apache Parquet file with   │
+                         │      BM25 + vector (IVF + RaBitQ) indexes  │
+                         └──────────────────┬────────────────────────┘
+                                            │  on S3 / Azure / local disk
+                                            ▼
+            query the same rows, in-process — no server to run:
+      full-text (BM25) · vector kNN · SQL · hybrid (BM25 + vector, fused with RRF)
+```
+
+## The two layers
+
+- **Superfile** — a single Apache Parquet file with embedded BM25 and vector
+  (IVF + RaBitQ) indexes spliced in. Immutable once written, and still a valid Parquet
+  file, so anything that reads Parquet can read your data.
+- **Supertable** — composes many superfiles into one queryable table, with a manifest
+  that provides snapshot-isolated reads and atomic commits. Writes are append-only;
+  `update` / `delete` are handled without rewriting your data.
+
+## One copy, four query modes
+
+Index your rows once, then retrieve them however the question needs:
+
+- **Full-text (BM25)** — keyword search.
+- **Vector (kNN)** — semantic search over your embeddings (bring your own).
+- **SQL** — filter, aggregate, and join over the same rows.
+- **Hybrid** — BM25 and vector fused in a single query with reciprocal-rank fusion (RRF).
+
+Because everything runs **in your process**, there's no server to deploy, no vector
+database to keep in sync, and one copy of the data to store.
+
+## Dig deeper
+
+<CardGroup cols={2}>
+  <Card title="Object-storage-native retrieval" icon="cloud" href="/concepts/object-storage-native-retrieval">
+    Why search runs directly on Parquet in object storage.
+  </Card>
+  <Card title="Hybrid search" icon="layer-group" href="/concepts/hybrid-search">
+    Keyword and vector fused in one query.
+  </Card>
+  <Card title="Retrieval for agents" icon="robot" href="/concepts/retrieval-for-agents">
+    The read path for agents doing many retrievals per task.
+  </Card>
+  <Card title="Embedded retrieval" icon="microchip" href="/concepts/embedded-retrieval">
+    In-process, no server — the "import it like SQLite" model.
+  </Card>
+</CardGroup>
+
+For the exhaustive, code-level internals — the superfile format, the supertable
+manifest, and the query layers — see [Infino on DeepWiki](https://deepwiki.com/infino-ai/infino).
