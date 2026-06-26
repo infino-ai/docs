@@ -32,7 +32,7 @@
           },
           {
             "group": "Reference",
-            "pages": ["faq", "tradeoffs"]
+            "pages": ["sql-reference", "faq", "tradeoffs"]
           }
         ]
       },

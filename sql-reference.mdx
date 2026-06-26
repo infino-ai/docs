@@ -1,0 +1,104 @@
+---
+title: SQL Reference
+description: Query Infino with SQL via query_sql — the dialect, the search table functions, and how they compose.
+---
+
+`query_sql` runs SQL across every table in the catalog. It is **read-only**: use it to
+filter, aggregate, and join your rows, and to run Infino's **search table functions**
+(BM25, vector, hybrid, and exact/token match) as relations you compose with SQL. Mutate
+data with `append` / `update` / `delete` (see [Tables](/guides/tables)), not SQL.
+
+<CodeGroup>
+
+```python Python
+rows = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")
+```
+
+```typescript Node.js
+const rows = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");
+```
+
+```rust Rust
+let rows = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?;
+```
+
+</CodeGroup>
+
+## Dialect
+
+Infino executes SQL on [Apache DataFusion](https://datafusion.apache.org) — ANSI-style,
+Postgres-leaning. You get `SELECT`, `WHERE`, `JOIN` (across tables), CTEs (`WITH`),
+`GROUP BY` with aggregates, window functions, `ORDER BY`, `LIMIT`, and the usual
+scalar/aggregate functions.
+
+## Search table functions
+
+Call a search function in the `FROM` clause as a relation. Every one takes a **leading
+table-name argument** (a string literal — the catalog table to search) and returns that
+table's **`_id`**, its **scalar columns**, and a **`score`** column. The ranked functions
+order by relevance — add `ORDER BY score DESC` (and a `LIMIT`) for control.
+
+| Function | Signature | Returns |
+| --- | --- | --- |
+| `bm25_search` | `bm25_search('table', 'column', 'query', k [, 'mode'])` | ranked BM25 hits |
+| `bm25_search_prefix` | `bm25_search_prefix('table', 'column', 'prefix', k)` | ranked prefix (autocomplete) hits |
+| `vector_search` | `vector_search('table', 'column', vector, k)` | ranked vector-kNN hits |
+| `hybrid_search` | `hybrid_search('table', 'text_col', 'query', 'vector_col', vector, k)` | BM25 + vector, fused with RRF |
+| `token_match` | `token_match('table', 'column', 'query' [, 'mode'])` | unranked rows containing the token(s) |
+| `exact_match` | `exact_match('table', 'column', 'value')` | unranked rows where `column` equals `value` |
+
+- **`mode`** (BM25, token) — `'or'` (default, match any term) or `'and'` (require all terms).
+- **`vector`** — the query embedding, as a comma-separated string literal
+  (`'0.12,0.04,-0.31,...'`) or a SQL array literal (`[0.12, 0.04, -0.31, ...]`).
+- **`token_match` / `exact_match`** are unranked: `score` is present (for schema
+  uniformity) but constant `0.0`, and order is unspecified — use `ORDER BY` / `LIMIT`.
+
+### Examples
+
+```sql
+-- BM25 keyword search
+SELECT _id, body, score
+FROM bm25_search('docs', 'body', 'cancel subscription', 10)
+ORDER BY score DESC;
+
+-- require all terms (AND)
+SELECT _id, score FROM bm25_search('docs', 'body', 'error timeout', 10, 'and');
+
+-- vector kNN — query vector as a string literal
+SELECT _id, score
+FROM vector_search('docs', 'embedding', '0.12,0.04,-0.31, ...', 10)
+ORDER BY score DESC;
+
+-- hybrid (BM25 + vector, fused with reciprocal-rank fusion)
+SELECT _id, body, score
+FROM hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '0.12,0.04, ...', 10)
+ORDER BY score DESC;
+
+-- exact id lookup (unranked)
+SELECT _id, body FROM exact_match('docs', 'doc_id', '42');
+```
+
+## Composing search with SQL
+
+Each function returns a relation, so you can filter, join, and aggregate over its results:
+
+```sql
+-- post-filter BM25 hits by a scalar column
+SELECT s._id, s.score
+FROM bm25_search('docs', 'body', 'billing', 50) AS s
+WHERE s.source = 'help-center'
+ORDER BY s.score DESC
+LIMIT 10;
+
+-- join search hits to another table
+SELECT h._id, u.name
+FROM hybrid_search('docs', 'body', 'refund', 'embedding', '0.1,0.2, ...', 20) AS h
+JOIN users AS u ON u.id = h.author_id;
+```
+
+<Note>
+SQL is read-only. `INSERT` / `UPDATE` / `DELETE` / `CREATE` are not available — create
+tables and mutate rows through the API (`create_table`, `append`, `update`, `delete`).
+For a pushdown text pre-filter on vector search (rather than a SQL post-filter), see the
+`filter` option in the [Search guide](/guides/search).
+</Note>
