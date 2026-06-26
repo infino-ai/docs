@@ -1,0 +1,24 @@
+---
+title: Infino
+description: The embedded retrieval engine for AI agents — SQL, full-text (BM25), vector, and hybrid search over Parquet on object storage, in-process.
+---
+
+Infino is an embedded retrieval engine. It runs SQL, full-text (BM25), vector, and
+hybrid search over a single copy of your data, stored as Apache Parquet on object
+storage — in-process, with no separate search server or vector database to operate.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Index a few documents and run keyword, vector, and SQL retrieval — in Python,
+    Node.js, or Rust.
+  </Card>
+  <Card title="Install" icon="download" href="/installation">
+    `pip install infino`, `npm install @infino-ai/infino`, or `cargo add infino`.
+  </Card>
+  <Card title="Object-storage-native retrieval" icon="cloud" href="/concepts/object-storage-native-retrieval">
+    Search directly on Parquet on S3, Azure, or local disk.
+  </Card>
+  <Card title="Hybrid search" icon="layer-group" href="/concepts/hybrid-search">
+    Keyword + vector + SQL in one engine, over one copy of the data.
+  </Card>
+</CardGroup>

@@ -1,0 +1,143 @@
+---
+title: Quickstart
+description: Index a small knowledge base and retrieve over it three ways — BM25 keyword, vector kNN, and SQL — over one table, in Python, Node.js, or Rust.
+---
+
+Index a small knowledge base and retrieve over it three ways — BM25 keyword search,
+vector kNN, and SQL — all over **one table**. `"memory://"` runs in-process; use
+`"./data"` or `"s3://bucket/prefix"` to persist.
+
+<CodeGroup>
+
+```python Python
+import infino
+import pyarrow as pa
+
+# A knowledge base your agent retrieves over.
+db = infino.connect("memory://")
+
+# Tiny stand-in for your embedding model so this runs as-is — a 16-dim
+# one-hot by topic. Real embeddings are dense and higher-dimensional.
+def embed(topic):                       # 0 = billing, 1 = appearance
+    v = [0.0] * 16
+    v[topic] = 1.0
+    return v
+
+schema = pa.schema([
+    pa.field("source", pa.large_utf8(), nullable=False),
+    pa.field("body", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), 16), nullable=False),
+])
+docs = db.create_table(
+    "docs", schema,
+    infino.IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+)
+
+docs.append([
+    {"source": "help-center", "body": "To cancel a subscription, open Settings then Billing.", "embedding": embed(0)},
+    {"source": "help-center", "body": "Refunds return to the original payment method.",         "embedding": embed(0)},
+    {"source": "blog",        "body": "Enable dark mode under Settings then Appearance.",        "embedding": embed(1)},
+])
+
+# Retrieve context to ground the agent's next answer:
+keyword  = docs.bm25_search("body", "cancel subscription", 5)               # BM25
+semantic = docs.vector_search("embedding", embed(0), 5)                     # vector kNN
+# vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+filtered = docs.vector_search("embedding", embed(0), 5, filter_column="body", filter_query="billing")
+billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL filter
+```
+
+```typescript Node.js
+import { connect, IndexSpec } from "@infino-ai/infino";
+
+// A knowledge base your agent retrieves over.
+const db = connect("memory://");
+
+// Tiny stand-in for your embedding model so this runs as-is — a 16-dim
+// one-hot by topic. Real embeddings are dense and higher-dimensional.
+const embed = (topic) => { const v = Array(16).fill(0.0); v[topic] = 1.0; return v; };
+
+const docs = db.createTable(
+  "docs",
+  { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
+  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+);
+
+docs.append([
+  { source: "help-center", body: "To cancel a subscription, open Settings then Billing.", embedding: embed(0) },
+  { source: "help-center", body: "Refunds return to the original payment method.",         embedding: embed(0) },
+  { source: "blog",        body: "Enable dark mode under Settings then Appearance.",        embedding: embed(1) },
+]);
+
+// Retrieve context to ground the agent's next answer:
+const keyword  = docs.bm25Search("body", "cancel subscription", 5);            // BM25
+const semantic = docs.vectorSearch("embedding", embed(0), 5);                  // vector kNN
+// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+const filtered = docs.vectorSearch("embedding", embed(0), 5, { filter: { column: "body", query: "billing" } });
+const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL filter
+```
+
+```rust Rust
+use std::sync::Arc;
+
+use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
+use arrow_schema::{DataType, Field, Schema};
+use infino::{connect, BoolMode, IndexSpec, Metric, VectorFilter, VectorSearchOptions};
+
+// Tiny stand-in for your embedding model so this runs as-is — a 16-dim
+// one-hot by topic. Real embeddings are dense and higher-dimensional.
+fn embed(topic: usize) -> Vec<f32> {
+    let mut v = vec![0.0_f32; 16];
+    v[topic] = 1.0;
+    v
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // A knowledge base your agent retrieves over.
+    let db = connect("memory://")?;
+
+    let item = Arc::new(Field::new("item", DataType::Float32, true));
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("source", DataType::LargeUtf8, false),
+        Field::new("body", DataType::LargeUtf8, false),
+        Field::new("embedding", DataType::FixedSizeList(item.clone(), 16), false),
+    ]));
+    let docs = db.create_table(
+        "docs",
+        schema.clone(),
+        IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
+    )?;
+
+    let flat: Vec<f32> = [0usize, 0, 1].iter().flat_map(|&t| embed(t)).collect();
+    docs.append(&RecordBatch::try_new(
+        schema,
+        vec![
+            Arc::new(LargeStringArray::from(vec!["help-center", "help-center", "blog"])),
+            Arc::new(LargeStringArray::from(vec![
+                "To cancel a subscription, open Settings then Billing.",
+                "Refunds return to the original payment method.",
+                "Enable dark mode under Settings then Appearance.",
+            ])),
+            Arc::new(FixedSizeListArray::new(item, 16, Arc::new(Float32Array::from(flat)), None)),
+        ],
+    )?)?;
+
+    // Retrieve context to ground the agent's next answer:
+    let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
+    let semantic =
+        docs.vector_search("embedding", &embed(0), 5, VectorSearchOptions::new(), None, None)?; // vector kNN
+    // vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+    let filtered = docs.vector_search(
+        "embedding", &embed(0), 5, VectorSearchOptions::new(),
+        Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None,
+    )?;
+    let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL filter
+    Ok(())
+}
+```
+
+</CodeGroup>
+
+Each search returns Arrow rows. From here, feed the retrieved passages to your model
+as grounding context — see the [concepts](/concepts/retrieval-for-agents) for how the
+three retrieval modes fit an agent loop.
