@@ -1,4 +1,7 @@
-# Object-storage-native retrieval
+---
+title: "Object-storage-native retrieval"
+icon: "cloud"
+---
 
 **Object-storage-native retrieval is search that runs directly on data kept in
 object storage — Amazon S3, Azure Blob, or local disk — instead of in a

@@ -1,4 +1,7 @@
-# FAQ
+---
+title: "FAQ"
+icon: "circle-question"
+---
 
 Operational and architecture answers for evaluating Infino. Each answer is
 short; follow the link for the canonical detail.

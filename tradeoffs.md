@@ -1,4 +1,7 @@
-# Tradeoffs and limits
+---
+title: "Tradeoffs"
+icon: "scale-balanced"
+---
 
 **Infino optimizes for query speed-per-dollar on object storage. That choice
 buys fast, cheap retrieval over data you already keep in object storage — and
