@@ -27,12 +27,13 @@
               "guides/embeddings",
               "guides/indexing",
               "guides/search",
-              "guides/storage"
+              "guides/storage",
+              "guides/parquet-interop"
             ]
           },
           {
             "group": "Reference",
-            "pages": ["sql-reference", "faq", "tradeoffs"]
+            "pages": ["sql-reference", "faq", "tradeoffs", "troubleshooting"]
           }
         ]
       },

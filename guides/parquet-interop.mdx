@@ -1,0 +1,47 @@
+---
+title: Parquet interop
+description: Your data is standard Apache Parquet — read it from DuckDB, pandas, or pyarrow with no export and no Infino in the read path.
+---
+
+Infino stores your data as **spec-compliant Apache Parquet**. Each table persists as one
+or more superfiles (`*.sf.parquet`); the embedded BM25 and vector index regions sit ahead
+of a standard Parquet footer and are referenced by `inf.*` file-metadata keys that a
+conformant Parquet reader simply ignores. So **anything that reads Parquet can read your
+data** — no export step, no Infino in the read path, no lock-in.
+
+A single table can shard into several superfiles, so read them as a **set** (glob the
+`*.sf.parquet` files under the table's directory).
+
+## DuckDB
+
+```sql
+SELECT source, COUNT(*) AS n
+FROM read_parquet('./data/**/*.sf.parquet')
+GROUP BY source
+ORDER BY source;
+```
+
+## pandas / pyarrow
+
+```python
+import glob
+import pyarrow.parquet as pq
+
+files = glob.glob("./data/**/*.sf.parquet", recursive=True)
+table = pq.read_table(files[0])          # or pa.concat_tables([...]) across all files
+df = table.to_pandas()
+```
+
+## What a Parquet reader sees
+
+A standard reader gets the **`_id` column and your scalar / text columns** — and ignores
+the index regions. One thing to know: the **vector column is consumed into the embedded
+index, not stored as a Parquet column**, so it won't appear in the read-back (you'll see
+`_id`, `source`, `body`, but not `embedding`).
+
+<Note>
+A raw Parquet read returns the rows as written to the superfiles. For Infino's **live
+view** — ranked search, and tables with `update` / `delete` applied — query through
+Infino (`query_sql` and the search API). Use direct Parquet reads for analytics,
+ETL/export, and interop with the wider data ecosystem.
+</Note>
