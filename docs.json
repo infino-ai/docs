@@ -45,44 +45,26 @@
       },
       {
         "tab": "Integrations",
-        "groups": [
-          {
-            "group": "Integrations",
-            "pages": [
-              "integrations/langchain",
-              "integrations/ai-sdk",
-              "integrations/crewai",
-              "integrations/mcp"
-            ]
-          }
+        "pages": [
+          "integrations/index",
+          "integrations/langchain",
+          "integrations/ai-sdk",
+          "integrations/crewai",
+          "integrations/mcp"
         ]
       },
       {
         "tab": "Tutorials",
-        "groups": [
-          {
-            "group": "Tutorials",
-            "pages": ["tutorials/index"]
-          }
-        ]
+        "pages": ["tutorials/index"]
       },
       {
         "tab": "API Reference",
-        "groups": [
-          {
-            "group": "API Reference",
-            "pages": ["api-reference/index"]
-          }
-        ]
+        "pages": ["api-reference/index"]
       }
     ]
   },
   "navbar": {
     "links": [
-      {
-        "label": "API reference (Rust)",
-        "href": "https://docs.rs/infino"
-      },
       {
         "label": "GitHub",
         "href": "https://github.com/infino-ai/infino"
