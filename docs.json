@@ -12,15 +12,11 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "quickstart", "how-it-works"]
-          },
-          {
-            "group": "Concepts",
             "pages": [
-              "concepts/object-storage-native-retrieval",
-              "concepts/hybrid-search",
-              "concepts/retrieval-for-agents",
-              "concepts/embedded-retrieval"
+              "index",
+              "quickstart",
+              "how-it-works",
+              "concepts/object-storage-native-retrieval"
             ]
           },
           {
