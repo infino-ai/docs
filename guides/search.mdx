@@ -26,6 +26,11 @@ hits = docs.bm25_search("body", "cancel subscription", 5, mode="or")
 const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
 ```
 
+```rust Rust
+use infino::BoolMode;
+let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?;
+```
+
 </CodeGroup>
 
 | Argument | Type | Default | Description |
@@ -33,7 +38,7 @@ const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
 | `column` | string | — | the FTS-indexed text column |
 | `query` | string | — | query terms, tokenized by the index |
 | `k` | int | — | number of top results |
-| `mode` | `"or"` / `"and"` | `"or"` | match any term (`or`) or require all terms (`and`) |
+| `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 ## Vector kNN
@@ -55,6 +60,14 @@ const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
 const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
 ```
 
+```rust Rust
+use infino::VectorSearchOptions;
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(), None, None)?;
+// higher recall: probe more IVF partitions
+let more = docs.vector_search("embedding", &q, 5,
+    VectorSearchOptions::new().with_nprobe(32), None, None)?;
+```
+
 </CodeGroup>
 
 | Argument | Type | Default | Description |
@@ -63,7 +76,7 @@ const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
 | `query` | float[] | — | the query vector (same dim as the index) |
 | `k` | int | — | number of top results |
 | `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
-| `rerankMult` *(Node)* | int | engine default | over-fetch multiplier for the exact-rerank stage |
+| `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
 | `filter` | text predicate | none | pushdown pre-filter (below) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
@@ -82,6 +95,12 @@ hits = docs.vector_search("embedding", embed("..."), 5,
 ```typescript Node.js
 const hits = docs.vectorSearch("embedding", embed("..."), 5,
   { filter: { column: "body", query: "billing" } });
+```
+
+```rust Rust
+use infino::{VectorFilter, VectorSearchOptions, BoolMode};
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
+    Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None)?;
 ```
 
 </CodeGroup>
@@ -117,6 +136,15 @@ const rows = db.querySql(
 );
 ```
 
+```rust Rust
+let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
+let rows = db.query_sql(&format!(
+    "SELECT doc_id, body, score FROM \
+     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
+     ORDER BY score DESC"
+))?;
+```
+
 </CodeGroup>
 
 <Warning>
@@ -135,19 +163,21 @@ rows. SQL is for **querying**; mutate with `append` / `update` / `delete` (see
 ```python Python
 rows = db.query_sql("""
     SELECT source, COUNT(*) AS n
-    FROM docs
-    WHERE source = 'help-center'
-    GROUP BY source
+    FROM docs WHERE source = 'help-center' GROUP BY source
 """)
 ```
 
 ```typescript Node.js
 const rows = db.querySql(`
   SELECT source, COUNT(*) AS n
-  FROM docs
-  WHERE source = 'help-center'
-  GROUP BY source
+  FROM docs WHERE source = 'help-center' GROUP BY source
 `);
+```
+
+```rust Rust
+let rows = db.query_sql(
+    "SELECT source, COUNT(*) AS n FROM docs WHERE source = 'help-center' GROUP BY source",
+)?;
 ```
 
 </CodeGroup>
@@ -155,8 +185,7 @@ const rows = db.querySql(`
 ## Unranked lookups
 
 When you don't need scoring, `token_match` (rows containing a token) and `exact_match`
-(rows whose column equals a value) return every matching row, unranked — useful for
-exact-id lookups and filtering.
+(rows whose column equals a value) return every matching row, unranked.
 
 <CodeGroup>
 
@@ -168,6 +197,12 @@ rows = docs.token_match("body", "billing")
 ```typescript Node.js
 const a = docs.exactMatch("doc_id", "1");
 const b = docs.tokenMatch("body", "billing");
+```
+
+```rust Rust
+use infino::BoolMode;
+let a = docs.exact_match("doc_id", "1", None)?;
+let b = docs.token_match("body", "billing", BoolMode::Or, None)?;
 ```
 
 </CodeGroup>

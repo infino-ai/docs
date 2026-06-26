@@ -22,12 +22,20 @@ const spec = new IndexSpec()
   .vector("embedding", 384, 64, "cosine");     // vector index over `embedding`
 ```
 
+```rust Rust
+use infino::{IndexSpec, Metric};
+
+let spec = IndexSpec::new()
+    .fts("body")                                  // BM25 over `body`
+    .vector("embedding", 384, 64, Metric::Cosine); // vector index over `embedding`
+```
+
 </CodeGroup>
 
 ## Full-text index — `fts(column)`
 
 Builds a BM25 inverted index over a text column, powering `bm25_search`, `token_match`,
-and the hybrid/pushdown-filter paths. Call `fts` once per text column you want to search.
+and the hybrid / pushdown-filter paths. Call `fts` once per text column you want to search.
 
 ## Vector index — `vector(column, dim, n_cent, metric)`
 
@@ -38,7 +46,7 @@ Builds an IVF (inverted-file) vector index for kNN.
 | `column` | string | the fixed-width vector column to index |
 | `dim` | int | embedding dimension — must match your model's output and the values you append |
 | `n_cent` | int | number of IVF partitions (centroids) |
-| `metric` | `cosine` / `l2sq` / `negdot` | distance metric (see [Embeddings](/guides/embeddings)) |
+| `metric` | `cosine` / `l2sq` / `negdot` (`Metric::Cosine` …) | distance metric (see [Embeddings](/guides/embeddings)) |
 
 **Tuning `n_cent`.** It sets how many partitions the vectors are bucketed into. More
 partitions mean finer buckets and faster search **at scale**, at some recall cost per

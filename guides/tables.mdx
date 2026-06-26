@@ -51,6 +51,30 @@ docs.append([
 ]);
 ```
 
+```rust Rust
+use std::sync::Arc;
+use arrow_schema::{DataType, Field, Schema};
+use infino::{connect, IndexSpec, Metric};
+
+// Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+let db = connect("./data")?;
+
+let item = Arc::new(Field::new("item", DataType::Float32, true));
+let schema = Arc::new(Schema::new(vec![
+    Field::new("doc_id", DataType::LargeUtf8, false),
+    Field::new("body", DataType::LargeUtf8, false),
+    Field::new("embedding", DataType::FixedSizeList(item, 384), false),
+]));
+let docs = db.create_table(
+    "docs", schema,
+    IndexSpec::new().fts("body").vector("embedding", 384, 64, Metric::Cosine),
+)?;
+
+// One append is one atomic commit. Build `batch` as an Arrow RecordBatch
+// matching the schema — see the Quickstart.
+docs.append(&batch)?;
+```
+
 </CodeGroup>
 
 <Note>
@@ -60,8 +84,9 @@ row-by-row for throughput.
 
 ## Update and delete
 
-`update` and `delete` match rows by a **SQL predicate**. `update` replaces matched rows
-1:1 with the new rows you supply.
+In **Python and Node.js**, `update` and `delete` match rows by a **SQL predicate**
+string. In **Rust**, they take a DataFusion `Expr` (`col(...).eq(lit(...))`). `update`
+replaces matched rows 1:1 with the new rows you supply.
 
 <CodeGroup>
 
@@ -87,6 +112,17 @@ const stats = docs.delete("doc_id = '1'");
 console.log(stats.matched, stats.nTombstoned);
 ```
 
+```rust Rust
+use datafusion_expr::{col, lit};   // build predicates as DataFusion expressions
+
+// Replace the row(s) matching the predicate (1:1 with the new rows in `batch`):
+docs.update(col("doc_id").eq(lit("1")), &batch)?;
+
+// Delete rows matching a predicate:
+let stats = docs.delete(col("doc_id").eq(lit("1")))?;
+println!("{} matched, {} tombstoned", stats.matched, stats.n_tombstoned);
+```
+
 </CodeGroup>
 
 <Warning>
@@ -94,23 +130,28 @@ console.log(stats.matched, stats.nTombstoned);
 `memory://`. `update` is 1:1: the matched row count must equal the replacement count.
 </Warning>
 
-(In Rust, `update` / `delete` take a DataFusion `Expr` rather than a SQL string — see
-[docs.rs](https://docs.rs/infino).)
-
 ## Compact, list, and drop
 
 <CodeGroup>
 
 ```python Python
-docs.optimize()                 # merge small / underfilled superfiles
-db.list_tables()                # ["docs"]
+docs.optimize()                    # merge small / underfilled superfiles
+db.list_tables()                   # ["docs"]
 db.drop_table("docs", purge=True)  # purge=True also deletes the table's storage
 ```
 
 ```typescript Node.js
-docs.optimize();                // merge small / underfilled superfiles
-db.listTables();                // ["docs"]
-db.dropTable("docs", true);     // purge=true also deletes the table's storage
+docs.optimize();                   // merge small / underfilled superfiles
+db.listTables();                   // ["docs"]
+db.dropTable("docs", true);        // purge=true also deletes the table's storage
+```
+
+```rust Rust
+use infino::OptimizeOptions;
+
+docs.optimize(&OptimizeOptions::default())?;  // merge small / underfilled superfiles
+db.list_tables()?;                            // Vec<String>
+db.drop_table("docs", true)?;                 // purge = true also deletes storage
 ```
 
 </CodeGroup>

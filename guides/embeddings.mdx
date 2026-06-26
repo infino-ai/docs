@@ -10,8 +10,7 @@ Infino builds the vector index over them.
 ## The pattern
 
 1. Declare a fixed-width vector column whose dimension matches your model's output.
-2. Declare a vector index on it with the **same dimension** and a distance **metric**
-   (`cosine` for normalized embeddings, `l2sq` for Euclidean, `negdot` for dot product).
+2. Declare a vector index on it with the **same dimension** and a distance **metric**.
 3. Embed your text and append the vectors alongside the rows.
 
 <CodeGroup>
@@ -41,6 +40,15 @@ const docs = db.createTable(
   new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
 );
 docs.append([{ doc_id: "1", body: text, embedding: await embed(text) }]);
+```
+
+```rust Rust
+use infino::{IndexSpec, Metric};
+
+// Compute embeddings with your model (e.g. via `candle`, `fastembed`, or an HTTP
+// service), then append the vectors as an Arrow RecordBatch (see the Quickstart).
+// dim (384) must match your model and the index spec:
+let spec = IndexSpec::new().fts("body").vector("embedding", 384, 64, Metric::Cosine);
 ```
 
 </CodeGroup>

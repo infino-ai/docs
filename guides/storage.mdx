@@ -19,6 +19,14 @@ const db = connect("./data");                 // local disk (durable)
 const db = connect("s3://bucket/prefix");     // object storage (durable)
 ```
 
+```rust Rust
+use infino::connect;
+
+let db = connect("memory://")?;               // in-process, ephemeral
+let db = connect("./data")?;                  // local disk (durable)
+let db = connect("s3://bucket/prefix")?;      // object storage (durable)
+```
+
 </CodeGroup>
 
 Data is stored as standard Apache Parquet at that location — anything that reads Parquet
@@ -31,7 +39,7 @@ storage (a path or `s3://` URI).
 
 ## Object-storage configuration
 
-For S3-compatible stores, pass credentials and a local read cache via connect options:
+For S3-compatible stores, pass credentials and a local read cache:
 
 <CodeGroup>
 
@@ -58,6 +66,20 @@ const db = connect("s3://bucket/prefix", {
 });
 ```
 
+```rust Rust
+use infino::{connect_with, ConnectOptions};
+
+let db = connect_with(
+    "s3://bucket/prefix",
+    ConnectOptions::new()
+        .with_s3_endpoint(
+            "https://s3.us-east-1.amazonaws.com", "us-east-1", "ACCESS_KEY", "SECRET_KEY",
+        )
+        .with_cache_dir("/var/cache/infino")     // local disk cache for remote-backed tables
+        .with_cache_budget_bytes(2_000_000_000),
+)?;
+```
+
 </CodeGroup>
 
 <Note>
@@ -67,12 +89,9 @@ superfiles on local disk so warm queries don't re-fetch from object storage.
 
 ## Connect options
 
-| Option (Python / Node.js) | Description |
+| Option (Python / Node.js / Rust) | Description |
 | --- | --- |
-| `endpoint` | S3-compatible endpoint URL |
-| `region` | object-store region |
-| `access_key` / `accessKey` | access key (credential) |
-| `secret_key` / `secretKey` | secret key (credential) |
-| `cache_dir` / `cacheDir` | local disk-cache directory for remote-backed tables |
-| `cache_budget_bytes` / `cacheBudgetBytes` | disk-cache budget, in bytes |
-| `cold_fetch_mode` / `coldFetchMode` | how cold-cache misses are serviced |
+| `endpoint`, `region`, keys / `with_s3_endpoint(...)` | S3-compatible endpoint, region, and credentials |
+| `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables |
+| `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
+| `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
