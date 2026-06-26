@@ -1,0 +1,18 @@
+---
+title: MCP server
+description: Expose Infino retrieval — keyword, vector, hybrid, and SQL — to any MCP client.
+---
+
+The [`@infino-ai/mcp-server`](https://www.npmjs.com/package/@infino-ai/mcp-server)
+package is a [Model Context Protocol](https://modelcontextprotocol.io) server for
+Infino. It exposes keyword, vector, hybrid, and SQL retrieval (plus write tools) to any
+MCP client — Claude, Cursor, and others.
+
+```bash
+npx -y @infino-ai/mcp-server
+```
+
+Point your MCP client at the `infino-mcp` command. The tool descriptions are written so
+the model picks the right retrieval mode by question shape (keyword ↔ semantic ↔
+hybrid). See the [infino-mcp repository](https://github.com/infino-ai/infino-mcp) for the
+full tool list and client configuration.

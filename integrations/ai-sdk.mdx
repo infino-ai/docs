@@ -1,0 +1,25 @@
+---
+title: Vercel AI SDK
+description: Build a knowledge-base agent with Infino and the Vercel AI SDK.
+---
+
+Use Infino as the retrieval layer for an agent built with the
+[Vercel AI SDK](https://ai-sdk.dev). Embed with the AI SDK (`embed` / `embedMany`),
+index into Infino, and expose retrieval as a `tool` the model calls — so the agent
+grounds its answers in your data.
+
+```bash
+pnpm i ai zod @ai-sdk/openai @infino-ai/infino
+```
+
+The pattern:
+
+1. **Index** — `embedMany` your chunks, then `append` them to an Infino table with an
+   FTS + vector index.
+2. **Retrieve** — define a `tool` whose `execute` embeds the query and runs Infino's
+   hybrid (BM25 + vector) search, returning the top passages.
+3. **Generate** — pass the tool to `generateText` with `stopWhen: stepCountIs(...)`;
+   the model calls it to ground its answer.
+
+See the [`@infino-ai/infino`](https://www.npmjs.com/package/@infino-ai/infino) package
+and the [Quickstart](/quickstart) for the Node API used inside the tool.

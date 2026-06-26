@@ -6,27 +6,65 @@
     "primary": "#5E6AD2"
   },
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Get started",
-        "pages": ["index", "quickstart", "installation"]
-      },
-      {
-        "group": "Concepts",
-        "pages": [
-          "concepts/object-storage-native-retrieval",
-          "concepts/hybrid-search",
-          "concepts/retrieval-for-agents",
-          "concepts/embedded-retrieval"
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["index", "quickstart", "installation"]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/object-storage-native-retrieval",
+              "concepts/hybrid-search",
+              "concepts/retrieval-for-agents",
+              "concepts/embedded-retrieval"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": ["architecture"]
+          },
+          {
+            "group": "Reference",
+            "pages": ["faq", "tradeoffs"]
+          }
         ]
       },
       {
-        "group": "Architecture",
-        "pages": ["architecture"]
+        "tab": "Integrations",
+        "groups": [
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/index",
+              "integrations/langchain",
+              "integrations/ai-sdk",
+              "integrations/crewai",
+              "integrations/mcp"
+            ]
+          }
+        ]
       },
       {
-        "group": "Reference",
-        "pages": ["faq", "tradeoffs"]
+        "tab": "Tutorials",
+        "groups": [
+          {
+            "group": "Tutorials",
+            "pages": ["tutorials/index"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": ["api-reference/index"]
+          }
+        ]
       }
     ]
   },

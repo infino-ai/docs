@@ -1,0 +1,28 @@
+---
+title: LangChain
+description: Use Infino as a LangChain VectorStore — vector, full-text (BM25), hybrid, and SQL retrieval — in Python and JavaScript.
+---
+
+Infino is a LangChain `VectorStore`: vector, full-text (BM25), hybrid, and SQL
+retrieval over a single copy of your data. Bring your own embeddings.
+
+## Python
+
+```bash
+pip install langchain-infino
+```
+
+The [`langchain-infino`](https://pypi.org/project/langchain-infino/) package provides
+the vector store with hybrid search, self-query, and SQL. Runnable walkthroughs are in
+the [LangChain examples](https://github.com/infino-ai/infino/tree/main/infino-python/examples/langchain)
+(live-data RAG, a research assistant, a support-ops agent).
+
+## JavaScript / TypeScript
+
+```bash
+npm install @infino-ai/langchain-infino
+```
+
+The [`@infino-ai/langchain-infino`](https://www.npmjs.com/package/@infino-ai/langchain-infino)
+package provides `InfinoVectorStore` with `fromDocuments` / `fromTexts`, similarity and
+hybrid search, MMR, and metadata filtering.
