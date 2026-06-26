@@ -64,3 +64,15 @@ const db = connect("s3://bucket/prefix", {
 Credentials can also come from the standard AWS environment. The cache keeps hot
 superfiles on local disk so warm queries don't re-fetch from object storage.
 </Note>
+
+## Connect options
+
+| Option (Python / Node.js) | Description |
+| --- | --- |
+| `endpoint` | S3-compatible endpoint URL |
+| `region` | object-store region |
+| `access_key` / `accessKey` | access key (credential) |
+| `secret_key` / `secretKey` | secret key (credential) |
+| `cache_dir` / `cacheDir` | local disk-cache directory for remote-backed tables |
+| `cache_budget_bytes` / `cacheBudgetBytes` | disk-cache budget, in bytes |
+| `cold_fetch_mode` / `coldFetchMode` | how cold-cache misses are serviced |

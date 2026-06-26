@@ -47,5 +47,15 @@ docs.append([{ doc_id: "1", body: text, embedding: await embed(text) }]);
 
 <Note>
 Embed your **queries** with the same model at search time, and pass the query vector to
-`vector_search` (see [Search](/guides/search)). Use `cosine` with normalized embeddings.
+`vector_search` (see [Search](/guides/search)).
 </Note>
+
+## Choosing a metric
+
+Match the index metric to how your embeddings are produced:
+
+| Metric | Use when |
+| --- | --- |
+| `cosine` | embeddings are normalized (most sentence-transformer and OpenAI models) |
+| `l2sq` | you want squared Euclidean distance |
+| `negdot` | you want dot-product similarity over unnormalized vectors |

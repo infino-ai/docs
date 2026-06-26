@@ -3,45 +3,74 @@ title: Search
 description: BM25 keyword, vector kNN, hybrid, pushdown filtering, and SQL — over one table.
 ---
 
-Infino retrieves from the same table four ways. All return Arrow rows; pass a
-`projection` to choose which columns come back (`_id`, scalar columns, or `score`).
+Infino retrieves from the same table four ways. Every search returns Arrow rows; pass a
+**`projection`** to choose which columns come back — `_id`, any scalar column, or the
+trailing `score`. Omit it to get just `_id` + `score` (the cheapest — no row decode).
+
+<Tip>
+Always pass a sensible top-`k` on production queries — it bounds both the work and the
+result size.
+</Tip>
 
 ## Full-text (BM25)
+
+Ranked keyword search over an FTS-indexed column.
 
 <CodeGroup>
 
 ```python Python
-hits = docs.bm25_search("body", "cancel subscription", 5)        # column, query, k
+hits = docs.bm25_search("body", "cancel subscription", 5, mode="or")
 ```
 
 ```typescript Node.js
-const hits = docs.bm25Search("body", "cancel subscription", 5);  // column, query, k
+const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
 ```
 
 </CodeGroup>
 
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | — | the FTS-indexed text column |
+| `query` | string | — | query terms, tokenized by the index |
+| `k` | int | — | number of top results |
+| `mode` | `"or"` / `"and"` | `"or"` | match any term (`or`) or require all terms (`and`) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
 ## Vector kNN
+
+Semantic search over a vector-indexed column. Embed the query with the **same model**
+you used to index (see [Embeddings](/guides/embeddings)).
 
 <CodeGroup>
 
 ```python Python
 hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
-# Higher recall: raise nprobe (IVF partitions probed)
+# higher recall: probe more IVF partitions
 hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
 ```
 
 ```typescript Node.js
 const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
-// Higher recall: raise nprobe (IVF partitions probed)
+// higher recall: probe more IVF partitions
 const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
 ```
 
 </CodeGroup>
 
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | — | the vector-indexed column |
+| `query` | float[] | — | the query vector (same dim as the index) |
+| `k` | int | — | number of top results |
+| `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
+| `rerankMult` *(Node)* | int | engine default | over-fetch multiplier for the exact-rerank stage |
+| `filter` | text predicate | none | pushdown pre-filter (below) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
 ### Pushdown filter
 
-Restrict the kNN to rows whose FTS-indexed column matches a text predicate — a
-**pre-filter** (the kNN ranks only matching rows), not a post-filter.
+Restrict the kNN to rows whose FTS-indexed column matches a text predicate. This is a
+**pre-filter** — the kNN ranks only among matching rows — not a post-filter on the top-`k`.
 
 <CodeGroup>
 
@@ -59,9 +88,14 @@ const hits = docs.vectorSearch("embedding", embed("..."), 5,
 
 ## Hybrid (BM25 + vector)
 
-Hybrid search fuses BM25 and vector results with reciprocal-rank fusion (RRF). It runs
-through `query_sql` via the `hybrid_search` table function — pass the query text and the
-query vector (as a comma-separated literal):
+Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
+fusion (RRF)** — strong when a query has both keyword and semantic intent. It runs
+through `query_sql` via the `hybrid_search` table function; pass the query text and the
+query vector as a comma-separated literal:
+
+```
+hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
+```
 
 <CodeGroup>
 
@@ -85,24 +119,55 @@ const rows = db.querySql(
 
 </CodeGroup>
 
+<Warning>
+Build the vector literal from your own embedding and escape any user-supplied query
+text before interpolating it into SQL.
+</Warning>
+
 ## SQL
 
 `query_sql` runs SQL across the catalog — filter, aggregate, and join over the same
-rows. (SQL is for querying; mutate with `append` / `update` / `delete`.)
+rows. SQL is for **querying**; mutate with `append` / `update` / `delete` (see
+[Tables](/guides/tables)).
 
 <CodeGroup>
 
 ```python Python
-rows = db.query_sql("SELECT body FROM docs WHERE doc_id = '1'")
+rows = db.query_sql("""
+    SELECT source, COUNT(*) AS n
+    FROM docs
+    WHERE source = 'help-center'
+    GROUP BY source
+""")
 ```
 
 ```typescript Node.js
-const rows = db.querySql("SELECT body FROM docs WHERE doc_id = '1'");
+const rows = db.querySql(`
+  SELECT source, COUNT(*) AS n
+  FROM docs
+  WHERE source = 'help-center'
+  GROUP BY source
+`);
 ```
 
 </CodeGroup>
 
-<Note>
-`token_match` and `exact_match` give **unranked** lookups (every row matching a token or
-an exact value) when you don't need scoring.
-</Note>
+## Unranked lookups
+
+When you don't need scoring, `token_match` (rows containing a token) and `exact_match`
+(rows whose column equals a value) return every matching row, unranked — useful for
+exact-id lookups and filtering.
+
+<CodeGroup>
+
+```python Python
+rows = docs.exact_match("doc_id", "1")
+rows = docs.token_match("body", "billing")
+```
+
+```typescript Node.js
+const a = docs.exactMatch("doc_id", "1");
+const b = docs.tokenMatch("body", "billing");
+```
+
+</CodeGroup>
