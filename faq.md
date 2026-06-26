@@ -99,3 +99,43 @@ GROUP BY source
 ```
 
 See [Queries](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#queries).
+
+## Does Infino compute embeddings, or do I bring my own?
+
+You bring your own. Infino indexes the vectors you supply — compute them with any model
+and pass them in alongside your rows. See [Embeddings](/guides/embeddings).
+
+## Which distance metrics does vector search support?
+
+`cosine` (for normalized embeddings), `l2sq` (squared Euclidean), and `negdot` (dot
+product). You set the metric on the vector index.
+
+## Does Infino do hybrid search?
+
+Yes — BM25 and vector kNN fused with reciprocal-rank fusion, in one query, via the
+`hybrid_search` SQL function. See [Hybrid search](/guides/search/hybrid).
+
+## Can I filter vector search by other fields?
+
+Yes. Use the pushdown text pre-filter on `vector_search` (the kNN ranks only matching
+rows), or filter with SQL. See [Vector search](/guides/search/vector) and the
+[SQL Reference](/sql-reference).
+
+## Can I update and delete data?
+
+Yes — match rows by a predicate and `update` (1:1 replacement) or `delete`. Both require
+durable storage (a path or `s3://`, not `memory://`). See [Tables](/guides/tables).
+
+## Which languages can I use Infino from?
+
+A Rust core with Python (`pip install infino`) and Node.js (`npm install @infino-ai/infino`)
+bindings.
+
+## Do I still need a separate vector database?
+
+No. One Infino table serves BM25, vector, hybrid, and SQL over a single copy of your data
+— no separate vector store or search cluster to run and keep in sync.
+
+## What license is Infino under?
+
+Apache-2.0.

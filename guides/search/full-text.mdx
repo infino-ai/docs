@@ -1,0 +1,56 @@
+---
+title: Full-text search (BM25)
+description: Ranked BM25 keyword search, plus unranked token and exact lookups.
+---
+
+Ranked keyword search over an FTS-indexed column.
+
+<CodeGroup>
+
+```python Python
+hits = docs.bm25_search("body", "cancel subscription", 5, mode="or")
+```
+
+```typescript Node.js
+const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
+```
+
+```rust Rust
+use infino::BoolMode;
+let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?;
+```
+
+</CodeGroup>
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | — | the FTS-indexed text column |
+| `query` | string | — | query terms, tokenized by the index |
+| `k` | int | — | number of top results |
+| `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
+## Unranked lookups
+
+When you don't need scoring, `token_match` (rows containing a token) and `exact_match`
+(rows whose column equals a value) return every matching row, unranked.
+
+<CodeGroup>
+
+```python Python
+rows = docs.exact_match("doc_id", "1")
+rows = docs.token_match("body", "billing")
+```
+
+```typescript Node.js
+const a = docs.exactMatch("doc_id", "1");
+const b = docs.tokenMatch("body", "billing");
+```
+
+```rust Rust
+use infino::BoolMode;
+let a = docs.exact_match("doc_id", "1", None)?;
+let b = docs.token_match("body", "billing", BoolMode::Or, None)?;
+```
+
+</CodeGroup>

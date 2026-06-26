@@ -1,0 +1,52 @@
+---
+title: Hybrid search
+description: BM25 and vector kNN fused with reciprocal-rank fusion, in one query.
+---
+
+Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
+fusion (RRF)** — strong when a query has both keyword and semantic intent. It runs
+through `query_sql` via the `hybrid_search` table function; pass the query text and the
+query vector as a comma-separated literal:
+
+```
+hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
+```
+
+<CodeGroup>
+
+```python Python
+vec = ",".join(map(str, embed("cancel subscription")))
+rows = db.query_sql(
+    f"SELECT doc_id, body, score FROM "
+    f"hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) "
+    f"ORDER BY score DESC"
+)
+```
+
+```typescript Node.js
+const vec = embed("cancel subscription").join(",");
+const rows = db.querySql(
+  `SELECT doc_id, body, score FROM ` +
+  `hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '${vec}', 5) ` +
+  `ORDER BY score DESC`,
+);
+```
+
+```rust Rust
+let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
+let rows = db.query_sql(&format!(
+    "SELECT doc_id, body, score FROM \
+     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
+     ORDER BY score DESC"
+))?;
+```
+
+</CodeGroup>
+
+<Warning>
+Build the vector literal from your own embedding, and escape any user-supplied query
+text before interpolating it into SQL.
+</Warning>
+
+See the [SQL Reference](/sql-reference) for the full `hybrid_search` signature and how to
+compose it with joins and filters.

@@ -26,7 +26,15 @@
               "guides/tables",
               "guides/embeddings",
               "guides/indexing",
-              "guides/search",
+              {
+                "group": "Search",
+                "pages": [
+                  "guides/search/index",
+                  "guides/search/full-text",
+                  "guides/search/vector",
+                  "guides/search/hybrid"
+                ]
+              },
               "guides/storage",
               "guides/parquet-interop"
             ]

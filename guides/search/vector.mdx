@@ -1,0 +1,71 @@
+---
+title: Vector search
+description: Semantic kNN search, nprobe recall tuning, and the pushdown text pre-filter.
+---
+
+Semantic search over a vector-indexed column. Embed the query with the **same model**
+you used to index (see [Embeddings](/guides/embeddings)).
+
+<CodeGroup>
+
+```python Python
+hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
+# higher recall: probe more IVF partitions
+hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
+```
+
+```typescript Node.js
+const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
+// higher recall: probe more IVF partitions
+const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
+```
+
+```rust Rust
+use infino::VectorSearchOptions;
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(), None, None)?;
+// higher recall: probe more IVF partitions
+let more = docs.vector_search("embedding", &q, 5,
+    VectorSearchOptions::new().with_nprobe(32), None, None)?;
+```
+
+</CodeGroup>
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | — | the vector-indexed column |
+| `query` | float[] | — | the query vector (same dim as the index) |
+| `k` | int | — | number of top results |
+| `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
+| `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
+| `filter` | text predicate | none | pushdown pre-filter (below) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
+## Pushdown filter
+
+Restrict the kNN to rows whose FTS-indexed column matches a text predicate. This is a
+**pre-filter** — the kNN ranks only among matching rows — not a post-filter on the top-`k`.
+
+<CodeGroup>
+
+```python Python
+hits = docs.vector_search("embedding", embed("..."), 5,
+                          filter_column="body", filter_query="billing")
+```
+
+```typescript Node.js
+const hits = docs.vectorSearch("embedding", embed("..."), 5,
+  { filter: { column: "body", query: "billing" } });
+```
+
+```rust Rust
+use infino::{VectorFilter, VectorSearchOptions, BoolMode};
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
+    Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None)?;
+```
+
+</CodeGroup>
+
+<Note>
+For scalar filtering (e.g. `WHERE source = '...'`) or filtering the *results* of a
+search, query with SQL — see the [SQL Reference](/sql-reference).
+</Note>
