@@ -45,6 +45,10 @@
   var FAQ = [
     ["Does Infino need a server?",
      "No. Infino runs inside your application as a library. You add it, open a connection, and the engine runs in your process."],
+    ["Is Infino a vector database?",
+     "It does what a vector database does (semantic nearest-neighbor search over your embeddings) without being a separate store you run. Vector search is one mode among full-text, hybrid, and SQL over a single copy of your data."],
+    ["Is Infino a database?",
+     "Not in the transactional sense. Infino is a retrieval engine for search and analytics over data you keep as Parquet, not an OLTP database for transactions or row-level updates."],
     ["Does Infino compute embeddings, or do I bring my own?",
      "You bring your own. Infino indexes the vectors you supply — compute them with any model and pass them in alongside your rows."],
     ["Does Infino do hybrid search?",

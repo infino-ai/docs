@@ -16,6 +16,41 @@ process. There is no wire protocol yet, so external SQL clients
 can't attach; SQL is reached through the connection's `query_sql`. See
 [Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino).
 
+## Is Infino a database?
+
+Not in the transactional sense. Infino is a retrieval engine for search and analytics
+over data you keep as Parquet, not an OLTP database for transactions or row-level updates.
+Use it to search and retrieve alongside whatever system owns your writes.
+
+## Is Infino a vector database?
+
+It does what a vector database does, semantic nearest-neighbor search over your
+embeddings, without being a separate store you run. Vector search is one mode among
+full-text, hybrid, and SQL over a single copy of your data, and you bring your own
+embeddings.
+
+## Is Infino a search engine?
+
+It gives you ranked full-text (BM25) search without a standalone cluster. The inverted
+index is embedded in your Parquet files on object storage, and queries run inside your
+application.
+
+## When should I use Infino, and when not?
+
+Use it for RAG and agent retrieval that wants hybrid (keyword plus semantic) relevance
+over one store, for large mostly-cold corpora that must stay searchable, and to add search
+and vector over Parquet you already have. It is not a system of record: transactional,
+write-heavy workloads belong in an OLTP database. See [Tradeoffs](/tradeoffs) for the full
+envelope.
+
+## How does Infino compare to search engines and vector databases?
+
+Instead of running a search cluster, a vector database, and an analytics store as three
+systems with three copies of your data, Infino runs full-text, vector, and SQL over one
+copy of standard Parquet on object storage. For a capability-by-capability comparison
+against search engines, vector databases, lakehouse tables, and warehouses, see
+[how Infino compares](https://infino.ai/vs).
+
 ## How do concurrent writes work?
 
 **One writer is active per table at a time.** Appends, updates, and deletes are
@@ -133,11 +168,6 @@ durable storage (a path or `s3://`, not `memory://`). See [Tables](/guides/table
 
 A Rust core with Python (`pip install infino`) and Node.js (`npm install @infino-ai/infino`)
 bindings.
-
-## Do I still need a separate vector database?
-
-No. One Infino table serves full-text, vector, hybrid, and SQL search over a single
-copy of your data.
 
 ## What license is Infino under?
 
