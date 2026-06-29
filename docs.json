@@ -66,11 +66,11 @@
           {
             "group": "Guides",
             "pages": [
+              "guides/storage",
               "guides/tables",
               "guides/embeddings",
               "guides/indexing",
               "guides/search",
-              "guides/storage",
               "guides/parquet-interop"
             ]
           },
