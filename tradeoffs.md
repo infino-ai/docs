@@ -51,6 +51,6 @@ size, and the hardware it was recorded on) lives in
 
 ## See also
 
-- [Object-storage-native retrieval](/concepts/object-storage-native-retrieval):
+- [Object-storage-native retrieval](/core-concepts#object-storage-native-retrieval):
   the model and why it makes these tradeoffs.
 - [Architecture overview](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md): where Infino fits best.

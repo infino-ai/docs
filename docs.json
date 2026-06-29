@@ -60,15 +60,7 @@
             "pages": [
               "index",
               "quickstart",
-              "how-it-works"
-            ]
-          },
-          {
-            "group": "Concepts",
-            "pages": [
-              "concepts/object-storage-native-retrieval",
-              "concepts/efficiency-and-cost",
-              "concepts/freshness"
+              "core-concepts"
             ]
           },
           {
@@ -159,5 +151,23 @@
         ]
       }
     ]
-  }
+  },
+  "redirects": [
+    {
+      "source": "/how-it-works",
+      "destination": "/core-concepts"
+    },
+    {
+      "source": "/concepts/object-storage-native-retrieval",
+      "destination": "/core-concepts"
+    },
+    {
+      "source": "/concepts/efficiency-and-cost",
+      "destination": "/core-concepts"
+    },
+    {
+      "source": "/concepts/freshness",
+      "destination": "/core-concepts"
+    }
+  ]
 }

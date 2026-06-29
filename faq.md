@@ -175,6 +175,6 @@ Apache-2.0.
 
 ## See also
 
-- [How Infino works](/how-it-works)
+- [How Infino works](/core-concepts)
 - [Tradeoffs](/tradeoffs)
 - [Quickstart](/quickstart)
