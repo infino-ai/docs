@@ -15,7 +15,7 @@ hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 vec = ",".join(map(str, embed("cancel subscription")))
 rows = db.query_sql(
     f"SELECT doc_id, body, score FROM "
@@ -24,7 +24,7 @@ rows = db.query_sql(
 )
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const vec = embed("cancel subscription").join(",");
 const rows = db.querySql(
   `SELECT doc_id, body, score FROM ` +
@@ -33,7 +33,7 @@ const rows = db.querySql(
 );
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
 let rows = db.query_sql(&format!(
     "SELECT doc_id, body, score FROM \

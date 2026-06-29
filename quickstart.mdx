@@ -8,17 +8,17 @@ description: Install Infino, then index a small knowledge base and retrieve over
 
 <CodeGroup>
 
-```bash Python
+```bash Python icon="python"
 pip install infino
 # Or with uv (https://docs.astral.sh/uv/):
 uv pip install infino
 ```
 
-```bash Node.js
+```bash Node.js icon="node-js"
 npm install @infino-ai/infino
 ```
 
-```bash Rust
+```bash Rust icon="rust"
 cargo add infino
 ```
 
@@ -40,7 +40,7 @@ vector kNN, and SQL — all over **one table**. `"memory://"` runs in-process; u
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 import infino
 import pyarrow as pa
 
@@ -78,7 +78,7 @@ filtered = docs.vector_search("embedding", embed(0), 5, filter_column="body", fi
 billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL filter
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 import { connect, IndexSpec } from "@infino-ai/infino";
 
 // A knowledge base your agent retrieves over.
@@ -108,7 +108,7 @@ const filtered = docs.vectorSearch("embedding", embed(0), 5, { filter: { column:
 const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL filter
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use std::sync::Arc;
 
 use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};

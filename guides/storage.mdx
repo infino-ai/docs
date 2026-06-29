@@ -8,19 +8,19 @@ Where your data lives is chosen by the `connect` URI:
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 db = infino.connect("memory://")              # in-process, ephemeral
 db = infino.connect("./data")                 # local disk (durable)
 db = infino.connect("s3://bucket/prefix")     # object storage (durable)
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const db = connect("memory://");              // in-process, ephemeral
 const db = connect("./data");                 // local disk (durable)
 const db = connect("s3://bucket/prefix");     // object storage (durable)
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::connect;
 
 let db = connect("memory://")?;               // in-process, ephemeral
@@ -44,7 +44,7 @@ For S3-compatible stores, pass credentials and a local read cache:
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 db = infino.connect(
     "s3://bucket/prefix",
     endpoint="https://s3.us-east-1.amazonaws.com",
@@ -56,7 +56,7 @@ db = infino.connect(
 )
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const db = connect("s3://bucket/prefix", {
   endpoint: "https://s3.us-east-1.amazonaws.com",
   region: "us-east-1",
@@ -67,7 +67,7 @@ const db = connect("s3://bucket/prefix", {
 });
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::{connect_with, ConnectOptions};
 
 let db = connect_with(

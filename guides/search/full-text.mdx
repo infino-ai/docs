@@ -8,15 +8,15 @@ Ranked keyword search over an FTS-indexed column.
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 hits = docs.bm25_search("body", "cancel subscription", 5, mode="or")
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::BoolMode;
 let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?;
 ```
@@ -38,17 +38,17 @@ When you don't need scoring, `token_match` (rows containing a token) and `exact_
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 rows = docs.exact_match("doc_id", "1")
 rows = docs.token_match("body", "billing")
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const a = docs.exactMatch("doc_id", "1");
 const b = docs.tokenMatch("body", "billing");
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::BoolMode;
 let a = docs.exact_match("doc_id", "1", None)?;
 let b = docs.token_match("body", "billing", BoolMode::Or, None)?;

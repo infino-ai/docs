@@ -9,7 +9,7 @@ chained fluently:
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 spec = (
     infino.IndexSpec()
     .fts("body")                               # BM25 over `body`
@@ -17,13 +17,13 @@ spec = (
 )
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const spec = new IndexSpec()
   .fts("body")                                 // BM25 over `body`
   .vector("embedding", 384, 64, "cosine");     // vector index over `embedding`
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::{IndexSpec, Metric};
 
 let spec = IndexSpec::new()

@@ -16,7 +16,7 @@ Infino builds the vector index over them.
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("all-MiniLM-L6-v2")   # 384-dim
 def embed(text): return model.encode(text).tolist()
@@ -29,7 +29,7 @@ docs = db.create_table(
 docs.append([{"doc_id": "1", "body": text, "embedding": embed(text)}])
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 import { pipeline } from "@huggingface/transformers";
 const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2"); // 384-dim
 const embed = async (text) => Array.from((await extractor(text, { pooling: "mean", normalize: true })).data);
@@ -43,7 +43,7 @@ const docs = db.createTable(
 docs.append([{ doc_id: "1", body: text, embedding: await embed(text) }]);
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::{IndexSpec, Metric};
 
 // Compute embeddings with your model (e.g. via `candle`, `fastembed`, or an HTTP

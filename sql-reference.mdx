@@ -11,15 +11,15 @@ data with `append` / `update` / `delete` (see [Tables](/guides/tables)), not SQL
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 rows = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const rows = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 let rows = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?;
 ```
 

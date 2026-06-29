@@ -11,7 +11,7 @@ vector-indexed — see [Indexing](/guides/indexing)). Create it once, then appen
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 import infino
 import pyarrow as pa
 
@@ -34,7 +34,7 @@ docs.append([
 ])
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 import { connect, IndexSpec } from "@infino-ai/infino";
 
 // Durable storage (a path or s3:// URI) — required if you'll update/delete later.
@@ -52,7 +52,7 @@ docs.append([
 ]);
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use std::sync::Arc;
 use arrow_schema::{DataType, Field, Schema};
 use infino::{connect, IndexSpec, Metric};
@@ -91,7 +91,7 @@ replaces matched rows 1:1 with the new rows you supply.
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 # Replace the row(s) matching the predicate (1:1 with the new rows):
 docs.update("doc_id = '1'", [
     {"doc_id": "1", "body": "Refunds go to the original payment method.", "embedding": embed("...")},
@@ -102,7 +102,7 @@ stats = docs.delete("doc_id = '1'")
 print(stats.matched, stats.n_tombstoned)
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 // Replace the row(s) matching the predicate (1:1 with the new rows):
 docs.update("doc_id = '1'", [
   { doc_id: "1", body: "Refunds go to the original payment method.", embedding: embed("...") },
@@ -113,7 +113,7 @@ const stats = docs.delete("doc_id = '1'");
 console.log(stats.matched, stats.nTombstoned);
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use datafusion_expr::{col, lit};   // build predicates as DataFusion expressions
 
 // Replace the row(s) matching the predicate (1:1 with the new rows in `batch`):
@@ -135,19 +135,19 @@ println!("{} matched, {} tombstoned", stats.matched, stats.n_tombstoned);
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 docs.optimize()                    # merge small / underfilled superfiles
 db.list_tables()                   # ["docs"]
 db.drop_table("docs", purge=True)  # purge=True also deletes the table's storage
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 docs.optimize();                   // merge small / underfilled superfiles
 db.listTables();                   // ["docs"]
 db.dropTable("docs", true);        // purge=true also deletes the table's storage
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::OptimizeOptions;
 
 docs.optimize(&OptimizeOptions::default())?;  // merge small / underfilled superfiles

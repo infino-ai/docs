@@ -9,19 +9,19 @@ you used to index (see [Embeddings](/guides/embeddings)).
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
 # higher recall: probe more IVF partitions
 hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
 // higher recall: probe more IVF partitions
 const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::VectorSearchOptions;
 let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(), None, None)?;
 // higher recall: probe more IVF partitions
@@ -48,17 +48,17 @@ Restrict the kNN to rows whose FTS-indexed column matches a text predicate. This
 
 <CodeGroup>
 
-```python Python
+```python Python icon="python"
 hits = docs.vector_search("embedding", embed("..."), 5,
                           filter_column="body", filter_query="billing")
 ```
 
-```typescript Node.js
+```typescript Node.js icon="node-js"
 const hits = docs.vectorSearch("embedding", embed("..."), 5,
   { filter: { column: "body", query: "billing" } });
 ```
 
-```rust Rust
+```rust Rust icon="rust"
 use infino::{VectorFilter, VectorSearchOptions, BoolMode};
 let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
     Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None)?;
