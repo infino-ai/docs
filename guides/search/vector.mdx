@@ -71,6 +71,12 @@ For scalar filtering (e.g. `WHERE source = '...'`) or filtering the *results* of
 search, query with SQL — see the [SQL Reference](/sql-reference).
 </Note>
 
+## Limitations
+
+- **Approximate (IVF).** Vector search trades exactness for speed; raise `nprobe` (and `rerank_mult`) to recover recall at some cost in work.
+- **Bring your own embeddings.** Embed queries with the same model and dimension you indexed with — Infino does not embed for you.
+- **The pushdown filter is a text predicate** over an FTS-indexed column. For scalar filters (ranges, equality on other columns), use [SQL](/sql-reference).
+
 ## See also
 
 - [Full-text search](/guides/search/full-text)

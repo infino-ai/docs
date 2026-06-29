@@ -52,6 +52,12 @@ text before interpolating it into SQL.
 See the [SQL Reference](/sql-reference) for the full `hybrid_search` signature and how to
 compose it with joins and filters.
 
+## Limitations
+
+- **Needs both indexes.** The table must have an `fts` index on the text column and a `vector` index on the embedding column.
+- **No dedicated method.** Hybrid runs through `query_sql` via the `hybrid_search` table function — there is no typed binding method.
+- **Escape interpolated input.** Build the vector literal yourself and escape user-supplied query text before putting it in SQL.
+
 ## See also
 
 - [Full-text search](/guides/search/full-text)

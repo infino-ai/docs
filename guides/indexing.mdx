@@ -5,7 +5,15 @@ description: Declare full-text (BM25) and vector (IVF) indexes, and tune them.
 ---
 
 You declare indexes once, at table creation, with an `IndexSpec`. Two index types,
-chained fluently:
+chained fluently.
+
+| Index | Declare with | Powers |
+| --- | --- | --- |
+| Full-text (BM25) | `fts(column)` | keyword search, hybrid, the pushdown filter |
+| Vector (IVF) | `vector(column, dim, n_cent, metric)` | semantic kNN, hybrid |
+
+Declare both on a table to enable [hybrid search](/guides/search/hybrid). Scalar columns
+need no index — filter them with [SQL](/sql-reference).
 
 <CodeGroup>
 

@@ -165,6 +165,14 @@ db.drop_table("docs", true)?;                 // purge = true also deletes stora
 | `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0–100) |
 | `target_superfile_size_mb` / `targetSuperfileSizeMb` | target merged-superfile size, in MB |
 
+## Limitations
+
+- **One writer per table at a time.** Appends/updates/deletes are serialized through a
+  single atomic commit (concurrent writers from other processes retry).
+- **`update` is 1:1** — the matched row count must equal the replacement-row count.
+- **`update` / `delete` need durable storage** — not `memory://`.
+- **Schema is fixed at creation** — adding or changing columns means a new table.
+
 ## See also
 
 - [Indexing](/guides/indexing)

@@ -97,6 +97,11 @@ superfiles on local disk so warm queries don't re-fetch from object storage.
 | `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
 
+## Limitations
+
+- **`memory://` is ephemeral** and can't be mutated — `update`/`delete` need a path or `s3://` URI.
+- **Object-storage reads are cached locally.** Cold queries fetch from the store; size the cache (`cache_budget_bytes`) for your working set.
+
 ## See also
 
 - [Tables](/guides/tables)

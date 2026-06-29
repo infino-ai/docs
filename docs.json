@@ -38,6 +38,7 @@
               {
                 "group": "Search",
                 "pages": [
+                  "guides/search/overview",
                   "guides/search/full-text",
                   "guides/search/vector",
                   "guides/search/hybrid"

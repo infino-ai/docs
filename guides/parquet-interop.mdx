@@ -47,6 +47,12 @@ Infino (`query_sql` and the search API). Use direct Parquet reads for analytics,
 ETL/export, and interop with the wider data ecosystem.
 </Note>
 
+## Limitations
+
+- **Tombstones aren't applied.** A raw Parquet read returns rows as written; `update`/`delete` effects show only through Infino.
+- **The vector column isn't a Parquet column.** It's consumed into the embedded index, so a standard reader won't see it.
+- **Rewriting drops the indexes.** Reading a superfile and rewriting it through a generic Parquet writer keeps the columns but loses searchability until re-indexed.
+
 ## See also
 
 - [Storage](/guides/storage)
