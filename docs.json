@@ -143,6 +143,21 @@
   "footer": {
     "socials": {
       "github": "https://github.com/infino-ai/infino"
-    }
+    },
+    "links": [
+      {
+        "header": "Resources",
+        "items": [
+          {
+            "label": "GitHub",
+            "href": "https://github.com/infino-ai/infino"
+          },
+          {
+            "label": "Issues",
+            "href": "https://github.com/infino-ai/infino/issues"
+          }
+        ]
+      }
+    ]
   }
 }
