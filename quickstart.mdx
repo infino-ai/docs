@@ -228,14 +228,25 @@ let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")
 
 </CodeGroup>
 
-Each search returns Arrow rows. With this tiny corpus you get back:
+Each search returns Arrow rows. With this tiny corpus, the `body` of the rows you get
+back looks like this:
 
-- `keyword`: the one note about cancelling a subscription (BM25 matched the terms).
-- `semantic`: the billing notes rank first (cancel, then refunds), with the blog note last.
-- `filtered`: only the note whose text matches `billing`.
-- `sql`: the two `help-center` rows.
+```text Expected output
+keyword   "To cancel a subscription, open Settings then Billing."
 
-From here, feed the retrieved passages to your model as grounding context.
+semantic  "Refunds return to the original payment method."
+          "To cancel a subscription, open Settings then Billing."
+          "Enable dark mode under Settings then Appearance."
+
+filtered  "To cancel a subscription, open Settings then Billing."
+
+sql       "To cancel a subscription, open Settings then Billing."
+          "Refunds return to the original payment method."
+```
+
+`keyword` matched the BM25 terms; `semantic` ranks the billing notes first; `filtered`
+keeps only the note whose text matches `billing`; `sql` returns the two `help-center`
+rows. From here, feed the retrieved passages to your model as grounding context.
 
 </Step>
 
