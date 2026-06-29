@@ -1,5 +1,6 @@
 ---
 title: "Object-storage-native retrieval"
+description: What object-storage-native retrieval is — search that runs directly on Apache Parquet in object storage, instead of a database or cluster that owns its own copy of the data.
 icon: "cloud"
 ---
 

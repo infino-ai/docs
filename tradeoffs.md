@@ -1,5 +1,6 @@
 ---
 title: "Tradeoffs"
+description: What Infino optimizes for and what it doesn't — the honest envelope of where it fits and where another tool is the better choice.
 icon: "scale-balanced"
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "FAQ"
+description: Operational and usage answers for evaluating and building on Infino — servers, durability, concurrency, embeddings, search, languages, and more.
 icon: "circle-question"
 ---
 
