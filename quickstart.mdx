@@ -4,9 +4,9 @@ icon: "rocket"
 description: Install Infino, then index a small knowledge base and retrieve over it three ways — BM25, vector, and SQL — in Python, Node.js, or Rust.
 ---
 
-This walks through indexing a tiny knowledge base and retrieving over it three ways —
-BM25 keyword search, vector kNN, and SQL — all over **one table**. The steps build on
-each other; pick your language and follow along.
+Let's get Infino running in a few minutes. We'll build a small knowledge base — a
+handful of help-center notes — and search it three ways: by keyword, by meaning, and
+with SQL. Pick your language; each step builds on the one before it.
 
 <Steps>
 
@@ -40,8 +40,9 @@ off: `infino = { version = "0.1", default-features = false }`.
 
 <Step title="Connect">
 
-Open a catalog. `"memory://"` runs in-process and ephemeral; use `"./data"` or
-`"s3://bucket/prefix"` to persist.
+First, open a connection. `"memory://"` keeps everything in memory for this
+walkthrough; point it at `"./data"` or an `"s3://bucket/prefix"` URI when you want your
+data to stick around.
 
 <CodeGroup>
 
@@ -73,8 +74,8 @@ let db = connect("memory://")?;
 
 <Step title="Create a table">
 
-A table is a schema plus an index spec — here a full-text (BM25) index on `body` and a
-vector index on `embedding`.
+Now create a table. You give it a schema and say which columns to index — a full-text
+index on the text, and a vector index on the embedding.
 
 <CodeGroup>
 
@@ -118,9 +119,10 @@ let docs = db.create_table(
 
 <Step title="Add data">
 
-Append a few rows. The `embed` helper is a tiny stand-in for your embedding model so
-this runs as-is — a 16-dim one-hot by topic (`0` = billing, `1` = appearance). Real
-embeddings are dense and higher-dimensional; see [Embeddings](/guides/embeddings).
+Let's add a few notes. The `embed` helper stands in for a real embedding model so the
+example runs on its own — it's a 16-dim one-hot by topic (`0` = billing, `1` =
+appearance). Your own embeddings will be dense and higher-dimensional; see
+[Embeddings](/guides/embeddings).
 
 <CodeGroup>
 
@@ -175,7 +177,8 @@ docs.append(&RecordBatch::try_new(
 
 <Step title="Search it">
 
-Retrieve over the same table three ways — keyword, semantic, and SQL.
+Now the part you came for. The same table answers all three kinds of query — keyword,
+meaning, and SQL:
 
 <CodeGroup>
 
