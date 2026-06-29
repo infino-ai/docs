@@ -1,0 +1,72 @@
+---
+title: Is Infino for you?
+icon: "circle-question"
+description: Infino is an open-source retrieval engine, not a vector database or a search cluster. When to use it for RAG and agent retrieval, and how it compares to search engines, vector databases, and lakehouse tables.
+---
+
+Infino is an **open-source retrieval engine**: full-text (BM25), vector, and SQL search
+over your data stored as Apache Parquet on object storage. The indexes live inside the
+Parquet files themselves, so you search your data where it lives instead of loading it
+into a separate system.
+
+## Is Infino a database?
+
+Not in the transactional sense. Infino is a retrieval engine for search and analytics
+over data you keep as Parquet, not an OLTP database for transactions and row-level
+updates. Use it to search and retrieve alongside whatever system owns your writes. See
+[Tradeoffs](/tradeoffs) for where it fits and where it doesn't.
+
+## Is Infino a vector database?
+
+It does what a vector database does (semantic nearest-neighbor search over your
+embeddings) and more, without being a separate store to run. Vector search is one of
+several modes (full-text, vector, hybrid, and SQL) over a single copy of your data. You
+bring your own embeddings. So you get vector search without standing up a vector database
+next to everything else.
+
+## Is Infino a search engine?
+
+It gives you ranked full-text (BM25) search like a search engine, but without a standalone
+cluster. The inverted index is embedded in the Parquet files on object storage, and
+queries run inside your application.
+
+## When to use Infino
+
+- **RAG and agent retrieval** that wants hybrid (keyword plus semantic) relevance over one
+  store rather than a separate search service and vector database kept in sync.
+- **Large, mostly-cold corpora that must stay searchable** (logs, documents, catalogs,
+  chat history), where keeping everything hot is the cost pain.
+- **Search over data already in your lakehouse.** A superfile is a valid Parquet file, so
+  you add keyword and vector retrieval to Parquet you already have, without copying it into
+  another system.
+- **Bursty or elastic query volume**, where stateless compute over object storage scales
+  up and down against a stable storage tier.
+
+## When not to use Infino
+
+Transactional, write-heavy, row-level-update workloads belong in an OLTP database. Infino
+is for retrieval, not as a system of record. The [Tradeoffs](/tradeoffs) page covers the
+full envelope, including cold first-touch latency and ingest throughput.
+
+## How Infino compares
+
+Infino keeps one copy of your data in one format (standard Parquet) on object storage,
+with BM25 and vector indexes embedded in the files. That changes the trade against each
+category:
+
+| Category | What it is | How Infino differs |
+| --- | --- | --- |
+| **Search engines** (Elasticsearch, OpenSearch) | Inverted-index segments on a warm cluster, sized for peak load | BM25 index embedded in Parquet on object storage, queried by stateless compute |
+| **Vector databases** (pgvector, Pinecone, Weaviate, Qdrant, LanceDB, Chroma) | ANN over engine-specific index files; joins and aggregates run in a separate engine | Vector is one mode over one copy; BM25, vector, and SQL run in a single query plan |
+| **Lakehouse tables** (Iceberg, Hudi, Delta) | Parquet on object storage with no search or vector indexes; search means a full scan | Same Parquet, but with BM25 and vector indexes built in, so search is indexed, not a scan |
+| **Data warehouses** (Snowflake, Databricks) | Proprietary format; search and vector via a separate managed index service | Open Parquet bytes any engine can read, with search and vector in the same engine |
+
+The common thread: instead of running a search cluster, a vector database, and your
+analytics store as three systems with three copies of the data, Infino runs all three
+kinds of query over one copy, in an open format.
+
+## See also
+
+- [How Infino works](/how-it-works)
+- [Object-storage-native retrieval](/concepts/object-storage-native-retrieval)
+- [Tradeoffs](/tradeoffs)
