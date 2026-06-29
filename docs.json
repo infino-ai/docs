@@ -2,8 +2,18 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Infino",
+  "logo": {
+    "light": "/logo/infino-logo.png",
+    "dark": "/logo/infino-logo.png"
+  },
+  "favicon": "/favicon.png",
   "colors": {
-    "primary": "#5E6AD2"
+    "primary": "#d24011",
+    "light": "#e8623a",
+    "dark": "#d24011"
+  },
+  "fonts": {
+    "family": "Inter"
   },
   "navigation": {
     "tabs": [
