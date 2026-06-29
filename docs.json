@@ -19,6 +19,20 @@
       "twitter:image": "/images/og-card.png"
     }
   },
+  "metadata": {
+    "timestamp": true
+  },
+  "search": {
+    "prompt": "Search the Infino docs…"
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true,
+    "raiseIssue": true
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
+  },
   "colors": {
     "primary": "#d24011",
     "light": "#e8623a",
