@@ -56,6 +56,11 @@ let b = docs.token_match("body", "billing", BoolMode::Or, None)?;
 
 </CodeGroup>
 
+<Note>
+`exact_match` and `token_match` run over an **FTS-indexed** column. Index the column
+you want to match — for example `IndexSpec().fts("doc_id")` — to look it up this way.
+</Note>
+
 ## See also
 
 - [Vector search](/guides/search/vector)
