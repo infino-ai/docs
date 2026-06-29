@@ -1,6 +1,6 @@
 ---
 title: "Object-storage-native retrieval"
-description: What object-storage-native retrieval is — search that runs directly on Apache Parquet in object storage, instead of a database or cluster that owns its own copy of the data.
+description: How object-storage-native retrieval works — Infino searches Apache Parquet files directly in S3 or Azure Blob, with no database cluster owning a copy.
 icon: "cloud"
 ---
 
