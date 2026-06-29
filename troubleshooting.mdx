@@ -4,6 +4,8 @@ icon: "wrench"
 description: Common errors and their fixes.
 ---
 
+Common errors you might hit, and how to fix them. Each entry states the cause and the fix.
+
 ## `update` / `delete` fails on an in-memory connection
 
 These require **durable storage**. Connect with a path or `s3://` URI, not
@@ -61,3 +63,9 @@ bare column or an unquoted list.
 A raw Parquet read returns the rows as stored in the superfiles and does **not** apply
 tombstones. For the live view (with `update` / `delete` applied), query through Infino
 rather than reading the files directly — see [Parquet interop](/guides/parquet-interop).
+
+## See also
+
+- [FAQ](/faq)
+- [Tables](/guides/tables)
+- [Storage](/guides/storage)

@@ -156,3 +156,17 @@ db.drop_table("docs", true)?;                 // purge = true also deletes stora
 ```
 
 </CodeGroup>
+
+`optimize` accepts options (omit for engine defaults):
+
+| Option (Python / Node.js / Rust) | Description |
+| --- | --- |
+| `max_memory_mb` / `maxMemoryMb` | build-time memory budget, in MB |
+| `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0–100) |
+| `target_superfile_size_mb` / `targetSuperfileSizeMb` | target merged-superfile size, in MB |
+
+## See also
+
+- [Indexing](/guides/indexing)
+- [Search](/guides/search/full-text)
+- [Storage](/guides/storage)

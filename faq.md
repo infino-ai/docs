@@ -142,3 +142,9 @@ No. One Infino table serves BM25, vector, hybrid, and SQL over a single copy of 
 ## What license is Infino under?
 
 Apache-2.0.
+
+## See also
+
+- [How Infino works](/how-it-works)
+- [Tradeoffs](/tradeoffs)
+- [Quickstart](/quickstart)
