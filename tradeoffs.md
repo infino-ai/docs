@@ -1,6 +1,6 @@
 ---
 title: "Tradeoffs"
-description: What Infino optimizes for and what it doesn't — the honest envelope of where it fits and where another tool is the better choice.
+description: What Infino optimizes for and what it doesn't — an honest look at where this retrieval engine fits your workload and where another tool is a better choice.
 icon: "scale-balanced"
 ---
 
