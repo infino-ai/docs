@@ -1,11 +1,11 @@
 ---
 title: Quickstart
 icon: "rocket"
-description: Install Infino, then index a small knowledge base and retrieve over it three ways — BM25, vector, and SQL — in Python, Node.js, or Rust.
+description: Install Infino, then index a small knowledge base and retrieve over it three ways (BM25, vector, and SQL) in Python, Node.js, or Rust.
 ---
 
-Let's get Infino running in a few minutes. We'll build a small knowledge base — a
-handful of help-center notes — and search it three ways: by keyword, by meaning, and
+Let's get Infino running in a few minutes. We'll build a small knowledge base (a
+handful of help-center notes) and search it three ways: by keyword, by meaning, and
 with SQL. Pick your language; each step builds on the one before it.
 
 <Steps>
@@ -74,7 +74,7 @@ let db = connect("memory://")?;
 
 <Step title="Create a table">
 
-Now create a table. You give it a schema and say which columns to index — a full-text
+Now create a table. You give it a schema and say which columns to index: a full-text
 index on the text, and a vector index on the embedding.
 
 <CodeGroup>
@@ -120,7 +120,7 @@ let docs = db.create_table(
 <Step title="Add data">
 
 Let's add a few notes. The `embed` helper stands in for a real embedding model so the
-example runs on its own — it's a 16-dim one-hot by topic (`0` = billing, `1` =
+example runs on its own. It's a 16-dim one-hot by topic (`0` = billing, `1` =
 appearance). Your own embeddings will be dense and higher-dimensional; see
 [Embeddings](/guides/embeddings).
 
@@ -177,8 +177,8 @@ docs.append(&RecordBatch::try_new(
 
 <Step title="Search it">
 
-Now the part you came for. The same table answers all three kinds of query — keyword,
-meaning, and SQL:
+Now the part you came for. The same table answers all three kinds of query: keyword,
+meaning, and SQL.
 
 <CodeGroup>
 
@@ -212,7 +212,7 @@ let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")
 
 </CodeGroup>
 
-Each search returns Arrow rows — feed the retrieved passages to your model as grounding
+Each search returns Arrow rows. Feed the retrieved passages to your model as grounding
 context.
 
 </Step>
@@ -223,7 +223,7 @@ context.
 
 <CardGroup cols={2}>
   <Card title="How Infino works" icon="diagram-project" href="/how-it-works">
-    The mental model — one Parquet copy, indexed and queried four ways.
+    The mental model: one Parquet copy, indexed and queried four ways.
   </Card>
   <Card title="Guides" icon="book" href="/guides/tables">
     Tables, embeddings, indexing, search, and storage.

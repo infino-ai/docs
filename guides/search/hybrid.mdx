@@ -5,7 +5,7 @@ description: Combine BM25 keyword search and vector kNN in a single Infino query
 ---
 
 Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
-fusion (RRF)** — strong when a query has both keyword and semantic intent. It runs
+fusion (RRF)**, which is strong when a query has both keyword and semantic intent. It runs
 through `query_sql` via the `hybrid_search` table function; pass the query text and the
 query vector as a comma-separated literal:
 
@@ -55,7 +55,7 @@ compose it with joins and filters.
 ## Limitations
 
 - **Needs both indexes.** The table must have an `fts` index on the text column and a `vector` index on the embedding column.
-- **No dedicated method.** Hybrid runs through `query_sql` via the `hybrid_search` table function — there is no typed binding method.
+- **No dedicated method.** Hybrid runs through `query_sql` via the `hybrid_search` table function; there is no typed binding method.
 - **Escape interpolated input.** Build the vector literal yourself and escape user-supplied query text before putting it in SQL.
 
 ## See also

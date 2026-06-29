@@ -1,12 +1,12 @@
 ---
 title: Vercel AI SDK integration
 icon: "bolt"
-description: Build a TypeScript knowledge-base agent with the Vercel AI SDK and Infino — wire up tools for vector, BM25, and hybrid retrieval over your data.
+description: Build a TypeScript knowledge-base agent with the Vercel AI SDK and Infino. Wire up tools for vector, BM25, and hybrid retrieval over your data.
 ---
 
 Use Infino as the retrieval layer for an agent built with the
 [Vercel AI SDK](https://ai-sdk.dev). Embed with the AI SDK (`embed` / `embedMany`),
-index into Infino, and expose retrieval as a `tool` the model calls — so the agent
+index into Infino, and expose retrieval as a `tool` the model calls, so the agent
 grounds its answers in your data.
 
 ```bash
@@ -15,11 +15,11 @@ pnpm i ai zod @ai-sdk/openai @infino-ai/infino
 
 The pattern:
 
-1. **Index** — `embedMany` your chunks, then `append` them to an Infino table with an
+1. **Index.** `embedMany` your chunks, then `append` them to an Infino table with an
    FTS + vector index.
-2. **Retrieve** — define a `tool` whose `execute` embeds the query and runs Infino's
+2. **Retrieve.** Define a `tool` whose `execute` embeds the query and runs Infino's
    hybrid (BM25 + vector) search, returning the top passages.
-3. **Generate** — pass the tool to `generateText` with `stopWhen: stepCountIs(...)`;
+3. **Generate.** Pass the tool to `generateText` with `stopWhen: stepCountIs(...)`;
    the model calls it to ground its answer.
 
 See the [`@infino-ai/infino`](https://www.npmjs.com/package/@infino-ai/infino) package

@@ -1,7 +1,7 @@
 ---
 title: Full-text search (BM25)
 icon: "font"
-description: Run ranked BM25 keyword search in Infino, plus unranked token matching and exact phrase lookups — with analyzers, filters, and scoring controls.
+description: Run ranked BM25 keyword search in Infino, plus unranked token matching and exact phrase lookups, with analyzers, filters, and scoring controls.
 ---
 
 Ranked keyword search over an FTS-indexed column.
@@ -25,9 +25,9 @@ let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `column` | string | — | the FTS-indexed text column |
-| `query` | string | — | query terms, tokenized by the index |
-| `k` | int | — | number of top results |
+| `column` | string | required | the FTS-indexed text column |
+| `query` | string | required | query terms, tokenized by the index |
+| `k` | int | required | number of top results |
 | `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
@@ -58,7 +58,7 @@ let b = docs.token_match("body", "billing", BoolMode::Or, None)?;
 
 <Note>
 `exact_match` and `token_match` run over an **FTS-indexed** column. Index the column
-you want to match — for example `IndexSpec().fts("doc_id")` — to look it up this way.
+you want to match, for example `IndexSpec().fts("doc_id")`, to look it up this way.
 </Note>
 
 ## See also

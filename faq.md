@@ -1,6 +1,6 @@
 ---
 title: "FAQ"
-description: Operational and usage answers for evaluating and building on Infino — servers, durability, concurrency, embeddings, search, languages, and more.
+description: Operational and usage answers for evaluating and building on Infino, covering servers, durability, concurrency, embeddings, search, languages, and more.
 icon: "circle-question"
 ---
 
@@ -13,17 +13,17 @@ No. Infino runs inside your application as a library. You add it (`cargo add inf
 `pip install infino`, or the npm package) and open a connection to a storage root from
 your own code; the engine, including SQL (DataFusion under the hood), runs in your
 process. There is no wire protocol yet, so external SQL clients
-can't attach — SQL is reached through the connection's `query_sql`. See
+can't attach; SQL is reached through the connection's `query_sql`. See
 [Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino).
 
 ## How do concurrent writes work?
 
 **One writer is active per table at a time.** Appends, updates, and deletes are
-staged on a writer and made durable by a single atomic commit — nothing is
+staged on a writer and made durable by a single atomic commit. Nothing is
 persisted until the commit succeeds, and a reader sees either the pre-commit or
 the post-commit state, never a partial one. Across processes the commit is
 guarded: the pointer to the current manifest is swapped only if it hasn't moved,
-so a writer working from a stale manifest can't overwrite another's commit — a
+so a writer working from a stale manifest can't overwrite another's commit. A
 conflicting publish refreshes from the current manifest and retries with
 backoff, up to a bounded number of attempts before surfacing a contention error.
 See [Write](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#write),
@@ -36,7 +36,7 @@ See [Write](https://github.com/infino-ai/infino/blob/main/docs/architecture/supe
 and never observes a partially applied commit; publication is atomic, so a read
 returns the table as of its pinned snapshot. Read freshness under concurrent
 writers is governed by the table's configured consistency policy and applied by
-the engine on every read — callers never refresh by hand. See
+the engine on every read; callers never refresh by hand. See
 [Manifest](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#manifest) and
 [Lifecycle](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#lifecycle).
 
@@ -56,15 +56,15 @@ see [Storage](https://github.com/infino-ai/infino/blob/main/docs/architecture/su
 ## Are writes durable and crash-safe?
 
 Yes. Nothing is persisted until a commit, and a commit publishes atomically, so
-a crash mid-write leaves the previously committed snapshot intact — there is no
+a crash mid-write leaves the previously committed snapshot intact, with no
 half-applied state. Committed superfiles surviving an abort mid-flight is
 verified by
 [`tests/supertable_commit_crash_localfs.rs`](https://github.com/infino-ai/infino/blob/main/tests/supertable_commit_crash_localfs.rs).
 
 ## Can DuckDB, pyarrow, or DataFusion read Infino's files?
 
-Yes. Each superfile is a **valid Parquet file** — it begins with Parquet data
-and ends with a standard Parquet footer — so DataFusion, DuckDB, and pyarrow can
+Yes. Each superfile is a **valid Parquet file** (it begins with Parquet data
+and ends with a standard Parquet footer), so DataFusion, DuckDB, and pyarrow can
 open it as a normal table and project columns, filter rows, and run SQL over the
 columnar data with no Infino-specific support. Compatibility is a property of
 the bytes, not a conversion step. See
@@ -72,15 +72,15 @@ the bytes, not a conversion step. See
 
 ## Are the search indexes visible to ordinary Parquet readers?
 
-The **scalar and text columns are** — they're ordinary Parquet columns any
-reader sees. The **full-text and vector index regions are not**: they lie
+The **scalar and text columns are**: they're ordinary Parquet columns any
+reader sees. The **full-text and vector index regions are not**. They lie
 outside the row-group ranges described by the footer and are namespaced in the
 footer's key-value metadata, so a standard reader simply skips them. Infino uses
 that same footer to locate the indexes when search is requested.
 
 **Round-trip caveat:** because the indexes live outside the standard Parquet
 structures, reading a superfile and rewriting it through a generic Parquet
-writer preserves the columns but **drops the index regions** — the output is
+writer preserves the columns but **drops the index regions**. The output is
 still valid Parquet, but no longer searchable by Infino without re-indexing. See
 [Parquet compatibility](https://github.com/infino-ai/infino/blob/main/docs/architecture/superfile.md#parquet-compatibility).
 
@@ -95,7 +95,7 @@ relation.
 
 ```sql
 -- Search is a table function, so it composes into a SQL plan as a relation:
--- rank `docs` by BM25, then group and count — one query, no separate service.
+-- rank `docs` by BM25, then group and count: one query, no separate service.
 SELECT source, COUNT(*) AS hits
 FROM bm25_search('docs', 'body', 'cancel subscription', 50)
 GROUP BY source
@@ -105,7 +105,7 @@ See [Queries](https://github.com/infino-ai/infino/blob/main/docs/architecture/su
 
 ## Does Infino compute embeddings, or do I bring my own?
 
-You bring your own. Infino indexes the vectors you supply — compute them with any model
+You bring your own. Infino indexes the vectors you supply: compute them with any model
 and pass them in alongside your rows. See [Embeddings](/guides/embeddings).
 
 ## Which distance metrics does vector search support?
@@ -115,7 +115,7 @@ product). You set the metric on the vector index.
 
 ## Does Infino do hybrid search?
 
-Yes — BM25 and vector kNN fused with reciprocal-rank fusion, in one query, via the
+Yes. BM25 and vector kNN are fused with reciprocal-rank fusion in one query, via the
 `hybrid_search` SQL function. See [Hybrid search](/guides/search/hybrid).
 
 ## Can I filter vector search by other fields?
@@ -126,7 +126,7 @@ rows), or filter with SQL. See [Vector search](/guides/search/vector) and the
 
 ## Can I update and delete data?
 
-Yes — match rows by a predicate and `update` (1:1 replacement) or `delete`. Both require
+Yes. Match rows by a predicate and `update` (1:1 replacement) or `delete`. Both require
 durable storage (a path or `s3://`, not `memory://`). See [Tables](/guides/tables).
 
 ## Which languages can I use Infino from?

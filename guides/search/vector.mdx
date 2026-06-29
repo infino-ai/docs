@@ -33,9 +33,9 @@ let more = docs.vector_search("embedding", &q, 5,
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `column` | string | — | the vector-indexed column |
-| `query` | float[] | — | the query vector (same dim as the index) |
-| `k` | int | — | number of top results |
+| `column` | string | required | the vector-indexed column |
+| `query` | float[] | required | the query vector (same dim as the index) |
+| `k` | int | required | number of top results |
 | `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
 | `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
 | `filter` | text predicate | none | pushdown pre-filter (below) |
@@ -44,7 +44,7 @@ let more = docs.vector_search("embedding", &q, 5,
 ## Pushdown filter
 
 Restrict the kNN to rows whose FTS-indexed column matches a text predicate. This is a
-**pre-filter** — the kNN ranks only among matching rows — not a post-filter on the top-`k`.
+**pre-filter**, where the kNN ranks only among matching rows; it is not a post-filter on the top-`k`.
 
 <CodeGroup>
 
@@ -68,13 +68,13 @@ let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
 
 <Note>
 For scalar filtering (e.g. `WHERE source = '...'`) or filtering the *results* of a
-search, query with SQL — see the [SQL Reference](/sql-reference).
+search, query with SQL. See the [SQL Reference](/sql-reference).
 </Note>
 
 ## Limitations
 
 - **Approximate (IVF).** Vector search trades exactness for speed; raise `nprobe` (and `rerank_mult`) to recover recall at some cost in work.
-- **Bring your own embeddings.** Embed queries with the same model and dimension you indexed with — Infino does not embed for you.
+- **Bring your own embeddings.** Embed queries with the same model and dimension you indexed with; Infino does not embed for you.
 - **The pushdown filter is a text predicate** over an FTS-indexed column. For scalar filters (ranges, equality on other columns), use [SQL](/sql-reference).
 
 ## See also

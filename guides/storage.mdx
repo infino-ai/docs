@@ -1,7 +1,7 @@
 ---
 title: Storage
 icon: "cloud"
-description: Run Infino against in-memory, local disk, or object storage backends like S3 and Azure Blob — picked at runtime by the connect URI scheme.
+description: Run Infino against in-memory, local disk, or object storage backends like S3 and Azure Blob, picked at runtime by the connect URI scheme.
 ---
 
 Where your data lives is chosen by the `connect` URI:
@@ -30,7 +30,7 @@ let db = connect("s3://bucket/prefix")?;      // object storage (durable)
 
 </CodeGroup>
 
-Data is stored as standard Apache Parquet at that location — anything that reads Parquet
+Data is stored as standard Apache Parquet at that location, so anything that reads Parquet
 can read it.
 
 <Warning>
@@ -99,7 +99,7 @@ superfiles on local disk so warm queries don't re-fetch from object storage.
 
 ## Limitations
 
-- **`memory://` is ephemeral** and can't be mutated — `update`/`delete` need a path or `s3://` URI.
+- **`memory://` is ephemeral** and can't be mutated. `update`/`delete` need a path or `s3://` URI.
 - **Object-storage reads are cached locally.** Cold queries fetch from the store; size the cache (`cache_budget_bytes`) for your working set.
 
 ## See also

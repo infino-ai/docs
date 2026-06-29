@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 icon: "wrench"
-description: Common Infino errors and their fixes — in-memory update limits, schema and vector dimension mismatches, SQL query syntax, and language-specific gotchas.
+description: Common Infino errors and their fixes, covering in-memory update limits, schema and vector dimension mismatches, SQL query syntax, and language-specific gotchas.
 ---
 
 Common errors you might hit, and how to fix them. Each entry states the cause and the fix.
@@ -17,7 +17,7 @@ db = infino.connect("./data")   # not "memory://"
 
 ## `update` reports a cardinality mismatch
 
-`update` replaces matched rows **1:1** — the number of rows your predicate matches must
+`update` replaces matched rows **1:1**, so the number of rows your predicate matches must
 equal the number of replacement rows you pass. Match a specific set (e.g. by `doc_id`)
 and supply exactly that many rows.
 
@@ -36,11 +36,11 @@ must be an existing catalog table.
 
 Appended rows must match the table's declared schema (column names and types). For the
 vector column, **each vector's length must equal the index dimension** you declared in
-`IndexSpec.vector(column, dim, …)` — and that must match your embedding model's output.
+`IndexSpec.vector(column, dim, …)`, and that must match your embedding model's output.
 
 ## Node.js: an integer column rejects a number
 
-Arrow `int64` columns expect a JavaScript **`bigint`**, not a `number` — pass `2021n`,
+Arrow `int64` columns expect a JavaScript **`bigint`**, not a `number`. Pass `2021n`,
 not `2021` (or coerce with `BigInt(x)`).
 
 ## Rust: "cannot have two global allocators"
@@ -55,14 +55,14 @@ infino = { version = "0.1", default-features = false }
 ## A vector query in SQL is rejected
 
 `vector_search` / `hybrid_search` expect the query vector as a **comma-separated string
-literal** (`'0.12,0.04,...'`) or a **SQL array literal** (`[0.12, 0.04, ...]`) — not a
+literal** (`'0.12,0.04,...'`) or a **SQL array literal** (`[0.12, 0.04, ...]`), not a
 bare column or an unquoted list.
 
 ## Deleted rows still show up when reading Parquet directly
 
 A raw Parquet read returns the rows as stored in the superfiles and does **not** apply
 tombstones. For the live view (with `update` / `delete` applied), query through Infino
-rather than reading the files directly — see [Parquet interop](/guides/parquet-interop).
+rather than reading the files directly. See [Parquet interop](/guides/parquet-interop).
 
 ## See also
 

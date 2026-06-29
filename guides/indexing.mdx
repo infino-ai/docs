@@ -13,7 +13,7 @@ chained fluently.
 | Vector (IVF) | `vector(column, dim, n_cent, metric)` | semantic kNN, hybrid |
 
 Declare both on a table to enable [hybrid search](/guides/search/hybrid). Scalar columns
-need no index — filter them with [SQL](/sql-reference).
+need no index; filter them with [SQL](/sql-reference).
 
 <CodeGroup>
 
@@ -41,31 +41,31 @@ let spec = IndexSpec::new()
 
 </CodeGroup>
 
-## Full-text index — `fts(column)`
+## Full-text index: `fts(column)`
 
 Builds a BM25 inverted index over a text column, powering `bm25_search`, `token_match`,
 and the hybrid / pushdown-filter paths. Call `fts` once per text column you want to search.
 
-## Vector index — `vector(column, dim, n_cent, metric)`
+## Vector index: `vector(column, dim, n_cent, metric)`
 
 Builds an IVF (inverted-file) vector index for kNN.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `column` | string | the fixed-width vector column to index |
-| `dim` | int | embedding dimension — must match your model's output and the values you append |
+| `dim` | int | embedding dimension; must match your model's output and the values you append |
 | `n_cent` | int | number of IVF partitions (centroids) |
 | `metric` | `cosine` / `l2sq` / `negdot` (`Metric::Cosine` …) | distance metric (see [Embeddings](/guides/embeddings)) |
 
 **Tuning `n_cent`.** It sets how many partitions the vectors are bucketed into. More
 partitions mean finer buckets and faster search **at scale**, at some recall cost per
-partition probed (raise `nprobe` at query time to recover recall). The engine clamps
+partition probed. Raise `nprobe` at query time to recover that recall. The engine clamps
 `n_cent` sensibly for small datasets, so a few dozen is a fine starting point; raise it
 as the table grows into the hundreds of thousands of rows and beyond.
 
 <Note>
 You can index multiple text columns (call `fts` per column) and multiple vector columns.
-**Scalar columns need no index declaration** — filter them with SQL (`query_sql`) or as
+**Scalar columns need no index declaration.** Filter them with SQL (`query_sql`) or as
 a pushdown pre-filter on vector search (see [Search](/guides/search/vector)).
 </Note>
 

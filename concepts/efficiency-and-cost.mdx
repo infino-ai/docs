@@ -1,7 +1,7 @@
 ---
 title: Efficiency and cost
 icon: "gauge-high"
-description: How Infino keeps retrieval cheap — it reads only the data a query needs, so cost tracks your query volume rather than the size of your corpus.
+description: How Infino keeps retrieval cheap. It reads only the data a query needs, so cost tracks your query volume rather than the size of your corpus.
 ---
 
 Infino is built so a query reads only the data it needs. Your corpus can be large and
@@ -15,13 +15,13 @@ whole files:
 
 1. **Pin a snapshot.** The query starts from a fixed view of the table, so concurrent
    writes can't change its answer mid-flight (see [Snapshots and freshness](/concepts/freshness)).
-2. **Prune from the catalog.** Each file carries small summaries in the manifest — value
+2. **Prune from the catalog.** Each file carries small summaries in the manifest: value
    ranges, a keyword "is this term present?" filter, and vector centroids. The query
    reads just these summaries to skip files that can't match, before fetching any file
    contents. The same summaries cover scalar, keyword, and vector signals, so a hybrid
    query prunes on all three together.
 3. **Fetch only the bytes that survive.** For the files left, Infino pulls just the
-   relevant byte ranges — a posting list, a handful of vector clusters — not the whole
+   relevant byte ranges, such as a posting list or a handful of vector clusters, not the whole
    file. A keyword filter in SQL is answered from the index and decodes only the matching
    rows, rather than scanning a whole column.
 
@@ -32,7 +32,7 @@ everything in memory.**
 
 Each [superfile](/how-it-works) is a single Apache Parquet file with its BM25 and vector
 indexes built into it. The index and the data it describes live together, so resolving a
-match doesn't mean a round trip to a separate index service — Infino reads the index and
+match doesn't mean a round trip to a separate index service. Infino reads the index and
 the matching rows from the same file.
 
 ## A hot working set, a cheap long tail
@@ -47,7 +47,7 @@ between compute and storage:
 
 The cache has a size budget and evicts cold files when it's full; in-flight queries keep
 their data alive, so eviction is always safe. The hot working set stays close to compute
-for speed while the long tail stays in cheap storage — you don't have to decide up front
+for speed while the long tail stays in cheap storage, and you don't have to decide up front
 which is which.
 
 ## See also

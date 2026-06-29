@@ -1,7 +1,7 @@
 ---
 title: SQL Reference
 icon: "database"
-description: Query Infino with SQL via query_sql — the supported dialect, the bm25_search, vector_search, and hybrid_search table functions, and how to compose them.
+description: Query Infino with SQL via query_sql, covering the supported dialect, the bm25_search, vector_search, and hybrid_search table functions, and how to compose them.
 ---
 
 `query_sql` runs SQL across every table in the catalog. It is **read-only**: use it to
@@ -27,17 +27,17 @@ let rows = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?;
 
 ## Dialect
 
-Infino executes SQL on [Apache DataFusion](https://datafusion.apache.org) — ANSI-style,
-Postgres-leaning. You get `SELECT`, `WHERE`, `JOIN` (across tables), CTEs (`WITH`),
+Infino executes SQL on [Apache DataFusion](https://datafusion.apache.org). The dialect is
+ANSI-style and Postgres-leaning. You get `SELECT`, `WHERE`, `JOIN` (across tables), CTEs (`WITH`),
 `GROUP BY` with aggregates, window functions, `ORDER BY`, `LIMIT`, and the usual
 scalar/aggregate functions.
 
 ## Search table functions
 
 Call a search function in the `FROM` clause as a relation. Every one takes a **leading
-table-name argument** (a string literal — the catalog table to search) and returns that
+table-name argument** (a string literal naming the catalog table to search) and returns that
 table's **`_id`**, its **scalar columns**, and a **`score`** column. The ranked functions
-order by relevance — add `ORDER BY score DESC` (and a `LIMIT`) for control.
+order by relevance, so add `ORDER BY score DESC` (and a `LIMIT`) for control.
 
 | Function | Signature | Returns |
 | --- | --- | --- |
@@ -48,11 +48,11 @@ order by relevance — add `ORDER BY score DESC` (and a `LIMIT`) for control.
 | `token_match` | `token_match('table', 'column', 'query' [, 'mode'])` | unranked rows containing the token(s) |
 | `exact_match` | `exact_match('table', 'column', 'value')` | unranked rows where `column` equals `value` |
 
-- **`mode`** (BM25, token) — `'or'` (default, match any term) or `'and'` (require all terms).
-- **`vector`** — the query embedding, as a comma-separated string literal
+- **`mode`** (BM25, token): `'or'` (default, match any term) or `'and'` (require all terms).
+- **`vector`**: the query embedding, as a comma-separated string literal
   (`'0.12,0.04,-0.31,...'`) or a SQL array literal (`[0.12, 0.04, -0.31, ...]`).
 - **`token_match` / `exact_match`** are unranked: `score` is present (for schema
-  uniformity) but constant `0.0`, and order is unspecified — use `ORDER BY` / `LIMIT`.
+  uniformity) but constant `0.0`, and order is unspecified, so use `ORDER BY` / `LIMIT`.
 
 ### Examples
 
@@ -65,7 +65,7 @@ ORDER BY score DESC;
 -- require all terms (AND)
 SELECT _id, score FROM bm25_search('docs', 'body', 'error timeout', 10, 'and');
 
--- vector kNN — query vector as a string literal
+-- vector kNN, query vector as a string literal
 SELECT _id, score
 FROM vector_search('docs', 'embedding', '0.12,0.04,-0.31, ...', 10)
 ORDER BY score DESC;
@@ -98,7 +98,7 @@ JOIN users AS u ON u.id = h.author_id;
 ```
 
 <Note>
-SQL is read-only. `INSERT` / `UPDATE` / `DELETE` / `CREATE` are not available — create
+SQL is read-only. `INSERT` / `UPDATE` / `DELETE` / `CREATE` are not available; create
 tables and mutate rows through the API (`create_table`, `append`, `update`, `delete`).
 For a pushdown text pre-filter on vector search (rather than a SQL post-filter), see the
 `filter` option in the [Search guide](/guides/search/vector).

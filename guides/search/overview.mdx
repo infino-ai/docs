@@ -1,7 +1,7 @@
 ---
 title: Search modes overview
 icon: "magnifying-glass"
-description: Compare Infino's search modes — BM25 full-text, vector kNN, hybrid, exact lookups, and SQL — and pick the right one for your retrieval workload.
+description: Compare Infino's search modes (BM25 full-text, vector kNN, hybrid, exact lookups, and SQL) and pick the right one for your retrieval workload.
 ---
 
 Infino retrieves from the same table several ways. Pick the mode that matches the
@@ -21,14 +21,14 @@ question; you can also compose any of them in [SQL](/sql-reference).
 
 | Mode | Ranked | Tunable recall | Text pre-filter | Compose in SQL |
 | --- | --- | --- | --- | --- |
-| BM25 | ✓ | — | — | ✓ (`bm25_search`) |
+| BM25 | ✓ | n/a | n/a | ✓ (`bm25_search`) |
 | Vector kNN | ✓ | ✓ (`nprobe`) | ✓ (pushdown) | ✓ (`vector_search`) |
-| Hybrid | ✓ (RRF) | ✓ | — | ✓ (`hybrid_search`) |
-| `token_match` / `exact_match` | — | — | — | ✓ |
-| SQL | — | — | — | native |
+| Hybrid | ✓ (RRF) | ✓ | n/a | ✓ (`hybrid_search`) |
+| `token_match` / `exact_match` | n/a | n/a | n/a | ✓ |
+| SQL | n/a | n/a | n/a | native |
 
 <Tip>
-Always pass a sensible top-`k` on production queries — it bounds both the work and the
+Always pass a sensible top-`k` on production queries: it bounds both the work and the
 result size. Every search returns Arrow rows; pass a `projection` to choose which
 columns come back.
 </Tip>

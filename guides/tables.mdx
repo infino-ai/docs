@@ -1,11 +1,11 @@
 ---
 title: Tables
 icon: "table"
-description: Manage Infino tables — define schemas, append rows, update and delete by predicate, compact Parquet files, and inspect the table catalog.
+description: Manage Infino tables. Define schemas, append rows, update and delete by predicate, compact Parquet files, and inspect the table catalog.
 ---
 
-A table is a **schema** plus an **index spec** (which columns are full-text- and
-vector-indexed — see [Indexing](/guides/indexing)). Create it once, then append rows.
+A table is a **schema** plus an **index spec**: which columns are full-text- and
+vector-indexed (see [Indexing](/guides/indexing)). Create it once, then append rows.
 
 ## Create and append
 
@@ -15,7 +15,7 @@ vector-indexed — see [Indexing](/guides/indexing)). Create it once, then appen
 import infino
 import pyarrow as pa
 
-# Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+# Durable storage (a path or s3:// URI), required if you'll update/delete later.
 db = infino.connect("./data")
 
 schema = pa.schema([
@@ -28,7 +28,7 @@ docs = db.create_table(
     infino.IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
 )
 
-# One append is one atomic commit — durable when the call returns.
+# One append is one atomic commit, durable when the call returns.
 docs.append([
     {"doc_id": "1", "body": "To cancel, open Settings then Billing.", "embedding": embed("...")},
 ])
@@ -37,7 +37,7 @@ docs.append([
 ```typescript Node.js icon="node-js"
 import { connect, IndexSpec } from "@infino-ai/infino";
 
-// Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+// Durable storage (a path or s3:// URI), required if you'll update/delete later.
 const db = connect("./data");
 
 const docs = db.createTable(
@@ -46,7 +46,7 @@ const docs = db.createTable(
   new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
 );
 
-// One append is one atomic commit — durable when the call returns.
+// One append is one atomic commit, durable when the call returns.
 docs.append([
   { doc_id: "1", body: "To cancel, open Settings then Billing.", embedding: embed("...") },
 ]);
@@ -57,7 +57,7 @@ use std::sync::Arc;
 use arrow_schema::{DataType, Field, Schema};
 use infino::{connect, IndexSpec, Metric};
 
-// Durable storage (a path or s3:// URI) — required if you'll update/delete later.
+// Durable storage (a path or s3:// URI), required if you'll update/delete later.
 let db = connect("./data")?;
 
 let item = Arc::new(Field::new("item", DataType::Float32, true));
@@ -72,7 +72,7 @@ let docs = db.create_table(
 )?;
 
 // One append is one atomic commit. Build `batch` as an Arrow RecordBatch
-// matching the schema — see the Quickstart.
+// matching the schema (see the Quickstart).
 docs.append(&batch)?;
 ```
 
@@ -127,8 +127,8 @@ println!("{} matched, {} tombstoned", stats.matched, stats.n_tombstoned);
 </CodeGroup>
 
 <Warning>
-`update` and `delete` require **durable storage** — a path or `s3://` URI, not
-`memory://`. `update` is 1:1: the matched row count must equal the replacement count.
+`update` and `delete` require **durable storage**: a path or `s3://` URI, not
+`memory://`. `update` is 1:1, so the matched row count must equal the replacement count.
 </Warning>
 
 ## Compact, list, and drop
@@ -162,16 +162,16 @@ db.drop_table("docs", true)?;                 // purge = true also deletes stora
 | Option (Python / Node.js / Rust) | Description |
 | --- | --- |
 | `max_memory_mb` / `maxMemoryMb` | build-time memory budget, in MB |
-| `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0–100) |
+| `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0 to 100) |
 | `target_superfile_size_mb` / `targetSuperfileSizeMb` | target merged-superfile size, in MB |
 
 ## Limitations
 
 - **One writer per table at a time.** Appends/updates/deletes are serialized through a
   single atomic commit (concurrent writers from other processes retry).
-- **`update` is 1:1** — the matched row count must equal the replacement-row count.
-- **`update` / `delete` need durable storage** — not `memory://`.
-- **Schema is fixed at creation** — adding or changing columns means a new table.
+- **`update` is 1:1.** The matched row count must equal the replacement-row count.
+- **`update` / `delete` need durable storage,** not `memory://`.
+- **Schema is fixed at creation.** Adding or changing columns means a new table.
 
 ## See also
 

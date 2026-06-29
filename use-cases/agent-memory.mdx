@@ -1,13 +1,13 @@
 ---
 title: Agent memory
 icon: "brain"
-description: Give AI agents long-term memory with Infino — hybrid BM25 and vector recall over past conversations, ready-made as the memory-infino OpenClaw plugin.
+description: Give AI agents long-term memory with Infino. Hybrid BM25 and vector recall over past conversations, ready-made as the memory-infino OpenClaw plugin.
 ---
 
 [`memory-infino`](https://clawhub.ai/infino-ai/plugins/memory-infino) is a drop-in
 memory plugin for [OpenClaw](https://docs.openclaw.ai) agents, built on Infino. An agent
-stores what it sees and recalls the relevant pieces later — searched by keyword and by
-meaning together, and queryable with SQL — all kept on object storage.
+stores what it sees and recalls the relevant pieces later, searched by keyword and by
+meaning together. It's all queryable with SQL and kept on object storage.
 
 ## The memory-infino plugin
 
@@ -27,14 +27,14 @@ npm install @infino-ai/memory-infino
 ```
 
 Find it on [ClawHub](https://clawhub.ai/infino-ai/plugins/memory-infino) and enable it as
-a memory plugin in your OpenClaw configuration — see the
+a memory plugin in your OpenClaw configuration. See the
 [OpenClaw docs](https://docs.openclaw.ai) for wiring a memory plugin into an agent. Memory
 lives on a local path or object storage (S3 / GCS / Azure).
 
 ## Why Infino for agent memory
 
 - **Hybrid recall in one engine.** `memory_recall` fuses keyword (BM25) and semantic
-  (vector) matches, so an agent finds memories by exact terms and by meaning at once — no
+  (vector) matches, so an agent finds memories by exact terms and by meaning at once, with no
   separate keyword index or rerank service.
 - **Object-storage-native.** Memory is stored as Apache Parquet on a local path or object
   storage; it scales with the agent's history rather than a fixed cluster.
@@ -44,7 +44,7 @@ lives on a local path or object storage (S3 / GCS / Azure).
 ## Build it yourself
 
 Not on OpenClaw, or want memory tailored to your own stack? Build the same pattern
-directly on the Infino Node binding — see the
+directly on the Infino Node binding. See the
 [agent-memory tutorial](/tutorials) and the [Quickstart](/quickstart).
 
 ## See also
