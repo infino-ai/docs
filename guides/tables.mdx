@@ -86,8 +86,10 @@ row-by-row for throughput.
 ## Update and delete
 
 In **Python and Node.js**, `update` and `delete` match rows by a **SQL predicate**
-string. In **Rust**, they take a DataFusion `Expr` (`col(...).eq(lit(...))`). `update`
-replaces matched rows 1:1 with the new rows you supply.
+string. In **Rust**, they take a DataFusion `Expr` (`col(...).eq(lit(...))`), where `col`
+and `lit` come from the `datafusion-expr` crate (see the [Quickstart](/quickstart) for the
+companion crates Rust needs). `update` replaces matched rows 1:1 with the new rows you
+supply.
 
 <CodeGroup>
 
