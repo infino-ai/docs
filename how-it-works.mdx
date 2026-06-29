@@ -4,9 +4,9 @@ icon: "diagram-project"
 description: How Infino works — a single copy of your data stored as Apache Parquet, indexed and queryable four ways (SQL, BM25, vector, hybrid) all in-process.
 ---
 
-Infino keeps **one copy of your data** as Apache Parquet on object storage, splices
-search indexes directly into it, and lets you query it four ways — all in-process,
-with no separate search server or vector database.
+Infino keeps your data as Apache Parquet and builds its search indexes right into
+those files. You can search it with full-text, vector, SQL, or a hybrid of all three,
+and it runs inside your application.
 
 ```text
        write rows   ──►  ┌─────────────── supertable ───────────────┐
@@ -18,7 +18,7 @@ with no separate search server or vector database.
                          └──────────────────┬────────────────────────┘
                                             │  on S3 / Azure / local disk
                                             ▼
-            query the same rows, in-process — no server to run:
+              query the same rows from your own process:
       full-text (BM25) · vector kNN · SQL · hybrid (BM25 + vector, fused with RRF)
 ```
 
@@ -40,8 +40,8 @@ Index your rows once, then retrieve them however the question needs:
 - **SQL** — filter, aggregate, and join over the same rows.
 - **Hybrid** — BM25 and vector fused in a single query with reciprocal-rank fusion (RRF).
 
-Because everything runs **in your process**, there's no server to deploy, no vector
-database to keep in sync, and one copy of the data to store.
+Infino runs **inside your application** and works from one copy of your data, so the
+same Parquet files serve every kind of search.
 
 ## Dig deeper
 

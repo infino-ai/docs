@@ -29,7 +29,7 @@
     name: "Infino",
     applicationCategory: "DeveloperApplication",
     description:
-      "Infino is an embedded retrieval engine — SQL, full-text (BM25), vector, and hybrid search over Apache Parquet on object storage, in-process.",
+      "Infino is an open-source retrieval engine for full-text, vector, and SQL search, with your data stored as Apache Parquet on object storage.",
     url: "https://docs.infino.ai",
     operatingSystem: "Linux, macOS",
     license: "https://www.apache.org/licenses/LICENSE-2.0",
@@ -44,13 +44,13 @@
 
   var FAQ = [
     ["Does Infino need a server?",
-     "No. Infino is an embedded engine that runs in-process inside your application — you add it as a library and open a connection. There is no separate server, cluster, or managed service to operate."],
+     "No. Infino runs inside your application as a library. You add it, open a connection, and the engine runs in your process."],
     ["Does Infino compute embeddings, or do I bring my own?",
      "You bring your own. Infino indexes the vectors you supply — compute them with any model and pass them in alongside your rows."],
     ["Does Infino do hybrid search?",
      "Yes — BM25 and vector kNN fused with reciprocal-rank fusion, in one query, via the hybrid_search SQL function."],
     ["Do I still need a separate vector database?",
-     "No. One Infino table serves BM25, vector, hybrid, and SQL over a single copy of your data — no separate vector store or search cluster to run and keep in sync."],
+     "No. One Infino table serves full-text, vector, hybrid, and SQL search over a single copy of your data."],
     ["Which languages can I use Infino from?",
      "A Rust core with Python (pip install infino) and Node.js (npm install @infino-ai/infino) bindings."],
     ["What license is Infino under?", "Apache-2.0."],

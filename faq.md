@@ -9,11 +9,10 @@ short; follow the link for the canonical detail.
 
 ## Does Infino need a server?
 
-No. Infino is an **embedded engine, not a server** — it runs in-process, inside
-your application. You add it as a library (`cargo add infino`,
-`pip install infino`, or the npm package) and open a connection to a storage
-root from your own code; the engine, including SQL (DataFusion under the hood),
-executes in your process. There is no wire protocol yet, so external SQL clients
+No. Infino runs inside your application as a library. You add it (`cargo add infino`,
+`pip install infino`, or the npm package) and open a connection to a storage root from
+your own code; the engine, including SQL (DataFusion under the hood), runs in your
+process. There is no wire protocol yet, so external SQL clients
 can't attach — SQL is reached through the connection's `query_sql`. See
 [Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino).
 
@@ -137,8 +136,8 @@ bindings.
 
 ## Do I still need a separate vector database?
 
-No. One Infino table serves BM25, vector, hybrid, and SQL over a single copy of your data
-— no separate vector store or search cluster to run and keep in sync.
+No. One Infino table serves full-text, vector, hybrid, and SQL search over a single
+copy of your data.
 
 ## What license is Infino under?
 

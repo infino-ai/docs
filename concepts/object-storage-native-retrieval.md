@@ -60,8 +60,8 @@ Infino is an object-storage-native retrieval engine built around two layers:
   manifest holds the term filters, value ranges, and vector centroids that let
   a query prune superfiles it can't match before any bytes are fetched.
 
-Search, vector, and SQL all run over that one copy of the data, in-process —
-**no server, no daemon, no managed service.** On a 1-million-document index, a
+Full-text, vector, and SQL search all run over that one copy of the data, **inside
+your own process**. On a 1-million-document index, a
 warm single-term BM25 query returns in the **microsecond range**, and a 1M-doc
 index builds in a couple of seconds with parallel writers (roughly **470K
 documents per second**); see [`benches/README.md`](https://github.com/infino-ai/infino/blob/main/benches/README.md) for

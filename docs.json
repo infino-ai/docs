@@ -7,7 +7,7 @@
     "dark": "/logo/infino-logo.png"
   },
   "favicon": "/favicon.png",
-  "description": "Infino is an embedded retrieval engine — SQL, full-text (BM25), vector, and hybrid search over Apache Parquet on object storage, in-process.",
+  "description": "Infino is an open-source retrieval engine for full-text, vector, and SQL search, with your data stored as Apache Parquet on object storage.",
   "seo": {
     "indexing": "all",
     "metatags": {
