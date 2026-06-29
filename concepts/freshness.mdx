@@ -1,0 +1,45 @@
+---
+title: Snapshots and freshness
+icon: "clock-rotate-left"
+description: How Infino keeps reads consistent — every query runs against a pinned snapshot, and new data becomes visible atomically at the next commit.
+---
+
+Every query in Infino runs against a **pinned snapshot** of the table. A reader sees the
+table exactly as it was when the query started, and concurrent writes never change that
+answer mid-flight. New data becomes visible all at once, at the next commit.
+
+## How a write becomes visible
+
+Writes are append-only, and superfiles are immutable once written. A **commit** is what
+makes new data visible, in a few stages:
+
+- **Stage** — appended rows accumulate in a write buffer.
+- **Build** — the buffered rows are built into new superfiles, each with its full-text
+  and vector indexes.
+- **Publish** — the new superfile bytes are written, then a successor manifest (the
+  existing entries plus the new ones) is published **atomically**.
+
+Until that atomic publish, nothing new is visible. After it, every query sees the new
+data. There is no half-applied state in between.
+
+## Snapshot isolation
+
+- **Readers and writers don't block each other.** A reader holds an immutable manifest
+  snapshot; a writer builds new superfiles and a new manifest independently.
+- **Atomic publication.** A reader sees either the manifest before a commit or the one
+  after it — never an intermediate state.
+- **Single writer per table.** One writer is active at a time; the manifest pointer is
+  swapped only if it hasn't moved, so concurrent writers from other processes retry
+  rather than overwrite each other.
+
+## What "fresh" means
+
+The commit is the freshness boundary: data is visible to new queries once it's committed,
+not before. A long-running query keeps reading its original snapshot even as later commits
+land, so its results stay internally consistent from start to finish.
+
+## See also
+
+- [How Infino works](/how-it-works)
+- [Efficiency and cost](/concepts/efficiency-and-cost)
+- [FAQ](/faq)

@@ -23,7 +23,7 @@
     "timestamp": true
   },
   "search": {
-    "prompt": "Search the Infino docs…"
+    "prompt": "Search the Infino docs\u2026"
   },
   "feedback": {
     "thumbsRating": true,
@@ -31,7 +31,16 @@
     "raiseIssue": true
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "colors": {
     "primary": "#d24011",
@@ -51,8 +60,15 @@
             "pages": [
               "index",
               "quickstart",
-              "how-it-works",
-              "concepts/object-storage-native-retrieval"
+              "how-it-works"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/object-storage-native-retrieval",
+              "concepts/efficiency-and-cost",
+              "concepts/freshness"
             ]
           },
           {
@@ -76,7 +92,12 @@
           },
           {
             "group": "Reference",
-            "pages": ["sql-reference", "faq", "tradeoffs", "troubleshooting"]
+            "pages": [
+              "sql-reference",
+              "faq",
+              "tradeoffs",
+              "troubleshooting"
+            ]
           }
         ]
       },
@@ -92,11 +113,15 @@
       },
       {
         "tab": "Tutorials",
-        "pages": ["tutorials/index"]
+        "pages": [
+          "tutorials/index"
+        ]
       },
       {
         "tab": "API Reference",
-        "pages": ["api-reference/index"]
+        "pages": [
+          "api-reference/index"
+        ]
       }
     ]
   },
