@@ -36,6 +36,22 @@ by default. If you embed it in a process that already sets a global allocator, t
 off: `infino = { version = "0.1", default-features = false }`.
 </Note>
 
+<Note>
+**Rust companion crates.** The Rust examples build Arrow data, and `update` / `delete`
+take DataFusion predicates (`col`, `lit`), so add these alongside `infino`, matching the
+Arrow and DataFusion versions Infino uses (Arrow 53 and DataFusion 53 for `infino` 0.1.x):
+
+```toml
+[dependencies]
+infino = "0.1"
+arrow-array = "53"
+arrow-schema = "53"
+datafusion-expr = "53"  # only needed for update / delete
+```
+
+Run `cargo tree -p infino` to check the versions if you are on a newer Infino.
+</Note>
+
 </Step>
 
 <Step title="Connect">
