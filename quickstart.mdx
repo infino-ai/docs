@@ -4,7 +4,13 @@ icon: "rocket"
 description: Install Infino, then index a small knowledge base and retrieve over it three ways — BM25, vector, and SQL — in Python, Node.js, or Rust.
 ---
 
-## Install
+This walks through indexing a tiny knowledge base and retrieving over it three ways —
+BM25 keyword search, vector kNN, and SQL — all over **one table**. The steps build on
+each other; pick your language and follow along.
+
+<Steps>
+
+<Step title="Install">
 
 <CodeGroup>
 
@@ -24,19 +30,18 @@ cargo add infino
 
 </CodeGroup>
 
-The full Rust API reference is on [docs.rs/infino](https://docs.rs/infino).
-
 <Note>
 Infino installs the [mimalloc](https://github.com/microsoft/mimalloc) global allocator
-by default. If you embed Infino in a process that already sets a global allocator, turn
-it off: `infino = { version = "0.1", default-features = false }`.
+by default. If you embed it in a process that already sets a global allocator, turn it
+off: `infino = { version = "0.1", default-features = false }`.
 </Note>
 
-## Index and query your data
+</Step>
 
-Index a small knowledge base and retrieve over it three ways — BM25 keyword search,
-vector kNN, and SQL — all over **one table**. `"memory://"` runs in-process; use
-`"./data"` or `"s3://bucket/prefix"` to persist.
+<Step title="Connect">
+
+Open a catalog. `"memory://"` runs in-process and ephemeral; use `"./data"` or
+`"s3://bucket/prefix"` to persist.
 
 <CodeGroup>
 
@@ -44,16 +49,36 @@ vector kNN, and SQL — all over **one table**. `"memory://"` runs in-process; u
 import infino
 import pyarrow as pa
 
-# A knowledge base your agent retrieves over.
 db = infino.connect("memory://")
+```
 
-# Tiny stand-in for your embedding model so this runs as-is — a 16-dim
-# one-hot by topic. Real embeddings are dense and higher-dimensional.
-def embed(topic):                       # 0 = billing, 1 = appearance
-    v = [0.0] * 16
-    v[topic] = 1.0
-    return v
+```typescript Node.js icon="node-js"
+import { connect, IndexSpec } from "@infino-ai/infino";
 
+const db = connect("memory://");
+```
+
+```rust Rust icon="rust"
+use std::sync::Arc;
+use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
+use arrow_schema::{DataType, Field, Schema};
+use infino::{connect, BoolMode, IndexSpec, Metric, VectorFilter, VectorSearchOptions};
+
+let db = connect("memory://")?;
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Create a table">
+
+A table is a schema plus an index spec — here a full-text (BM25) index on `body` and a
+vector index on `embedding`.
+
+<CodeGroup>
+
+```python Python icon="python"
 schema = pa.schema([
     pa.field("source", pa.large_utf8(), nullable=False),
     pa.field("body", pa.large_utf8(), nullable=False),
@@ -63,111 +88,147 @@ docs = db.create_table(
     "docs", schema,
     infino.IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
 )
+```
+
+```typescript Node.js icon="node-js"
+const docs = db.createTable(
+  "docs",
+  { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
+  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+);
+```
+
+```rust Rust icon="rust"
+let item = Arc::new(Field::new("item", DataType::Float32, true));
+let schema = Arc::new(Schema::new(vec![
+    Field::new("source", DataType::LargeUtf8, false),
+    Field::new("body", DataType::LargeUtf8, false),
+    Field::new("embedding", DataType::FixedSizeList(item.clone(), 16), false),
+]));
+let docs = db.create_table(
+    "docs",
+    schema.clone(),
+    IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
+)?;
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Add data">
+
+Append a few rows. The `embed` helper is a tiny stand-in for your embedding model so
+this runs as-is — a 16-dim one-hot by topic (`0` = billing, `1` = appearance). Real
+embeddings are dense and higher-dimensional; see [Embeddings](/guides/embeddings).
+
+<CodeGroup>
+
+```python Python icon="python"
+def embed(topic):
+    v = [0.0] * 16
+    v[topic] = 1.0
+    return v
 
 docs.append([
     {"source": "help-center", "body": "To cancel a subscription, open Settings then Billing.", "embedding": embed(0)},
     {"source": "help-center", "body": "Refunds return to the original payment method.",         "embedding": embed(0)},
     {"source": "blog",        "body": "Enable dark mode under Settings then Appearance.",        "embedding": embed(1)},
 ])
-
-# Retrieve context to ground the agent's next answer:
-keyword  = docs.bm25_search("body", "cancel subscription", 5)               # BM25
-semantic = docs.vector_search("embedding", embed(0), 5)                     # vector kNN
-# vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-filtered = docs.vector_search("embedding", embed(0), 5, filter_column="body", filter_query="billing")
-billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL filter
 ```
 
 ```typescript Node.js icon="node-js"
-import { connect, IndexSpec } from "@infino-ai/infino";
-
-// A knowledge base your agent retrieves over.
-const db = connect("memory://");
-
-// Tiny stand-in for your embedding model so this runs as-is — a 16-dim
-// one-hot by topic. Real embeddings are dense and higher-dimensional.
 const embed = (topic) => { const v = Array(16).fill(0.0); v[topic] = 1.0; return v; };
-
-const docs = db.createTable(
-  "docs",
-  { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
-  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
-);
 
 docs.append([
   { source: "help-center", body: "To cancel a subscription, open Settings then Billing.", embedding: embed(0) },
   { source: "help-center", body: "Refunds return to the original payment method.",         embedding: embed(0) },
   { source: "blog",        body: "Enable dark mode under Settings then Appearance.",        embedding: embed(1) },
 ]);
-
-// Retrieve context to ground the agent's next answer:
-const keyword  = docs.bm25Search("body", "cancel subscription", 5);            // BM25
-const semantic = docs.vectorSearch("embedding", embed(0), 5);                  // vector kNN
-// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-const filtered = docs.vectorSearch("embedding", embed(0), 5, { filter: { column: "body", query: "billing" } });
-const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL filter
 ```
 
 ```rust Rust icon="rust"
-use std::sync::Arc;
-
-use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
-use arrow_schema::{DataType, Field, Schema};
-use infino::{connect, BoolMode, IndexSpec, Metric, VectorFilter, VectorSearchOptions};
-
-// Tiny stand-in for your embedding model so this runs as-is — a 16-dim
-// one-hot by topic. Real embeddings are dense and higher-dimensional.
 fn embed(topic: usize) -> Vec<f32> {
     let mut v = vec![0.0_f32; 16];
     v[topic] = 1.0;
     v
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // A knowledge base your agent retrieves over.
-    let db = connect("memory://")?;
-
-    let item = Arc::new(Field::new("item", DataType::Float32, true));
-    let schema = Arc::new(Schema::new(vec![
-        Field::new("source", DataType::LargeUtf8, false),
-        Field::new("body", DataType::LargeUtf8, false),
-        Field::new("embedding", DataType::FixedSizeList(item.clone(), 16), false),
-    ]));
-    let docs = db.create_table(
-        "docs",
-        schema.clone(),
-        IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
-    )?;
-
-    let flat: Vec<f32> = [0usize, 0, 1].iter().flat_map(|&t| embed(t)).collect();
-    docs.append(&RecordBatch::try_new(
-        schema,
-        vec![
-            Arc::new(LargeStringArray::from(vec!["help-center", "help-center", "blog"])),
-            Arc::new(LargeStringArray::from(vec![
-                "To cancel a subscription, open Settings then Billing.",
-                "Refunds return to the original payment method.",
-                "Enable dark mode under Settings then Appearance.",
-            ])),
-            Arc::new(FixedSizeListArray::new(item, 16, Arc::new(Float32Array::from(flat)), None)),
-        ],
-    )?)?;
-
-    // Retrieve context to ground the agent's next answer:
-    let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
-    let semantic =
-        docs.vector_search("embedding", &embed(0), 5, VectorSearchOptions::new(), None, None)?; // vector kNN
-    // vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-    let filtered = docs.vector_search(
-        "embedding", &embed(0), 5, VectorSearchOptions::new(),
-        Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None,
-    )?;
-    let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL filter
-    Ok(())
-}
+let flat: Vec<f32> = [0usize, 0, 1].iter().flat_map(|&t| embed(t)).collect();
+docs.append(&RecordBatch::try_new(
+    schema,
+    vec![
+        Arc::new(LargeStringArray::from(vec!["help-center", "help-center", "blog"])),
+        Arc::new(LargeStringArray::from(vec![
+            "To cancel a subscription, open Settings then Billing.",
+            "Refunds return to the original payment method.",
+            "Enable dark mode under Settings then Appearance.",
+        ])),
+        Arc::new(FixedSizeListArray::new(item, 16, Arc::new(Float32Array::from(flat)), None)),
+    ],
+)?)?;
 ```
 
 </CodeGroup>
 
-Each search returns Arrow rows. Next: the [Guides](/guides/tables) for tables, embeddings,
-indexing, search, and storage, or [How Infino works](/how-it-works) for the model.
+</Step>
+
+<Step title="Search it">
+
+Retrieve over the same table three ways — keyword, semantic, and SQL.
+
+<CodeGroup>
+
+```python Python icon="python"
+keyword  = docs.bm25_search("body", "cancel subscription", 5)               # BM25
+semantic = docs.vector_search("embedding", embed(0), 5)                     # vector kNN
+# vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+filtered = docs.vector_search("embedding", embed(0), 5, filter_column="body", filter_query="billing")
+billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL
+```
+
+```typescript Node.js icon="node-js"
+const keyword  = docs.bm25Search("body", "cancel subscription", 5);            // BM25
+const semantic = docs.vectorSearch("embedding", embed(0), 5);                  // vector kNN
+// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+const filtered = docs.vectorSearch("embedding", embed(0), 5, { filter: { column: "body", query: "billing" } });
+const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL
+```
+
+```rust Rust icon="rust"
+let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
+let semantic =
+    docs.vector_search("embedding", &embed(0), 5, VectorSearchOptions::new(), None, None)?; // vector kNN
+// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
+let filtered = docs.vector_search(
+    "embedding", &embed(0), 5, VectorSearchOptions::new(),
+    Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None,
+)?;
+let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL
+```
+
+</CodeGroup>
+
+Each search returns Arrow rows — feed the retrieved passages to your model as grounding
+context.
+
+</Step>
+
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="How Infino works" icon="diagram-project" href="/how-it-works">
+    The mental model — one Parquet copy, indexed and queried four ways.
+  </Card>
+  <Card title="Guides" icon="book" href="/guides/tables">
+    Tables, embeddings, indexing, search, and storage.
+  </Card>
+  <Card title="Integrations" icon="puzzle-piece" href="/integrations">
+    LangChain, Vercel AI SDK, CrewAI, and MCP.
+  </Card>
+  <Card title="SQL Reference" icon="database" href="/sql-reference">
+    Query and compose search with SQL.
+  </Card>
+</CardGroup>
