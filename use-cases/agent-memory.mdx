@@ -1,0 +1,54 @@
+---
+title: Agent memory
+icon: "brain"
+description: Give an AI agent long-term memory backed by Infino — hybrid (BM25 + vector) recall over everything it has seen, on object storage — ready-made as the memory-infino plugin for OpenClaw.
+---
+
+Give an AI agent long-term memory backed by Infino: hybrid (BM25 + vector) recall over
+everything it has seen, plus SQL over that memory, stored on object storage. For
+[OpenClaw](https://docs.openclaw.ai) agents this is ready-made as the **`memory-infino`**
+plugin — drop it in and your agent gets durable, searchable memory.
+
+## The memory-infino plugin
+
+[`memory-infino`](https://clawhub.ai/infino-ai/plugins/memory-infino) implements OpenClaw's
+memory-plugin contract with three tools:
+
+| Tool | What it does |
+| --- | --- |
+| `memory_recall` | Hybrid (BM25 + vector) search over long-term memory, fused with reciprocal-rank fusion |
+| `memory_store` | Save a memory (embedded on write) |
+| `memory_forget` | Delete by id, or find-and-delete by query |
+
+## Install
+
+```bash
+npm install @infino-ai/memory-infino
+```
+
+Find it on [ClawHub](https://clawhub.ai/infino-ai/plugins/memory-infino) and enable it as
+a memory plugin in your OpenClaw configuration — see the
+[OpenClaw docs](https://docs.openclaw.ai) for wiring a memory plugin into an agent. Memory
+lives on a local path or object storage (S3 / GCS / Azure).
+
+## Why Infino for agent memory
+
+- **Hybrid recall in one engine.** `memory_recall` fuses keyword (BM25) and semantic
+  (vector) matches, so an agent finds memories by exact terms and by meaning at once — no
+  separate keyword index or rerank service.
+- **Object-storage-native.** Memory is stored as Apache Parquet on a local path or object
+  storage; it scales with the agent's history rather than a fixed cluster.
+- **SQL over memory.** The same store answers structured and time-based questions over an
+  agent's history.
+
+## Build it yourself
+
+Not on OpenClaw, or want memory tailored to your own stack? Build the same pattern
+directly on the Infino Node binding — see the
+[agent-memory tutorial](/tutorials) and the [Quickstart](/quickstart).
+
+## See also
+
+- [memory-infino on ClawHub](https://clawhub.ai/infino-ai/plugins/memory-infino)
+- [memory-infino on GitHub](https://github.com/infino-ai/memory-infino)
+- [How Infino works](/how-it-works)

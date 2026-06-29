@@ -118,6 +118,13 @@
         ]
       },
       {
+        "tab": "Use Cases",
+        "pages": [
+          "use-cases/index",
+          "use-cases/agent-memory"
+        ]
+      },
+      {
         "tab": "API Reference",
         "pages": [
           "api-reference/index"
