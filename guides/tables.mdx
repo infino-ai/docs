@@ -83,6 +83,26 @@ One `append` == one atomic commit, durable on return. Append in batches rather t
 row-by-row for throughput.
 </Note>
 
+## Open an existing table
+
+A table persists, so you create it once and open it on later runs with `open_table`.
+
+<CodeGroup>
+
+```python Python icon="python"
+docs = db.open_table("docs")
+```
+
+```typescript Node.js icon="node-js"
+const docs = db.openTable("docs");
+```
+
+```rust Rust icon="rust"
+let docs = db.open_table("docs")?;
+```
+
+</CodeGroup>
+
 ## Update and delete
 
 In **Python and Node.js**, `update` and `delete` match rows by a **SQL predicate**
