@@ -11,6 +11,7 @@
   "seo": {
     "indexing": "all",
     "metatags": {
+      "canonical": "https://docs.infino.ai",
       "og:site_name": "Infino",
       "og:type": "website",
       "og:image": "/images/og-card.png",
