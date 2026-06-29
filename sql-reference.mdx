@@ -101,11 +101,11 @@ JOIN users AS u ON u.id = h.author_id;
 SQL is read-only. `INSERT` / `UPDATE` / `DELETE` / `CREATE` are not available; create
 tables and mutate rows through the API (`create_table`, `append`, `update`, `delete`).
 For a pushdown text pre-filter on vector search (rather than a SQL post-filter), see the
-`filter` option in the [Search guide](/guides/search/vector).
+`filter` option in the [Search guide](/guides/search#vector-search).
 </Note>
 
 ## See also
 
-- [Search](/guides/search/full-text)
-- [Hybrid search](/guides/search/hybrid)
+- [Search](/guides/search#full-text-bm25)
+- [Hybrid search](/guides/search#hybrid-search)
 - [Tables](/guides/tables)

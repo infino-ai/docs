@@ -69,15 +69,7 @@
               "guides/tables",
               "guides/embeddings",
               "guides/indexing",
-              {
-                "group": "Search",
-                "pages": [
-                  "guides/search/overview",
-                  "guides/search/full-text",
-                  "guides/search/vector",
-                  "guides/search/hybrid"
-                ]
-              },
+              "guides/search",
               "guides/storage",
               "guides/parquet-interop"
             ]
@@ -168,6 +160,22 @@
     {
       "source": "/concepts/freshness",
       "destination": "/core-concepts"
+    },
+    {
+      "source": "/guides/search/overview",
+      "destination": "/guides/search"
+    },
+    {
+      "source": "/guides/search/full-text",
+      "destination": "/guides/search#full-text-bm25"
+    },
+    {
+      "source": "/guides/search/vector",
+      "destination": "/guides/search#vector-search"
+    },
+    {
+      "source": "/guides/search/hybrid",
+      "destination": "/guides/search#hybrid-search"
     }
   ]
 }

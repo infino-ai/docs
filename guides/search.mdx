@@ -1,0 +1,223 @@
+---
+title: Search
+icon: "magnifying-glass"
+description: Search Infino five ways from one table, BM25 full-text, vector kNN, hybrid, exact lookups, and SQL, and pick the right mode for your retrieval workload.
+---
+
+Infino retrieves from the same table several ways. Pick the mode that matches the
+question; you can also compose any of them in [SQL](/sql-reference). Every search returns
+Arrow rows, and you can pass a `projection` to choose which columns come back.
+
+## Choose a search mode
+
+| You want to… | Use | Why |
+| --- | --- | --- |
+| Match exact keywords or terms | [Full-text (BM25)](#full-text-bm25) | Lexical ranking over tokenized text |
+| Find by meaning or paraphrase | [Vector kNN](#vector-search) | Semantic similarity over embeddings |
+| Cover both keyword and semantic intent | [Hybrid](#hybrid-search) | RRF fuses BM25 and vector rankings |
+| Look up an exact id or value | [`exact_match`](#unranked-lookups) | Unranked, precise |
+| Filter, aggregate, or join | [SQL](/sql-reference) | Compose over the same rows |
+
+| Mode | Ranked | Tunable recall | Text pre-filter | Compose in SQL |
+| --- | --- | --- | --- | --- |
+| BM25 | ✓ | n/a | n/a | ✓ (`bm25_search`) |
+| Vector kNN | ✓ | ✓ (`nprobe`) | ✓ (pushdown) | ✓ (`vector_search`) |
+| Hybrid | ✓ (RRF) | ✓ | n/a | ✓ (`hybrid_search`) |
+| `token_match` / `exact_match` | n/a | n/a | n/a | ✓ |
+| SQL | n/a | n/a | n/a | native |
+
+<Tip>
+Always pass a sensible top-`k` on production queries: it bounds both the work and the
+result size.
+</Tip>
+
+## Full-text (BM25)
+
+Ranked keyword search over an FTS-indexed column.
+
+<CodeGroup>
+
+```python Python icon="python"
+hits = docs.bm25_search("body", "cancel subscription", 5, mode="or")
+```
+
+```typescript Node.js icon="node-js"
+const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
+```
+
+```rust Rust icon="rust"
+use infino::BoolMode;
+let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?;
+```
+
+</CodeGroup>
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | required | the FTS-indexed text column |
+| `query` | string | required | query terms, tokenized by the index |
+| `k` | int | required | number of top results |
+| `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
+### Unranked lookups
+
+When you don't need scoring, `token_match` (rows containing a token) and `exact_match`
+(rows whose column equals a value) return every matching row, unranked.
+
+<CodeGroup>
+
+```python Python icon="python"
+rows = docs.exact_match("doc_id", "1")
+rows = docs.token_match("body", "billing")
+```
+
+```typescript Node.js icon="node-js"
+const a = docs.exactMatch("doc_id", "1");
+const b = docs.tokenMatch("body", "billing");
+```
+
+```rust Rust icon="rust"
+use infino::BoolMode;
+let a = docs.exact_match("doc_id", "1", None)?;
+let b = docs.token_match("body", "billing", BoolMode::Or, None)?;
+```
+
+</CodeGroup>
+
+<Note>
+`exact_match` and `token_match` run over an **FTS-indexed** column. Index the column
+you want to match, for example `IndexSpec().fts("doc_id")`, to look it up this way.
+</Note>
+
+## Vector search
+
+Semantic search over a vector-indexed column. Embed the query with the **same model** you
+used to index (see [Embeddings](/guides/embeddings)).
+
+<CodeGroup>
+
+```python Python icon="python"
+hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
+# higher recall: probe more IVF partitions
+hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
+```
+
+```typescript Node.js icon="node-js"
+const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
+// higher recall: probe more IVF partitions
+const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
+```
+
+```rust Rust icon="rust"
+use infino::VectorSearchOptions;
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(), None, None)?;
+// higher recall: probe more IVF partitions
+let more = docs.vector_search("embedding", &q, 5,
+    VectorSearchOptions::new().with_nprobe(32), None, None)?;
+```
+
+</CodeGroup>
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | string | required | the vector-indexed column |
+| `query` | float[] | required | the query vector (same dim as the index) |
+| `k` | int | required | number of top results |
+| `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
+| `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
+| `filter` | text predicate | none | pushdown pre-filter (below) |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
+### Pushdown filter
+
+Restrict the kNN to rows whose FTS-indexed column matches a text predicate. This is a
+**pre-filter**, where the kNN ranks only among matching rows, not a post-filter on the
+top-`k`.
+
+<CodeGroup>
+
+```python Python icon="python"
+hits = docs.vector_search("embedding", embed("..."), 5,
+                          filter_column="body", filter_query="billing")
+```
+
+```typescript Node.js icon="node-js"
+const hits = docs.vectorSearch("embedding", embed("..."), 5,
+  { filter: { column: "body", query: "billing" } });
+```
+
+```rust Rust icon="rust"
+use infino::{VectorFilter, VectorSearchOptions, BoolMode};
+let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
+    Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None)?;
+```
+
+</CodeGroup>
+
+For scalar filtering (such as `WHERE source = '...'`) or filtering the results of a
+search, query with [SQL](/sql-reference).
+
+## Hybrid search
+
+Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
+fusion (RRF)**, which is strong when a query has both keyword and semantic intent. It runs
+through `query_sql` via the `hybrid_search` table function. Pass the query text and the
+query vector as a comma-separated literal:
+
+```
+hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
+```
+
+<CodeGroup>
+
+```python Python icon="python"
+vec = ",".join(map(str, embed("cancel subscription")))
+rows = db.query_sql(
+    f"SELECT doc_id, body, score FROM "
+    f"hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) "
+    f"ORDER BY score DESC"
+)
+```
+
+```typescript Node.js icon="node-js"
+const vec = embed("cancel subscription").join(",");
+const rows = db.querySql(
+  `SELECT doc_id, body, score FROM ` +
+  `hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '${vec}', 5) ` +
+  `ORDER BY score DESC`,
+);
+```
+
+```rust Rust icon="rust"
+let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
+let rows = db.query_sql(&format!(
+    "SELECT doc_id, body, score FROM \
+     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
+     ORDER BY score DESC"
+))?;
+```
+
+</CodeGroup>
+
+Hybrid search needs both indexes on the table: an `fts` index on the text column and a
+`vector` index on the embedding column. Build the vector literal from your own embedding,
+and escape any user-supplied query text before putting it in SQL. See the
+[SQL Reference](/sql-reference) for the full `hybrid_search` signature and how to compose
+it with joins and filters.
+
+## Limitations
+
+- **Vector search is approximate (IVF).** It trades exactness for speed; raise `nprobe`
+  (and `rerank_mult`) to recover recall at some cost in work.
+- **Bring your own embeddings.** Embed queries with the same model and dimension you
+  indexed with.
+- **Filters in vector search are text predicates** over an FTS-indexed column. For scalar
+  filters, use SQL.
+- **`exact_match` and `token_match` need an FTS-indexed column.**
+
+## See also
+
+- [Indexing](/guides/indexing)
+- [Embeddings](/guides/embeddings)
+- [SQL Reference](/sql-reference)

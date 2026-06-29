@@ -56,7 +56,7 @@ let spec = IndexSpec::new().fts("body").vector("embedding", 384, 64, Metric::Cos
 
 <Note>
 Embed your **queries** with the same model at search time, and pass the query vector to
-`vector_search` (see [Search](/guides/search/vector)).
+`vector_search` (see [Search](/guides/search#vector-search)).
 </Note>
 
 ## Choosing a metric
@@ -72,5 +72,5 @@ Match the index metric to how your embeddings are produced:
 ## See also
 
 - [Indexing](/guides/indexing)
-- [Vector search](/guides/search/vector)
+- [Vector search](/guides/search#vector-search)
 - [Quickstart](/quickstart)

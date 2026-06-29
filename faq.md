@@ -151,12 +151,12 @@ product). You set the metric on the vector index.
 ## Does Infino do hybrid search?
 
 Yes. BM25 and vector kNN are fused with reciprocal-rank fusion in one query, via the
-`hybrid_search` SQL function. See [Hybrid search](/guides/search/hybrid).
+`hybrid_search` SQL function. See [Hybrid search](/guides/search#hybrid-search).
 
 ## Can I filter vector search by other fields?
 
 Yes. Use the pushdown text pre-filter on `vector_search` (the kNN ranks only matching
-rows), or filter with SQL. See [Vector search](/guides/search/vector) and the
+rows), or filter with SQL. See [Vector search](/guides/search#vector-search) and the
 [SQL Reference](/sql-reference).
 
 ## Can I update and delete data?

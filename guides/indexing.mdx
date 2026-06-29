@@ -12,7 +12,7 @@ chained fluently.
 | Full-text (BM25) | `fts(column)` | keyword search, hybrid, the pushdown filter |
 | Vector (IVF) | `vector(column, dim, n_cent, metric)` | semantic kNN, hybrid |
 
-Declare both on a table to enable [hybrid search](/guides/search/hybrid). Scalar columns
+Declare both on a table to enable [hybrid search](/guides/search#hybrid-search). Scalar columns
 need no index; filter them with [SQL](/sql-reference).
 
 <CodeGroup>
@@ -66,11 +66,11 @@ as the table grows into the hundreds of thousands of rows and beyond.
 <Note>
 You can index multiple text columns (call `fts` per column) and multiple vector columns.
 **Scalar columns need no index declaration.** Filter them with SQL (`query_sql`) or as
-a pushdown pre-filter on vector search (see [Search](/guides/search/vector)).
+a pushdown pre-filter on vector search (see [Search](/guides/search#vector-search)).
 </Note>
 
 ## See also
 
 - [Tables](/guides/tables)
-- [Search](/guides/search/full-text)
+- [Search](/guides/search#full-text-bm25)
 - [Embeddings](/guides/embeddings)
