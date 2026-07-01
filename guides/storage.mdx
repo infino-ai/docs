@@ -40,59 +40,111 @@ storage (a path or `s3://` URI).
 
 ## Object-storage configuration
 
-For S3-compatible stores, pass credentials and a local read cache:
+Credentials go in `storage_options` (`storageOptions` in Node.js), keyed by the
+standard [`object_store`](https://docs.rs/object_store) config strings — `aws_*`
+for S3, `azure_*` for Azure Blob (the same names the AWS and Azure SDKs use).
+Infino reads no credentials from the environment; omit them to use ambient cloud
+identity (an IAM instance role or Azure managed identity).
 
 <CodeGroup>
 
 ```python Python icon="python"
+# S3
 db = infino.connect(
     "s3://bucket/prefix",
-    endpoint="https://s3.us-east-1.amazonaws.com",
-    region="us-east-1",
-    access_key="...",
-    secret_key="...",
+    storage_options={
+        "aws_access_key_id": "...",
+        "aws_secret_access_key": "...",
+        "aws_region": "us-east-1",
+    },
     cache_dir="/var/cache/infino",   # local disk cache for remote-backed tables
     cache_budget_bytes=2_000_000_000,
+    validate=True,                   # probe the store now, not on first query
+)
+
+# Azure Blob
+db = infino.connect(
+    "az://container/prefix",
+    storage_options={
+        "azure_storage_account_name": "...",
+        "azure_storage_account_key": "...",
+    },
 )
 ```
 
 ```typescript Node.js icon="node-js"
+// S3
 const db = connect("s3://bucket/prefix", {
-  endpoint: "https://s3.us-east-1.amazonaws.com",
-  region: "us-east-1",
-  accessKey: "...",
-  secretKey: "...",
+  storageOptions: {
+    aws_access_key_id: "...",
+    aws_secret_access_key: "...",
+    aws_region: "us-east-1",
+  },
   cacheDir: "/var/cache/infino",   // local disk cache for remote-backed tables
   cacheBudgetBytes: 2_000_000_000,
+  validate: true,                  // probe the store now, not on first query
+});
+
+// Azure Blob
+const db = connect("az://container/prefix", {
+  storageOptions: {
+    azure_storage_account_name: "...",
+    azure_storage_account_key: "...",
+  },
 });
 ```
 
 ```rust Rust icon="rust"
 use infino::{connect_with, ConnectOptions};
 
+// S3
 let db = connect_with(
     "s3://bucket/prefix",
     ConnectOptions::new()
-        .with_s3_endpoint(
-            "https://s3.us-east-1.amazonaws.com", "us-east-1", "ACCESS_KEY", "SECRET_KEY",
-        )
+        .with_storage_option("aws_access_key_id", "...")
+        .with_storage_option("aws_secret_access_key", "...")
+        .with_storage_option("aws_region", "us-east-1")
         .with_cache_dir("/var/cache/infino")     // local disk cache for remote-backed tables
-        .with_cache_budget_bytes(2_000_000_000),
+        .with_cache_budget_bytes(2_000_000_000)
+        .with_validate(true),                    // probe the store now, not on first query
+)?;
+
+// Azure Blob
+let db = connect_with(
+    "az://container/prefix",
+    ConnectOptions::new()
+        .with_storage_option("azure_storage_account_name", "...")
+        .with_storage_option("azure_storage_account_key", "..."),
 )?;
 ```
 
 </CodeGroup>
 
+Common credential keys:
+
+| Backend | Keys |
+| --- | --- |
+| S3 | `aws_access_key_id`, `aws_secret_access_key`, `aws_region`, `aws_session_token`, `aws_endpoint` |
+| Azure | `azure_storage_account_name`, `azure_storage_account_key`, `azure_storage_sas_key`, `azure_storage_client_id`, `azure_storage_client_secret`, `azure_storage_tenant_id` |
+
+The full set is whatever `object_store` accepts for the backend; an unknown key
+is rejected at `connect`. For an S3-compatible endpoint (MinIO / R2 / Ceph), set
+`aws_endpoint` (add `aws_allow_http: "true"` for plain HTTP) alongside the
+credentials.
+
 <Note>
-Credentials can also come from the standard AWS environment. The cache keeps hot
-superfiles on local disk so warm queries don't re-fetch from object storage.
+Pass `validate` (`with_validate(true)` in Rust) to probe the backend during
+`connect`, so wrong credentials or an unreachable bucket fail there instead of
+on the first query. The local cache keeps hot superfiles on disk so warm queries
+don't re-fetch from object storage.
 </Note>
 
 ## Connect options
 
 | Option (Python / Node.js / Rust) | Description |
 | --- | --- |
-| `endpoint`, `region`, keys / `with_s3_endpoint(...)` | S3-compatible endpoint, region, and credentials |
+| `storage_options` / `storageOptions` / `with_storage_option(k, v)` | cloud credentials & tuning, keyed by `object_store`'s `aws_*` / `azure_*` config strings |
+| `validate` / `validate` / `with_validate(bool)` | probe the object store at `connect` to fail fast on bad credentials (default off) |
 | `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables |
 | `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
