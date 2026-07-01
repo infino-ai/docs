@@ -1,0 +1,116 @@
+---
+title: CLI
+icon: "terminal"
+description: The infino command-line interface — create tables, ingest data, and run full-text (BM25), vector, and SQL search from your terminal or a coding agent. No server.
+---
+
+`infino` is the command-line interface to the retrieval engine: SQL, full-text
+(BM25), and vector search over a single copy of your data on object storage, run
+straight from your terminal — or driven by a coding agent. It wraps the same
+engine as the [Python, Node, and Rust SDKs](/quickstart); there's nothing extra
+to run.
+
+## Install
+
+<CodeGroup>
+
+```bash Homebrew
+brew install infino-ai/tap/infino-cli
+```
+
+```bash npm
+npm install -g @infino-ai/infino-cli   # or run once with: npx @infino-ai/infino-cli
+```
+
+```bash cargo
+cargo install infino-cli
+```
+
+```bash shell
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/infino-ai/infino-cli/releases/latest/download/infino-cli-installer.sh | sh
+```
+
+</CodeGroup>
+
+All install the `infino` binary.
+
+## Connect
+
+Every command targets a storage location with `--uri` (or the `INFINO_URI`
+environment variable):
+
+| `--uri` | Storage |
+| --- | --- |
+| `memory://` | in-process, ephemeral |
+| `file://<path>` | local disk |
+| `s3://<bucket>/<prefix>` | Amazon S3 (or S3-compatible) |
+| `az://<container>/<prefix>` | Azure Blob |
+
+S3/Azure credentials are read from the ambient environment (`AWS_*`, `AZURE_*`).
+
+## Quickstart
+
+```bash
+# Create a table and load its first rows (body full-text indexed)
+infino create-table docs --uri file://./data --schema schema.yaml --fts body --file seed.ndjson
+
+# Append more rows
+infino ingest docs --uri file://./data --file more.ndjson --format ndjson
+
+# Search
+infino bm25-search docs body "object storage" -k 10 --uri file://./data
+infino query "SELECT id, body FROM docs LIMIT 10" --uri file://./data --output json
+```
+
+A table becomes durable on its first commit, so `create-table` loads initial
+rows too — from a Parquet file (`--from-parquet`, which also infers the schema)
+or a YAML schema plus `--file`.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `create-table` | Create a table and load initial rows; declare `--fts` / `--vector` indexes |
+| `ingest` | Append rows from Parquet or NDJSON (file or stdin) |
+| `bm25-search` | Ranked keyword (BM25) search |
+| `vector-search` | Vector similarity (kNN) search |
+| `token-match` / `exact-match` | Unranked token / exact-value match |
+| `query` | Run SQL, including the `bm25_search()` / `vector_search()` table functions |
+| `tables` / `describe` | List tables / show a table's schema |
+| `update` / `delete` | Change rows matching a `--where` SQL predicate |
+| `optimize` | Compact a table |
+| `skills install` | Install the bundled agent skills for Claude Code / Cursor |
+
+Run `infino <command> --help` for the full flags. Every row-returning command
+takes `--output table` (default), `json`, or `csv`.
+
+## Vector search
+
+The CLI does not embed text — embed your query with your own model and pass the
+vector as a JSON array (or `-` for stdin):
+
+```bash
+infino vector-search docs embedding --vector-file query.json -k 10 --uri file://./data
+```
+
+Give the column a vector index when you create the table:
+`--vector embedding:384:256:cosine` (`column:dim:centroids:metric`).
+
+## Agent skills
+
+`infino skills install` writes skill files into `~/.claude/skills` so coding
+agents (Claude Code, Cursor) can drive the CLI in natural language:
+
+```bash
+infino skills install
+infino skills status
+```
+
+This complements the [MCP server](/integrations/mcp): skills are for shell-native
+agents, MCP is for tool-calling agents.
+
+## Learn more
+
+- Source, issues, and releases: [github.com/infino-ai/infino-cli](https://github.com/infino-ai/infino-cli)
+- Packages: [crates.io](https://crates.io/crates/infino-cli) · [npm](https://www.npmjs.com/package/@infino-ai/infino-cli)
