@@ -77,6 +77,7 @@
           {
             "group": "Reference",
             "pages": [
+              "cli",
               "sql-reference",
               "faq",
               "tradeoffs",
@@ -106,12 +107,6 @@
         "pages": [
           "use-cases/index",
           "use-cases/agent-memory"
-        ]
-      },
-      {
-        "tab": "CLI",
-        "pages": [
-          "cli"
         ]
       },
       {
