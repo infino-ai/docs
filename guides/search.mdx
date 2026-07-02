@@ -22,7 +22,7 @@ Arrow rows, and you can pass a `projection` to choose which columns come back.
 | --- | --- | --- | --- | --- |
 | BM25 | ✓ | n/a | n/a | ✓ (`bm25_search`) |
 | Vector kNN | ✓ | ✓ (`nprobe`) | ✓ (pushdown) | ✓ (`vector_search`) |
-| Hybrid | ✓ (RRF) | ✓ | n/a | ✓ (`hybrid_search`) |
+| Hybrid | ✓ (RRF) | ✓ | n/a | ✓ (`hybrid_search`; also a direct method in Python and Node.js) |
 | `token_match` / `exact_match` | n/a | n/a | n/a | ✓ |
 | SQL | n/a | n/a | n/a | native |
 
@@ -160,10 +160,63 @@ search, query with [SQL](/sql-reference).
 
 ## Hybrid search
 
-Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
-fusion (RRF)**, which is strong when a query has both keyword and semantic intent. It runs
-through `query_sql` via the `hybrid_search` table function. Pass the query text and the
-query vector as a comma-separated literal:
+Hybrid search runs BM25 and vector kNN over the same table and fuses their rankings with
+**reciprocal-rank fusion (RRF)**, which is strong when a query has both keyword and
+semantic intent. Results come back best-first with a fused `score` (higher is better).
+The table needs both indexes: an `fts` index on the text column and a `vector` index on
+the embedding column.
+
+<CodeGroup>
+
+```python Python icon="python"
+hits = docs.hybrid_search("body", "cancel subscription",
+                          "embedding", embed("cancel subscription"), 5)
+# tune the BM25 side with mode, the vector side with nprobe
+hits = docs.hybrid_search("body", "cancel subscription",
+                          "embedding", embed("..."), 5,
+                          mode="and", nprobe=32)
+```
+
+```typescript Node.js icon="node-js"
+const hits = docs.hybridSearch("body", "cancel subscription",
+  "embedding", embed("cancel subscription"), 5);
+// tune the BM25 side with mode, the vector side with nprobe
+const more = docs.hybridSearch("body", "cancel subscription",
+  "embedding", embed("..."), 5, { mode: "and", nprobe: 32 });
+```
+
+```rust Rust icon="rust"
+// Rust exposes hybrid search through SQL. Pass the query vector as a
+// comma-separated literal to the `hybrid_search` table function.
+let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
+let rows = db.query_sql(&format!(
+    "SELECT doc_id, body, score FROM \
+     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
+     ORDER BY score DESC"
+))?;
+```
+
+</CodeGroup>
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text_column` | string | required | the FTS-indexed text column (BM25 side) |
+| `text_query` | string | required | query terms, tokenized by the FTS index |
+| `vector_column` | string | required | the vector-indexed column (kNN side) |
+| `vector_query` | float[] | required | the query vector (same dim as the index) |
+| `k` | int | required | number of top results (bounds each retriever and the fused result) |
+| `mode` | `or` / `and` | `or` | BM25 boolean mode — match any term or require all terms |
+| `nprobe` | int | engine default | IVF partitions to probe on the vector side; higher = better recall |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
+Projection semantics match the other direct search methods: pass `projection=["doc_id",
+"body"]` (or the Node.js equivalent) to pick which columns come back, and `score` is
+always included.
+
+### Compose in SQL
+
+Hybrid search is also a SQL table function, so you can join or filter its results in a
+query. Pass the query vector as a comma-separated literal:
 
 ```
 hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
@@ -189,22 +242,12 @@ const rows = db.querySql(
 );
 ```
 
-```rust Rust icon="rust"
-let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
-let rows = db.query_sql(&format!(
-    "SELECT doc_id, body, score FROM \
-     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
-     ORDER BY score DESC"
-))?;
-```
-
 </CodeGroup>
 
-Hybrid search needs both indexes on the table: an `fts` index on the text column and a
-`vector` index on the embedding column. Build the vector literal from your own embedding,
-and escape any user-supplied query text before putting it in SQL. See the
-[SQL Reference](/sql-reference) for the full `hybrid_search` signature and how to compose
-it with joins and filters.
+The SQL form takes no `mode` or `nprobe` — use the direct `hybrid_search` method when you
+need those. Build the vector literal from your own embedding, and escape any
+user-supplied query text before putting it in SQL. See the [SQL Reference](/sql-reference)
+for the full `hybrid_search` signature.
 
 ## Limitations
 
