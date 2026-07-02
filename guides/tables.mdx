@@ -1,7 +1,7 @@
 ---
 title: Tables
 icon: "table"
-description: Manage Infino tables. Define schemas, append rows, update and delete by predicate, compact Parquet files, and inspect the table catalog.
+description: Manage Infino tables. Define schemas, append rows, update and delete by predicate, compact Parquet files, reclaim storage, and inspect the table catalog.
 ---
 
 A table is a **schema** plus an **index spec**: which columns are full-text- and
@@ -186,6 +186,37 @@ db.drop_table("docs", true)?;                 // purge = true also deletes stora
 | `max_memory_mb` / `maxMemoryMb` | build-time memory budget, in MB |
 | `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0 to 100) |
 | `target_superfile_size_mb` / `targetSuperfileSizeMb` | target merged-superfile size, in MB |
+
+## Reclaim storage (gc)
+
+Compaction and interrupted writes can leave behind storage objects that the
+table no longer references. `gc` deletes them and reports what it reclaimed. It
+only removes objects older than a grace window (in seconds), so it never races a
+concurrent reader or writer; requires durable storage.
+
+<CodeGroup>
+
+```python Python icon="python"
+report = docs.gc(3600.0)                        # delete orphans older than 1 hour
+print(report.bytes_freed, report.objects_deleted)
+```
+
+```typescript Node.js icon="node-js"
+const report = docs.gc(3600);                   // delete orphans older than 1 hour
+console.log(report.bytesFreed, report.objectsDeleted);
+```
+
+```rust Rust icon="rust"
+use std::time::Duration;
+
+let report = docs.gc(Duration::from_secs(3600))?;  // delete orphans older than 1 hour
+println!("{} {}", report.bytes_freed, report.objects_deleted);
+```
+
+</CodeGroup>
+
+`optimize` already runs a best-effort `gc` after compacting, so calling `gc`
+directly is mainly for reclaiming on a schedule or after bulk deletes.
 
 ## Limitations
 
