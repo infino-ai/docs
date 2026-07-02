@@ -60,6 +60,28 @@ let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None
 | `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
+### Counting matches
+
+`count` returns how many rows match a BM25 keyword query, without fetching or ranking
+them — cheaper than a search when you only need the tally.
+
+<CodeGroup>
+
+```python Python icon="python"
+n = docs.count("body", "cancel subscription")            # or mode="and"
+```
+
+```typescript Node.js icon="node-js"
+const n = docs.count("body", "cancel subscription");     // or { mode: "and" }
+```
+
+```rust Rust icon="rust"
+use infino::BoolMode;
+let n = docs.count("body", "cancel subscription", BoolMode::Or)?;
+```
+
+</CodeGroup>
+
 ### Unranked lookups
 
 When you don't need scoring, `token_match` (rows containing a token) and `exact_match`
@@ -160,51 +182,53 @@ search, query with [SQL](/sql-reference).
 
 ## Hybrid search
 
-Hybrid search runs BM25 and vector kNN and fuses their rankings with **reciprocal-rank
-fusion (RRF)**, which is strong when a query has both keyword and semantic intent. It runs
-through `query_sql` via the `hybrid_search` table function. Pass the query text and the
-query vector as a comma-separated literal:
-
-```
-hybrid_search(table, text_column, query_text, vector_column, query_vector, k)
-```
+Hybrid search runs BM25 and vector kNN over the same table and fuses their rankings with
+**reciprocal-rank fusion (RRF)**, which is strong when a query has both keyword and
+semantic intent. It's a first-class method — pass the text query and the query vector,
+and it returns ranked Arrow rows like the other searches:
 
 <CodeGroup>
 
 ```python Python icon="python"
-vec = ",".join(map(str, embed("cancel subscription")))
-rows = db.query_sql(
-    f"SELECT doc_id, body, score FROM "
-    f"hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) "
-    f"ORDER BY score DESC"
-)
+hits = docs.hybrid_search("body", "cancel subscription", "embedding",
+                          embed("cancel subscription"), 5)
+# mode (BM25 boolean mode) and nprobe (vector recall) are optional:
+hits = docs.hybrid_search("body", "cancel subscription", "embedding",
+                          embed("..."), 5, mode="and", nprobe=32)
 ```
 
 ```typescript Node.js icon="node-js"
-const vec = embed("cancel subscription").join(",");
-const rows = db.querySql(
-  `SELECT doc_id, body, score FROM ` +
-  `hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '${vec}', 5) ` +
-  `ORDER BY score DESC`,
-);
+const hits = docs.hybridSearch("body", "cancel subscription", "embedding",
+  embed("cancel subscription"), 5);
+// mode (BM25 boolean mode) and nprobe (vector recall) are optional:
+const tuned = docs.hybridSearch("body", "cancel subscription", "embedding",
+  embed("..."), 5, { mode: "and", nprobe: 32 });
 ```
 
 ```rust Rust icon="rust"
-let vec = q.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(",");
-let rows = db.query_sql(&format!(
-    "SELECT doc_id, body, score FROM \
-     hybrid_search('docs', 'body', 'cancel subscription', 'embedding', '{vec}', 5) \
-     ORDER BY score DESC"
-))?;
+use infino::{BoolMode, VectorSearchOptions};
+let hits = docs.hybrid_search(
+    "body", "cancel subscription", BoolMode::Or,
+    "embedding", &q, VectorSearchOptions::new(), 5, None,
+)?;
 ```
 
 </CodeGroup>
 
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text_column` | string | required | the FTS-indexed text column |
+| `text_query` | string | required | query terms for the BM25 side |
+| `vector_column` | string | required | the vector-indexed column |
+| `vector_query` | float[] | required | the query vector (same dim as the index) |
+| `k` | int | required | number of top results |
+| `mode` | `or` / `and` | `or` | BM25 boolean mode |
+| `nprobe` | int | engine default | IVF partitions to probe on the vector side |
+| `projection` | string[] | `_id` + `score` | columns to return |
+
 Hybrid search needs both indexes on the table: an `fts` index on the text column and a
-`vector` index on the embedding column. Build the vector literal from your own embedding,
-and escape any user-supplied query text before putting it in SQL. See the
-[SQL Reference](/sql-reference) for the full `hybrid_search` signature and how to compose
-it with joins and filters.
+`vector` index on the embedding column. It's also available in [SQL](/sql-reference) via
+the `hybrid_search` table function, where you can compose it with joins and filters.
 
 ## Limitations
 

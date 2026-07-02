@@ -1,12 +1,12 @@
 ---
 title: Quickstart
 icon: "rocket"
-description: Install Infino, then index a small knowledge base and retrieve over it three ways (BM25, vector, and SQL) in Python, Node.js, or Rust.
+description: Install Infino, then index a small knowledge base and retrieve over it four ways (BM25, vector, hybrid, and SQL) in Python, Node.js, or Rust.
 ---
 
 Let's get Infino running in a few minutes. We'll build a small knowledge base (a
-handful of help-center notes) and search it three ways: by keyword, by meaning, and
-with SQL. Pick your language; each step builds on the one before it.
+handful of help-center notes) and search it four ways: by keyword, by meaning, by both
+at once (hybrid), and with SQL. Pick your language; each step builds on the one before it.
 
 <Tip>
 Prefer the terminal, or driving Infino from a coding agent? The [CLI](/cli) does
@@ -82,7 +82,7 @@ const db = connect("memory://");
 use std::sync::Arc;
 use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
 use arrow_schema::{DataType, Field, Schema};
-use infino::{connect, BoolMode, IndexSpec, Metric, VectorFilter, VectorSearchOptions};
+use infino::{connect, BoolMode, IndexSpec, Metric, VectorSearchOptions};
 
 let db = connect("memory://")?;
 ```
@@ -196,24 +196,24 @@ docs.append(&RecordBatch::try_new(
 
 <Step title="Search it">
 
-Now the part you came for. The same table answers all three kinds of query: keyword,
-meaning, and SQL.
+Now the part you came for. The same table answers every kind of query: keyword,
+meaning, hybrid, and SQL.
 
 <CodeGroup>
 
 ```python Python icon="python"
 keyword  = docs.bm25_search("body", "cancel subscription", 5)               # BM25
 semantic = docs.vector_search("embedding", embed(0), 5)                     # vector kNN
-# vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-filtered = docs.vector_search("embedding", embed(0), 5, filter_column="body", filter_query="billing")
+# hybrid: BM25 + vector, fused with reciprocal-rank fusion:
+hybrid   = docs.hybrid_search("body", "cancel subscription", "embedding", embed(0), 5)
 billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL
 ```
 
 ```typescript Node.js icon="node-js"
 const keyword  = docs.bm25Search("body", "cancel subscription", 5);            // BM25
 const semantic = docs.vectorSearch("embedding", embed(0), 5);                  // vector kNN
-// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-const filtered = docs.vectorSearch("embedding", embed(0), 5, { filter: { column: "body", query: "billing" } });
+// hybrid: BM25 + vector, fused with reciprocal-rank fusion:
+const hybrid   = docs.hybridSearch("body", "cancel subscription", "embedding", embed(0), 5);
 const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL
 ```
 
@@ -221,10 +221,10 @@ const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'
 let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
 let semantic =
     docs.vector_search("embedding", &embed(0), 5, VectorSearchOptions::new(), None, None)?; // vector kNN
-// vector kNN, restricted to rows whose body matches a keyword (pushdown filter):
-let filtered = docs.vector_search(
-    "embedding", &embed(0), 5, VectorSearchOptions::new(),
-    Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None,
+// hybrid: BM25 + vector, fused with reciprocal-rank fusion:
+let hybrid = docs.hybrid_search(
+    "body", "cancel subscription", BoolMode::Or,
+    "embedding", &embed(0), VectorSearchOptions::new(), 5, None,
 )?;
 let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL
 ```
@@ -241,15 +241,18 @@ semantic  "Refunds return to the original payment method."
           "To cancel a subscription, open Settings then Billing."
           "Enable dark mode under Settings then Appearance."
 
-filtered  "To cancel a subscription, open Settings then Billing."
+hybrid    "To cancel a subscription, open Settings then Billing."
+          "Refunds return to the original payment method."
+          "Enable dark mode under Settings then Appearance."
 
 sql       "To cancel a subscription, open Settings then Billing."
           "Refunds return to the original payment method."
 ```
 
-`keyword` matched the BM25 terms; `semantic` ranks the billing notes first; `filtered`
-keeps only the note whose text matches `billing`; `sql` returns the two `help-center`
-rows. From here, feed the retrieved passages to your model as grounding context.
+`keyword` matched the BM25 terms; `semantic` ranks the billing notes first; `hybrid`
+fuses the two rankings, so the exact keyword match leads while the semantically close
+note follows; `sql` returns the two `help-center` rows. From here, feed the retrieved
+passages to your model as grounding context.
 
 </Step>
 
