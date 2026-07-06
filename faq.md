@@ -1,5 +1,5 @@
 ---
-title: "FAQ"
+title: "Infino FAQ: servers, durability, search, and embeddings"
 description: Operational and usage answers for evaluating and building on Infino, covering servers, durability, concurrency, embeddings, search, languages, and more.
 icon: "circle-question"
 ---
