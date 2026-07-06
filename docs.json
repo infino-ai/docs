@@ -113,6 +113,7 @@
       {
         "tab": "Demos",
         "pages": [
+          "demos/index",
           "demos/lantern"
         ]
       },
