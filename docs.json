@@ -24,7 +24,7 @@
     "timestamp": true
   },
   "search": {
-    "prompt": "Search the Infino docs\u2026"
+    "prompt": "Search the Infino docs…"
   },
   "feedback": {
     "thumbsRating": true,
@@ -108,6 +108,12 @@
         "pages": [
           "use-cases/index",
           "use-cases/agent-memory"
+        ]
+      },
+      {
+        "tab": "Demos",
+        "pages": [
+          "demos/lantern"
         ]
       },
       {
