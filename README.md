@@ -1,6 +1,6 @@
 # Infino documentation
 
-Source for the Infino documentation site, served at **docs.infino.ai** and built
+Source for the Infino documentation site, served at **infino.ai/docs** and built
 with [Mintlify](https://mintlify.com).
 
 - Prose pages are plain `.md`; pages that use components (Quickstart, Install,

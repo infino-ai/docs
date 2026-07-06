@@ -30,7 +30,7 @@
     applicationCategory: "DeveloperApplication",
     description:
       "Infino is an open-source retrieval engine for full-text, vector, and SQL search, with your data stored as Apache Parquet on object storage.",
-    url: "https://docs.infino.ai",
+    url: "https://infino.ai/docs",
     operatingSystem: "Linux, macOS",
     license: "https://www.apache.org/licenses/LICENSE-2.0",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
