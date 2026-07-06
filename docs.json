@@ -4,7 +4,8 @@
   "name": "Infino",
   "logo": {
     "light": "/logo/infino-logo.png",
-    "dark": "/logo/infino-logo.png"
+    "dark": "/logo/infino-logo.png",
+    "href": "https://infino.ai"
   },
   "favicon": "/favicon.png",
   "description": "Infino is an open-source retrieval engine for full-text, vector, and SQL search, with your data stored as Apache Parquet on object storage.",
