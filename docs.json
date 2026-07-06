@@ -120,10 +120,27 @@
   "navbar": {
     "links": [
       {
+        "label": "Home",
+        "href": "https://infino.ai"
+      },
+      {
+        "label": "Compare",
+        "href": "https://infino.ai/vs"
+      },
+      {
+        "label": "Infino Cloud",
+        "href": "https://infino.ai/enterprise"
+      },
+      {
         "label": "GitHub",
         "href": "https://github.com/infino-ai/infino"
       }
-    ]
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Talk to us",
+      "href": "mailto:info@infino.ai"
+    }
   },
   "footer": {
     "socials": {
