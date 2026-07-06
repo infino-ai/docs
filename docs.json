@@ -53,18 +53,6 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Home",
-        "href": "https://infino.ai"
-      },
-      {
-        "tab": "Compare",
-        "href": "https://infino.ai/vs"
-      },
-      {
-        "tab": "Infino Cloud",
-        "href": "https://infino.ai/enterprise"
-      },
-      {
         "tab": "Documentation",
         "groups": [
           {
@@ -131,6 +119,18 @@
   },
   "navbar": {
     "links": [
+      {
+        "label": "Home",
+        "href": "https://infino.ai"
+      },
+      {
+        "label": "Compare",
+        "href": "https://infino.ai/vs"
+      },
+      {
+        "label": "Infino Cloud",
+        "href": "https://infino.ai/enterprise"
+      },
       {
         "label": "GitHub",
         "href": "https://github.com/infino-ai/infino"
