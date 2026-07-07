@@ -1,0 +1,31 @@
+<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lantern demo">
+  <rect width="640" height="360" fill="#131410"/>
+  <!-- faint plotting grid -->
+  <g stroke="#1e2019" stroke-width="1">
+    <path d="M0 90 H640 M0 180 H640 M0 270 H640"/>
+    <path d="M160 0 V360 M320 0 V360 M480 0 V360"/>
+  </g>
+  <!-- hanging cord -->
+  <line x1="320" y1="0" x2="320" y2="52" stroke="#5c5f55" stroke-width="2"/>
+  <!-- cap + body -->
+  <rect x="305" y="52" width="30" height="10" fill="none" stroke="#9a9d92" stroke-width="2"/>
+  <path d="M298 62 h44 l12 20 v36 l-12 20 h-44 l-12 -20 v-36 z" fill="none" stroke="#9a9d92" stroke-width="2"/>
+  <!-- flame -->
+  <circle cx="320" cy="100" r="16" fill="#d3ff4d" opacity="0.16"/>
+  <circle cx="320" cy="100" r="7" fill="#d3ff4d"/>
+  <!-- light cone -->
+  <path d="M304 138 L212 322 H428 L336 138 Z" fill="#d3ff4d" opacity="0.06"/>
+  <!-- code lines in the light -->
+  <g stroke-width="4" stroke-linecap="round">
+    <line x1="248" y1="272" x2="330" y2="272" stroke="#d3ff4d" opacity="0.55"/>
+    <line x1="262" y1="292" x2="378" y2="292" stroke="#d3ff4d" opacity="0.4"/>
+    <line x1="240" y1="312" x2="306" y2="312" stroke="#d3ff4d" opacity="0.5"/>
+    <line x1="322" y1="312" x2="398" y2="312" stroke="#d3ff4d" opacity="0.3"/>
+    <!-- lines still in the dark -->
+    <line x1="96" y1="292" x2="164" y2="292" stroke="#272921"/>
+    <line x1="452" y1="272" x2="540" y2="272" stroke="#272921"/>
+    <line x1="470" y1="312" x2="524" y2="312" stroke="#272921"/>
+    <line x1="72" y1="272" x2="150" y2="272" stroke="#272921"/>
+    <line x1="452" y1="292" x2="500" y2="292" stroke="#272921"/>
+  </g>
+</svg>
