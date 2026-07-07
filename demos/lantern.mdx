@@ -1,13 +1,50 @@
 ---
 title: "Lantern"
 description: "Ask any public GitHub repo questions in plain English. Answers come from Infino search, with sources you can click."
-mode: "custom"
 ---
 
-<iframe
-  src="https://lantern.infino.ai"
-  title="Lantern, by Infino"
-  className="block w-full h-screen"
-  frameBorder="0"
-  allow="clipboard-write"
-></iframe>
+Lantern is a live demo of Infino as the retrieval layer for an AI agent.
+Pick a repository, ask a question in plain English, and Claude answers by
+searching the code through Infino. Every answer cites the exact lines it
+used and shows what it took: search in milliseconds, thinking in seconds,
+tokens spent.
+
+<video
+  autoPlay
+  muted
+  loop
+  playsInline
+  controls
+  className="w-full rounded-xl"
+  src="/videos/lantern-demo.mp4"
+></video>
+
+<Card title="Open Lantern" icon="arrow-up-right-from-square" href="https://lantern.infino.ai" horizontal>
+  Runs in the browser, no login. Each visitor gets a handful of questions a day.
+</Card>
+
+## What to try
+
+- Ask the pre-indexed `infino-ai/infino` repo something conceptual, like
+  *why does a table need an append before it can be reopened?*
+- When the benchmark bar appears, open it. The same question also ran
+  through plain file tools (grep and read), so you can compare tool
+  calls, tokens, and time side by side.
+- Open **under the hood** to see what the index actually stores: the
+  schema, sample chunks, and the files Infino wrote on disk.
+- Paste any public GitHub repo to index it live. Large repos start
+  answering while indexing is still in progress.
+
+## How Infino powers it
+
+| In the demo | Infino feature |
+| --- | --- |
+| Keyword search tool | BM25 full-text search |
+| Semantic search tool | Vector search over the chunk embeddings |
+| Hybrid search tool (the default) | Fused keyword and vector ranking in one call |
+| Under-the-hood inspector | SQL over the same table, plus the literal storage layout |
+| Live indexing | One table per repo with full-text and vector indexes, appended in batches |
+
+The agent talks to Infino through the same tool names the
+[Infino MCP server](/integrations/mcp) exposes, so what you see is what
+any MCP-connected agent gets.
