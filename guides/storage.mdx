@@ -153,10 +153,10 @@ don't re-fetch from object storage.
 ## Connection memory budget
 
 `connection_memory_budget_bytes` caps the **RAM (heap)** a connection may hold while it
-works, the transient working memory that query, ingest, and vector search allocate. It is
-**per connection**: one ceiling shared by every table you open on that connection and by
-all three kinds of work, tracked as a single running total. By default it is unset, usage
-is measured but never enforced; pass a byte value to enforce it.
+works, the transient memory used to ingest data and run queries over it (keyword, vector,
+hybrid, or SQL). It is **per connection**: one ceiling shared by every table on the
+connection and by all its work, tracked as a single running total. By default it is unset,
+usage is measured but never enforced; pass a byte value to enforce it.
 
 When a request would cross the limit, Infino tries to stay within budget before it fails:
 
@@ -185,8 +185,8 @@ let db = connect_with(
 
 </CodeGroup>
 
-A refusal surfaces as each language's idiomatic recoverable error: `MemoryError` in
-Python, a thrown `Error` in Node, and `InfinoError::OverBudget` in Rust. Catch it, then
+A refusal surfaces as each language's idiomatic recoverable error: `ConnectionMemoryBudgetError`
+in Python, a thrown `Error` in Node, and `InfinoError::OverBudget` in Rust. Catch it, then
 narrow the query, split the ingest, or raise the budget.
 
 <Note>
