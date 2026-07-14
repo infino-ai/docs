@@ -147,7 +147,54 @@ don't re-fetch from object storage.
 | `validate` / `validate` / `with_validate(bool)` | probe the object store at `connect` to fail fast on bad credentials (default off) |
 | `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables |
 | `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
+| `connection_memory_budget_bytes` / `connectionMemoryBudgetBytes` / `with_connection_memory_budget_bytes` | per-connection heap budget, in bytes (`0` / omitted = measure only) |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
+
+## Connection memory budget
+
+`connection_memory_budget_bytes` caps the **RAM (heap)** a connection may hold while it
+works, the transient working memory that query, ingest, and vector search allocate. It is
+**per connection**: one ceiling shared by every table you open on that connection and by
+all three kinds of work, tracked as a single running total. By default it is unset, usage
+is measured but never enforced; pass a byte value to enforce it.
+
+When a request would cross the limit, Infino tries to stay within budget before it fails:
+
+- **SQL that can spill** (sorts, aggregations, joins) writes intermediate state to disk and
+  keeps going, so the query still completes, just slower.
+- **Work that can't spill** (a vector search's cold fetch, an ingest build) is refused
+  before it allocates, returning a recoverable error rather than risking an out-of-memory
+  crash.
+
+<CodeGroup>
+
+```python Python icon="python"
+db = infino.connect("./data", connection_memory_budget_bytes=512_000_000)
+```
+
+```typescript Node.js icon="node-js"
+const db = connect("./data", { connectionMemoryBudgetBytes: 512_000_000 });
+```
+
+```rust Rust icon="rust"
+let db = connect_with(
+    "./data",
+    ConnectOptions::new().with_connection_memory_budget_bytes(512_000_000),
+)?;
+```
+
+</CodeGroup>
+
+A refusal surfaces as each language's idiomatic recoverable error: `MemoryError` in
+Python, a thrown `Error` in Node, and `InfinoError::OverBudget` in Rust. Catch it, then
+narrow the query, split the ingest, or raise the budget.
+
+<Note>
+This budget is RAM only. It is separate from `cache_budget_bytes`, which bounds the local
+disk cache, and it does not cap memory-mapped reads (the OS reclaims those on its own).
+Give each independent workload its own connection so their budgets stay isolated rather
+than sharing one ceiling. Omit it (or pass `0`) to only measure usage, never enforce.
+</Note>
 
 ## Limitations
 
