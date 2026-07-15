@@ -60,6 +60,8 @@ let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None
 | `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
+<Note>BM25 `score` is a **similarity** — higher is better. (Vector `score` is a distance; the two run in opposite directions.)</Note>
+
 ### Counting matches
 
 `count` returns how many rows match a BM25 keyword query, without fetching or ranking
@@ -150,6 +152,12 @@ let more = docs.vector_search("embedding", &q, 5,
 | `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
 | `filter` | text predicate | none | pushdown pre-filter (below) |
 | `projection` | string[] | `_id` + `score` | columns to return |
+
+<Note>
+Vector `score` is a **distance**: `0.0` is a perfect match and larger is farther. This is
+the opposite direction from BM25's `score` (a similarity, higher is better). Don't compare
+the two raw scores — [hybrid search](#hybrid-search) fuses them for you by rank.
+</Note>
 
 ### Pushdown filter
 
