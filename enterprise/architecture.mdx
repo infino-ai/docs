@@ -1,14 +1,8 @@
 ---
 title: "Architecture"
-tag: "Coming soon"
 icon: "sitemap"
 description: How Infino Enterprise is structured at a high level — a control plane, a serving layer, and object storage holding your data as Parquet, separating control, compute, and storage.
 ---
-
-<Note>
-  **Coming soon.** Infino Enterprise is not generally available yet — this documents the
-  hosted service ahead of launch, so details may change before launch.
-</Note>
 
 Infino Enterprise separates control, compute, and storage. This is what lets the service
 scale each independently, run queries close to the data, and bill for usage rather than
@@ -50,10 +44,9 @@ Because storage is decoupled from compute and the durable copy lives in object s
 database that is not being queried does not need to hold always-on compute. You pay for
 the storage your data occupies and for the query usage you actually drive, rather than for
 provisioned capacity sitting idle. This is the "speed per dollar" positioning of the
-engine carried into a hosted service. See [Benchmarks](/enterprise/benchmarks).
+engine carried into a hosted service.
 
 ## See also
 
 - [Core concepts](/core-concepts) — the object-storage-native retrieval model.
-- [Security & Compliance](/enterprise/security) — auth, encryption, and tenant isolation.
 - [Connect & storage](/guides/storage) — the storage backends the engine supports.

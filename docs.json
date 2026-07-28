@@ -77,15 +77,12 @@
           },
           {
             "group": "Infino Enterprise",
+            "tag": "Coming soon",
             "pages": [
               "enterprise/index",
               "enterprise/quickstart",
               "enterprise/authentication",
               "enterprise/architecture",
-              "enterprise/security",
-              "enterprise/limits",
-              "enterprise/benchmarks",
-              "enterprise/deployment",
               "enterprise/faq"
             ]
           },

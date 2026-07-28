@@ -1,14 +1,8 @@
 ---
 title: "FAQ"
-tag: "Coming soon"
 icon: "circle-question"
 description: Frequently asked questions about Infino Enterprise — how it differs from the open-source engine, where data lives, durability, tenant isolation, Parquet access, and API keys.
 ---
-
-<Note>
-  **Coming soon.** Infino Enterprise is not generally available yet — this documents the
-  hosted service ahead of launch, so some answers may change before launch.
-</Note>
 
 ## How is this different from the open-source engine?
 
@@ -24,10 +18,6 @@ the code you write: you do not run or size storage or compute, and table mainten
 Your data is stored as standard Apache Parquet on object storage, the same open format the
 open-source engine uses locally. See [Architecture](/enterprise/architecture).
 
-<Note>**TODO (team):** confirm which cloud and regions data is stored in, and whether a
-customer can pin a database to a specific region. See
-[Security & Compliance](/enterprise/security#data-residency).</Note>
-
 ## Is my data durable?
 
 Yes. The durable copy of record lives in object storage. Hot byte ranges are cached close
@@ -38,14 +28,11 @@ storage.
 
 Each database is isolated per tenant, and an API key grants access only to the databases
 it is scoped to. A query is authenticated and routed to run against only that tenant's
-data. See [Security & Compliance](/enterprise/security#tenant-isolation).
+data.
 
 ## Can I read my data as Parquet?
 
 Your data is stored as standard Parquet, so it is not held in a proprietary format.
-
-<Note>**TODO (team):** confirm how direct Parquet access is exposed on the hosted service
-(for example export, snapshot, or read-only bucket access) before documenting it.</Note>
 
 ## How do I get an API key?
 
@@ -53,20 +40,13 @@ API keys are created from your dashboard. A key is a string beginning `ik_…` a
 to `connect` explicitly or read from the `INFINO_API_KEY` environment variable. See
 [Authentication](/enterprise/authentication).
 
-<Note>**TODO (team):** confirm the sign-up path to the dashboard for early access before
-launch.</Note>
-
 ## How am I billed?
 
 Infino Enterprise is usage-based: you pay for the storage your data occupies and the query
 usage you drive, rather than for always-on provisioned capacity. See
 [Architecture](/enterprise/architecture#scale-to-zero-economics).
 
-<Note>**TODO (team):** confirm the exact billing dimensions and pricing before
-documenting them.</Note>
-
 ## See also
 
 - [Overview](/enterprise) — what Infino Enterprise is.
 - [Quickstart](/enterprise/quickstart) — connect and run your first search.
-- [Security & Compliance](/enterprise/security) — auth, encryption, and isolation.

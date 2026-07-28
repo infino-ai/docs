@@ -18,9 +18,9 @@
     "/v1/append/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a row append to the tenant's worker.",
+        "summary": "Append rows",
         "operationId": "append",
         "parameters": [
           {
@@ -57,15 +57,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Append rows to a table. Body is an Arrow IPC stream, or a JSON `{\"data\": [...]}` envelope."
       }
     },
     "/v1/bm25_search/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a BM25 full-text search to the tenant's worker.",
+        "summary": "BM25 full-text search",
         "operationId": "bm25_search",
         "parameters": [
           {
@@ -103,15 +104,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Ranked BM25 full-text search over a full-text-indexed column."
       }
     },
     "/v1/count/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a full-text match count to the tenant's worker.",
+        "summary": "Count matches",
         "operationId": "count",
         "parameters": [
           {
@@ -149,15 +151,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Count the rows matching a full-text query."
       }
     },
     "/v1/create_table/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a table-creation request to the tenant's worker.",
+        "summary": "Create a table",
         "operationId": "create_table",
         "parameters": [
           {
@@ -195,15 +198,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Create a table with an Arrow schema and optional full-text and vector indexes."
       }
     },
     "/v1/databases": {
       "get": {
         "tags": [
-          "databases"
+          "Databases"
         ],
-        "summary": "`GET /v1/databases` — list the account's databases with their lifecycle\nstate. Authenticates with the customer API key on `Authorization: Bearer`.\n(The gateway also accepts the browser console's session here — an internal\npath, not part of the public contract.)",
+        "summary": "List databases",
         "operationId": "list_databases",
         "responses": {
           "200": {
@@ -231,13 +235,14 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "List your account's databases and their state."
       },
       "post": {
         "tags": [
-          "databases"
+          "Databases"
         ],
-        "summary": "`POST /v1/databases` — register a metadata-only database for the account the\nAPI key belongs to. Authenticates with the customer API key on\n`Authorization: Bearer`. (The gateway also accepts the browser console's\nsession on this route — an internal first-party path, intentionally not part\nof the public contract below.)",
+        "summary": "Create a database",
         "operationId": "create_database",
         "requestBody": {
           "content": {
@@ -278,15 +283,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Register a new database for your account."
       }
     },
     "/v1/databases/{name}": {
       "delete": {
         "tags": [
-          "databases"
+          "Databases"
         ],
-        "summary": "`DELETE /v1/databases/{name}` — begin deleting a database for the account the\nAPI key belongs to. Authenticates with the customer API key on\n`Authorization: Bearer`. Idempotent: deleting an absent (or already-purging)\ndatabase is a success. (The gateway also accepts the browser console's\nsession here — an internal path, not part of the public contract.)",
+        "summary": "Delete a database",
         "operationId": "delete_database",
         "parameters": [
           {
@@ -318,15 +324,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Begin deleting a database. Idempotent."
       }
     },
     "/v1/delete/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a predicate row-delete to the tenant's worker (no body;\n`?table=`/`?predicate=` ride the query string).",
+        "summary": "Delete rows",
         "operationId": "delete",
         "parameters": [
           {
@@ -367,15 +374,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Delete rows matching a predicate. `table`/`predicate` are query params; no body."
       }
     },
     "/v1/drop_table/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a table drop to the tenant's worker.",
+        "summary": "Drop a table",
         "operationId": "drop_table",
         "parameters": [
           {
@@ -413,15 +421,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Drop a table from the database."
       }
     },
     "/v1/exact_match/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward an exact match to the tenant's worker.",
+        "summary": "Exact match",
         "operationId": "exact_match",
         "parameters": [
           {
@@ -459,15 +468,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Exact-value match over a column."
       }
     },
     "/v1/hybrid_search/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a hybrid (BM25 + vector) search to the tenant's worker.",
+        "summary": "Hybrid search",
         "operationId": "hybrid_search",
         "parameters": [
           {
@@ -505,15 +515,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Hybrid BM25 + vector search, fused with reciprocal-rank fusion."
       }
     },
     "/v1/list_tables/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a list-tables request to the tenant's worker.",
+        "summary": "List tables",
         "operationId": "list_tables",
         "parameters": [
           {
@@ -538,15 +549,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "List the tables in the database."
       }
     },
     "/v1/query_sql/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a SQL query to the tenant's worker.",
+        "summary": "Run a SQL query",
         "operationId": "sql_query",
         "parameters": [
           {
@@ -584,15 +596,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Run a read-only SQL query across the database's tables."
       }
     },
     "/v1/schema/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a schema-describe request to the tenant's worker.",
+        "summary": "Describe a table's schema",
         "operationId": "schema",
         "parameters": [
           {
@@ -630,15 +643,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Return a table's column schema."
       }
     },
     "/v1/token_match/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward an unranked token match to the tenant's worker.",
+        "summary": "Token match",
         "operationId": "token_match",
         "parameters": [
           {
@@ -676,15 +690,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Unranked token match over a full-text-indexed column."
       }
     },
     "/v1/update/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a predicate row-update to the tenant's worker: the body carries the\nreplacement rows (Arrow IPC, or a JSON `{\"data\": [...]}` envelope when\n`Content-Type: application/json`), and `?table=`/`?predicate=` ride the\nquery string.",
+        "summary": "Update rows",
         "operationId": "update",
         "parameters": [
           {
@@ -728,15 +743,16 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Replace rows matching a predicate. `table`/`predicate` are query params; the body carries the replacement rows (Arrow IPC or JSON)."
       }
     },
     "/v1/vector_search/{database}": {
       "post": {
         "tags": [
-          "data"
+          "Data plane"
         ],
-        "summary": "Forward a vector search to the tenant's worker.",
+        "summary": "Vector search",
         "operationId": "vector_search",
         "parameters": [
           {
@@ -774,7 +790,8 @@
           {
             "api_key": []
           }
-        ]
+        ],
+        "description": "Vector (kNN) search over a vector column, with an optional full-text pre-filter."
       }
     }
   },
@@ -1324,6 +1341,16 @@
   "security": [
     {
       "api_key": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Data plane",
+      "description": "Per-database table operations: create/list/drop tables, describe schema, append/update/delete rows, and search (BM25, vector, hybrid, token, exact, count, and SQL)."
+    },
+    {
+      "name": "Databases",
+      "description": "Manage the databases in your account: create, list, and delete."
     }
   ]
 }
