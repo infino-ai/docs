@@ -138,7 +138,7 @@
             ]
           },
           {
-            "group": "Data plane (REST)",
+            "group": "REST API",
             "tag": "Coming soon",
             "openapi": "/api-reference/openapi.json"
           }

@@ -18,7 +18,7 @@
     "/v1/append/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Rows"
         ],
         "summary": "Append rows",
         "operationId": "append",
@@ -64,7 +64,7 @@
     "/v1/bm25_search/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "BM25 full-text search",
         "operationId": "bm25_search",
@@ -111,7 +111,7 @@
     "/v1/count/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Count matches",
         "operationId": "count",
@@ -158,7 +158,7 @@
     "/v1/create_table/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Tables"
         ],
         "summary": "Create a table",
         "operationId": "create_table",
@@ -331,7 +331,7 @@
     "/v1/delete/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Rows"
         ],
         "summary": "Delete rows",
         "operationId": "delete",
@@ -381,7 +381,7 @@
     "/v1/drop_table/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Tables"
         ],
         "summary": "Drop a table",
         "operationId": "drop_table",
@@ -428,7 +428,7 @@
     "/v1/exact_match/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Exact match",
         "operationId": "exact_match",
@@ -475,7 +475,7 @@
     "/v1/hybrid_search/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Hybrid search",
         "operationId": "hybrid_search",
@@ -522,7 +522,7 @@
     "/v1/list_tables/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Tables"
         ],
         "summary": "List tables",
         "operationId": "list_tables",
@@ -556,7 +556,7 @@
     "/v1/query_sql/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Run a SQL query",
         "operationId": "sql_query",
@@ -603,7 +603,7 @@
     "/v1/schema/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Tables"
         ],
         "summary": "Describe a table's schema",
         "operationId": "schema",
@@ -650,7 +650,7 @@
     "/v1/token_match/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Token match",
         "operationId": "token_match",
@@ -697,7 +697,7 @@
     "/v1/update/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Rows"
         ],
         "summary": "Update rows",
         "operationId": "update",
@@ -750,7 +750,7 @@
     "/v1/vector_search/{database}": {
       "post": {
         "tags": [
-          "Data plane"
+          "Search"
         ],
         "summary": "Vector search",
         "operationId": "vector_search",
@@ -1345,12 +1345,20 @@
   ],
   "tags": [
     {
-      "name": "Data plane",
-      "description": "Per-database table operations: create/list/drop tables, describe schema, append/update/delete rows, and search (BM25, vector, hybrid, token, exact, count, and SQL)."
+      "name": "Databases",
+      "description": "Create, list, and delete the databases in your account."
     },
     {
-      "name": "Databases",
-      "description": "Manage the databases in your account: create, list, and delete."
+      "name": "Tables",
+      "description": "Create, drop, and list tables, and describe a table's schema."
+    },
+    {
+      "name": "Rows",
+      "description": "Append, update, and delete rows."
+    },
+    {
+      "name": "Search",
+      "description": "BM25, vector, and hybrid search, token and exact match, count, and SQL."
     }
   ]
 }
