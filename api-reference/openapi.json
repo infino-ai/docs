@@ -11,7 +11,7 @@
   "servers": [
     {
       "url": "https://api.platform.infino.ai",
-      "description": "Infino Cloud"
+      "description": "Infino Enterprise"
     }
   ],
   "paths": {
