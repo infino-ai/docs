@@ -1,5 +1,5 @@
 ---
-title: "Infino Enterprise"
+title: "Quickstart"
 tag: "Coming soon"
 icon: "cloud"
 description: Run the same Infino retrieval API against Infino Enterprise, the hosted service. Only the connect target changes; every table and search call stays the same.
@@ -23,7 +23,7 @@ table and search call after that is the one you'd write for `connect("./data")` 
 You need two things from your dashboard:
 
 1. **An API key** — a string beginning `ik_…`. Treat it like a password. See
-   [Authentication](/guides/authentication).
+   [Authentication](/enterprise/authentication).
 2. **Your endpoint URL**, in the form `https://api.platform.infino.ai/<database>`. The scheme
    and host identify the service; the last path segment is the **database** this
    connection targets (for example `https://api.platform.infino.ai/my-app`). One connection is
@@ -269,7 +269,7 @@ never call it from the client.
 
 ## See also
 
-- [Authentication](/guides/authentication) — API keys, the `Authorization` header, and rotation.
+- [Authentication](/enterprise/authentication) — API keys, the `Authorization` header, and rotation.
 - [Search](/guides/search) — BM25, vector, hybrid, and SQL.
 - [Tables](/guides/tables) — schema, indexes, and mutations.
 - [Connect & storage](/guides/storage) — local and object-storage backends.

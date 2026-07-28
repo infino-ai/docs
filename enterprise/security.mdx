@@ -1,0 +1,74 @@
+---
+title: "Security & Compliance"
+tag: "Coming soon"
+icon: "shield"
+description: How Infino Enterprise secures your data — API-key Bearer authentication, TLS in transit, encryption at rest via the object store, per-tenant isolation, and key rotation.
+---
+
+<Note>
+  **Coming soon.** Infino Enterprise is not generally available yet — this documents the
+  hosted service ahead of launch, so details may change before launch.
+</Note>
+
+This page describes how Infino Enterprise protects your data. The verified controls are
+below; items still being finalized are marked as team TODOs.
+
+## Authentication
+
+Every request is authenticated with an **API key** presented as an
+`Authorization: Bearer <key>` header. Keys begin `ik_…` and are created and scoped from
+your dashboard. A request without a valid key for the target database is rejected. See
+[Authentication](/enterprise/authentication) for how the key is supplied and sent.
+
+## Encryption in transit
+
+`https://` is required for the hosted endpoint, so all traffic, including the bearer
+token, is encrypted with TLS. A remote `http://` URL is rejected at `connect`, so a key
+never travels over an unencrypted connection. Plain `http://` is accepted only for
+loopback (`localhost` / `127.0.0.1`) during local development.
+
+## Encryption at rest
+
+Your data is stored as Parquet on object storage and is encrypted at rest by the object
+store.
+
+<Note>**TODO (team):** confirm the encryption-at-rest specifics to document — the object
+store's server-side encryption mode, key management (provider-managed vs.
+customer-managed keys), and whether customer-managed keys are supported.</Note>
+
+## Tenant isolation
+
+Each database is isolated per tenant. An API key grants access only to the databases it
+is scoped to, and a query is routed and executed against only that tenant's data.
+
+<Note>**TODO (team):** confirm the isolation model to document — how storage and compute
+are separated between tenants (namespaces/prefixes, per-tenant credentials, network
+boundaries) so the description is accurate.</Note>
+
+## Key rotation
+
+Rotate a key from your dashboard: create a new key, roll it out to your deployments, then
+revoke the old one. Revocation takes effect immediately. See
+[Authentication](/enterprise/authentication#rotating-a-key).
+
+## Compliance
+
+<Note>**TODO (team):** confirm which compliance certifications and attestations to
+document (for example SOC 2 Type II, ISO 27001, GDPR posture, HIPAA/BAA availability).
+Do not publish any certification that is not actually held.</Note>
+
+## Data residency
+
+<Note>**TODO (team):** confirm data-residency options to document — which regions data can
+be stored in and whether a customer can pin a database to a specific region.</Note>
+
+## SLA and testing
+
+<Note>**TODO (team):** confirm the availability SLA (if any) and the security testing
+cadence (for example third-party penetration testing frequency, vulnerability disclosure
+process) before publishing any numbers.</Note>
+
+## See also
+
+- [Authentication](/enterprise/authentication) — API keys and the Bearer header.
+- [Architecture](/enterprise/architecture) — how control, compute, and storage are separated.
