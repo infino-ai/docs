@@ -126,8 +126,17 @@
       },
       {
         "tab": "API Reference",
-        "pages": [
-          "api-reference/index"
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/index"
+            ]
+          },
+          {
+            "group": "Data plane (REST)",
+            "openapi": "/api-reference/openapi.json"
+          }
         ]
       }
     ]
