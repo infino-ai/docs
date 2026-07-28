@@ -76,6 +76,13 @@
             ]
           },
           {
+            "group": "Infino Cloud",
+            "pages": [
+              "guides/hosted",
+              "guides/authentication"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
               "cli",
