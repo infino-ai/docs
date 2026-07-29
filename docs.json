@@ -134,7 +134,8 @@
           {
             "group": "Overview",
             "pages": [
-              "api-reference/index"
+              "api-reference/index",
+              "api-reference/parity"
             ]
           },
           {

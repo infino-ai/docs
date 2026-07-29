@@ -66,3 +66,13 @@ variable. For the full walkthrough and the credential model, see the hosted
 Not using one of the SDKs? The hosted service is also a plain HTTP API — the same
 per-database operations (tables, rows, search, SQL) over REST. See the **REST API**
 section in this tab.
+
+The machine-readable OpenAPI 3.1 spec is served at
+[`https://api.platform.infino.ai/openapi.json`](https://api.platform.infino.ai/openapi.json) —
+point your code generator or client tooling at it as the source of truth.
+
+## Local vs hosted
+
+The SDKs connect to both local and hosted Infino with the same calls. For the
+exact list of where the two differ — the handful of local-only and hosted-only
+operations — see [Local vs hosted](/api-reference/parity).

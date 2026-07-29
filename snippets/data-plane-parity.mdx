@@ -1,0 +1,21 @@
+| Operation | Local | Hosted | Notes |
+|-----------|:-----:|:------:|-------|
+| Create a database | ✅ | ✅ | A no-op on a local connection, so hosted setup code runs unchanged locally. |
+| List databases | — | ✅ | Account-level; available over REST and the dashboard, not the SDK. |
+| Delete a database | — | ✅ | Account-level; available over REST and the dashboard, not the SDK. |
+| Create a table | ✅ | ✅ | Hosted accepts a subset of Arrow column types (scalar, vector, list). |
+| Drop a table | ✅ | ✅ |  |
+| List tables | ✅ | ✅ |  |
+| Describe a table's schema | ✅ | ✅ |  |
+| Append rows | ✅ | ✅ |  |
+| Update rows | ✅ | ✅ |  |
+| Delete rows | ✅ | ✅ |  |
+| BM25 full-text search | ✅ | ✅ |  |
+| Token match | ✅ | ✅ | Hosted requires a projection (under review). |
+| Exact match | ✅ | ✅ | Hosted requires a projection (under review). |
+| Count matches | ✅ | ✅ |  |
+| Vector search | ✅ | ✅ | Hosted requires a projection (under review). |
+| Hybrid search | ✅ | ✅ |  |
+| Run a SQL query | ✅ | ✅ | SDK method: `query_sql`. |
+| Optimize (compact) a table | ✅ | — | Managed for you on the hosted service. |
+| Garbage-collect a table | ✅ | — | Managed for you on the hosted service. |
