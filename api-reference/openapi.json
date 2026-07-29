@@ -3,9 +3,6 @@
   "info": {
     "title": "Infino API",
     "description": "The Infino hosted data-plane API: per-database table operations — create, ingest, search, and SQL.",
-    "license": {
-      "name": ""
-    },
     "version": "0.1.0"
   },
   "servers": [
@@ -21,6 +18,7 @@
           "Rows"
         ],
         "summary": "Append rows",
+        "description": "Append rows to a table. The body is an Arrow IPC stream, or a JSON `{\"data\": [...]}` envelope.",
         "operationId": "append",
         "parameters": [
           {
@@ -57,8 +55,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Append rows to a table. Body is an Arrow IPC stream, or a JSON `{\"data\": [...]}` envelope."
+        ]
       }
     },
     "/v1/bm25_search/{database}": {
@@ -67,6 +64,7 @@
           "Search"
         ],
         "summary": "BM25 full-text search",
+        "description": "Ranked BM25 full-text search over a full-text-indexed column.",
         "operationId": "bm25_search",
         "parameters": [
           {
@@ -104,8 +102,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Ranked BM25 full-text search over a full-text-indexed column."
+        ]
       }
     },
     "/v1/count/{database}": {
@@ -114,6 +111,7 @@
           "Search"
         ],
         "summary": "Count matches",
+        "description": "Count the rows matching a full-text query.",
         "operationId": "count",
         "parameters": [
           {
@@ -151,8 +149,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Count the rows matching a full-text query."
+        ]
       }
     },
     "/v1/create_table/{database}": {
@@ -161,6 +158,7 @@
           "Tables"
         ],
         "summary": "Create a table",
+        "description": "Create a table with an Arrow schema and optional full-text and vector indexes.",
         "operationId": "create_table",
         "parameters": [
           {
@@ -198,8 +196,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Create a table with an Arrow schema and optional full-text and vector indexes."
+        ]
       }
     },
     "/v1/databases": {
@@ -208,6 +205,7 @@
           "Databases"
         ],
         "summary": "List databases",
+        "description": "List your account's databases and their state.",
         "operationId": "list_databases",
         "responses": {
           "200": {
@@ -235,14 +233,14 @@
           {
             "api_key": []
           }
-        ],
-        "description": "List your account's databases and their state."
+        ]
       },
       "post": {
         "tags": [
           "Databases"
         ],
         "summary": "Create a database",
+        "description": "Register a new database for your account.",
         "operationId": "create_database",
         "requestBody": {
           "content": {
@@ -283,8 +281,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Register a new database for your account."
+        ]
       }
     },
     "/v1/databases/{name}": {
@@ -293,6 +290,7 @@
           "Databases"
         ],
         "summary": "Delete a database",
+        "description": "Begin deleting a database. Idempotent.",
         "operationId": "delete_database",
         "parameters": [
           {
@@ -324,8 +322,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Begin deleting a database. Idempotent."
+        ]
       }
     },
     "/v1/delete/{database}": {
@@ -334,6 +331,7 @@
           "Rows"
         ],
         "summary": "Delete rows",
+        "description": "Delete rows matching a predicate. `table` and `predicate` are query parameters; no body.",
         "operationId": "delete",
         "parameters": [
           {
@@ -374,8 +372,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Delete rows matching a predicate. `table`/`predicate` are query params; no body."
+        ]
       }
     },
     "/v1/drop_table/{database}": {
@@ -384,6 +381,7 @@
           "Tables"
         ],
         "summary": "Drop a table",
+        "description": "Drop a table from the database.",
         "operationId": "drop_table",
         "parameters": [
           {
@@ -421,8 +419,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Drop a table from the database."
+        ]
       }
     },
     "/v1/exact_match/{database}": {
@@ -431,6 +428,7 @@
           "Search"
         ],
         "summary": "Exact match",
+        "description": "Exact-value match over a column.",
         "operationId": "exact_match",
         "parameters": [
           {
@@ -468,8 +466,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Exact-value match over a column."
+        ]
       }
     },
     "/v1/hybrid_search/{database}": {
@@ -478,6 +475,7 @@
           "Search"
         ],
         "summary": "Hybrid search",
+        "description": "Hybrid BM25 and vector search, fused with reciprocal-rank fusion.",
         "operationId": "hybrid_search",
         "parameters": [
           {
@@ -515,8 +513,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Hybrid BM25 + vector search, fused with reciprocal-rank fusion."
+        ]
       }
     },
     "/v1/list_tables/{database}": {
@@ -525,6 +522,7 @@
           "Tables"
         ],
         "summary": "List tables",
+        "description": "List the tables in the database.",
         "operationId": "list_tables",
         "parameters": [
           {
@@ -549,8 +547,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "List the tables in the database."
+        ]
       }
     },
     "/v1/query_sql/{database}": {
@@ -559,6 +556,7 @@
           "Search"
         ],
         "summary": "Run a SQL query",
+        "description": "Run a read-only SQL query across the database's tables.",
         "operationId": "sql_query",
         "parameters": [
           {
@@ -596,8 +594,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Run a read-only SQL query across the database's tables."
+        ]
       }
     },
     "/v1/schema/{database}": {
@@ -606,6 +603,7 @@
           "Tables"
         ],
         "summary": "Describe a table's schema",
+        "description": "Return a table's column schema.",
         "operationId": "schema",
         "parameters": [
           {
@@ -643,8 +641,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Return a table's column schema."
+        ]
       }
     },
     "/v1/token_match/{database}": {
@@ -653,6 +650,7 @@
           "Search"
         ],
         "summary": "Token match",
+        "description": "Unranked token match over a full-text-indexed column.",
         "operationId": "token_match",
         "parameters": [
           {
@@ -690,8 +688,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Unranked token match over a full-text-indexed column."
+        ]
       }
     },
     "/v1/update/{database}": {
@@ -700,6 +697,7 @@
           "Rows"
         ],
         "summary": "Update rows",
+        "description": "Replace rows matching a predicate. `table` and `predicate` are query parameters; the body carries the replacement rows (Arrow IPC or JSON).",
         "operationId": "update",
         "parameters": [
           {
@@ -743,8 +741,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Replace rows matching a predicate. `table`/`predicate` are query params; the body carries the replacement rows (Arrow IPC or JSON)."
+        ]
       }
     },
     "/v1/vector_search/{database}": {
@@ -753,6 +750,7 @@
           "Search"
         ],
         "summary": "Vector search",
+        "description": "Vector (kNN) search over a vector column, with an optional full-text pre-filter.",
         "operationId": "vector_search",
         "parameters": [
           {
@@ -790,8 +788,7 @@
           {
             "api_key": []
           }
-        ],
-        "description": "Vector (kNN) search over a vector column, with an optional full-text pre-filter."
+        ]
       }
     }
   },
@@ -1081,7 +1078,7 @@
       },
       "ListDatabasesResponse": {
         "type": "object",
-        "description": "The account's databases — the session-plane console's database view.",
+        "description": "The databases in your account.",
         "required": [
           "databases"
         ],
@@ -1114,7 +1111,7 @@
       },
       "SchemaField": {
         "type": "object",
-        "description": "One column in a `create_table` schema. A scalar column is `{name, type}`\nwhere `type` is a scalar spelling (`\"i32\"`, `\"large_utf8\"`, …); a vector\ncolumn is `{name, type: \"vector\", dim}`; a list column is\n`{name, type: \"list\", item}`. `dim`/`item` are validated against `type` by\nthe worker (they must be present for `\"vector\"`/`\"list\"` respectively).",
+        "description": "One column in a `create_table` schema. A scalar column is `{name, type}` where `type` is a scalar spelling (`\"i32\"`, `\"large_utf8\"`, …); a vector column is `{name, type: \"vector\", dim}`; a list column is `{name, type: \"list\", item}`. `dim` is required for `\"vector\"` and `item` for `\"list\"`.",
         "required": [
           "name",
           "type"
@@ -1237,8 +1234,6 @@
         "description": "One vector index declaration under `indexes.vector`.",
         "required": [
           "column",
-          "dim",
-          "n_centroids",
           "metric"
         ],
         "properties": {
@@ -1246,14 +1241,22 @@
             "type": "string"
           },
           "dim": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Redundant with the schema column's declared width; the server resolves\nthe dimension from the schema, so this is optional and, if given, must\nagree.",
             "minimum": 0
           },
           "metric": {
             "$ref": "#/components/schemas/Metric"
           },
           "n_centroids": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "IVF centroid count. Optional; the server applies a default when omitted.",
             "minimum": 0
           }
         },
