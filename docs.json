@@ -131,7 +131,7 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "Overview",
+            "group": "SDKs",
             "pages": [
               "api-reference/index",
               "api-reference/parity"
