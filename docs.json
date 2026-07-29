@@ -76,14 +76,13 @@
             ]
           },
           {
-            "group": "Infino Enterprise",
-            "tag": "Coming soon",
+            "group": "Infino Cloud",
             "pages": [
-              "enterprise/index",
-              "enterprise/quickstart",
-              "enterprise/authentication",
-              "enterprise/architecture",
-              "enterprise/faq"
+              "cloud/index",
+              "cloud/quickstart",
+              "cloud/authentication",
+              "cloud/architecture",
+              "cloud/faq"
             ]
           },
           {
@@ -140,7 +139,6 @@
           },
           {
             "group": "REST API",
-            "tag": "Coming soon",
             "openapi": "/api-reference/openapi.json"
           }
         ]
@@ -158,8 +156,8 @@
         "href": "https://infino.ai/vs"
       },
       {
-        "label": "Infino Enterprise",
-        "href": "https://infino.ai/enterprise"
+        "label": "Infino Cloud",
+        "href": "https://infino.ai/cloud"
       },
       {
         "label": "GitHub",

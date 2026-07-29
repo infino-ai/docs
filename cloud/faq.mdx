@@ -1,0 +1,53 @@
+---
+title: "FAQ"
+icon: "circle-question"
+description: Frequently asked questions about Infino Cloud — how it differs from the open-source engine, where data lives, durability, data isolation, Parquet access, and API keys.
+---
+
+## How is this different from the open-source engine?
+
+It is the same engine, served as a fully-managed hosted service. The API is identical: a
+program written against a local `connect("./data")` or `connect("s3://…")` moves to Infino
+Cloud by changing only the `connect` target. The difference is operational, not in
+the code you write: you do not run or size storage or compute, and table maintenance
+(`optimize` and `gc`) runs for you. See the [Overview](/enterprise) and
+[Quickstart](/cloud/quickstart).
+
+## Where does my data live?
+
+Your data is stored as standard Apache Parquet on object storage, the same open format the
+open-source engine uses locally. See [Architecture](/cloud/architecture).
+
+## Is my data durable?
+
+Yes. The durable copy of record lives in object storage. Hot byte ranges are cached close
+to compute for fast warm queries, but the source of truth is the Parquet in object
+storage.
+
+## How is my data isolated?
+
+Each database is isolated to your account, and an API key grants access only to the
+databases it is scoped to. A query is authenticated and routed to run against only your
+own data.
+
+## Can I read my data as Parquet?
+
+Your data is stored as standard Parquet, so it is not held in a proprietary format.
+
+## How do I get an API key?
+
+API keys are created in the Infino Cloud console at
+[platform.infino.ai](https://platform.infino.ai) — the only place to mint one. A key is a
+string beginning `inf_…` and is passed to `connect` explicitly or read from the
+`INFINO_API_KEY` environment variable. See [Authentication](/cloud/authentication).
+
+## How am I billed?
+
+Infino Cloud is usage-based: you pay for the storage your data occupies and the query
+usage you drive, rather than for always-on provisioned capacity. See
+[Architecture](/cloud/architecture#scale-to-zero-economics).
+
+## See also
+
+- [Overview](/enterprise) — what Infino Cloud is.
+- [Quickstart](/cloud/quickstart) — connect and run your first search.

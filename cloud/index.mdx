@@ -1,17 +1,17 @@
 ---
-title: "Infino Enterprise"
+title: "Infino Cloud"
 icon: "building"
-description: Infino Enterprise is the Infino retrieval engine served as a fully-managed, object-storage-native hosted service. No servers to run or size, usage-based, same API as the open-source engine.
+description: Infino Cloud is the Infino retrieval engine served as a fully-managed, object-storage-native hosted service. No servers to run or size, usage-based, same API as the open-source engine.
 ---
 
-Infino Enterprise is the same Infino retrieval engine you run locally, served as a
+Infino Cloud is the same Infino retrieval engine you run locally, served as a
 fully-managed, object-storage-native hosted service. You get full-text, vector, hybrid,
 and SQL search over your data without running or sizing any storage or compute yourself.
 Data lives as Apache Parquet on object storage, and you pay for what you use.
 
 The API is identical to the open-source engine. A program written against
 `connect("./data")` or `connect("s3://…")` moves to the hosted service by changing only
-the `connect` target. See the [Quickstart](/enterprise/quickstart) for the one-line change.
+the `connect` target. See the [Quickstart](/cloud/quickstart) for the one-line change.
 
 ## What you get
 
@@ -30,7 +30,7 @@ Infino is open source, and you can always run the engine yourself against local 
 your own object-storage bucket. See [Connect & storage](/guides/storage) for the
 self-hosted backends.
 
-**Choose Infino Enterprise when** you want retrieval as a service: you would rather not
+**Choose Infino Cloud when** you want retrieval as a service: you would rather not
 operate storage, tune caches, or run maintenance, and you want to go from an API key to a
 working table in minutes. It suits teams that want to focus on their application rather
 than on running infrastructure.
@@ -43,13 +43,13 @@ start self-hosted and move to the hosted service later without rewriting your ap
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="cloud" href="/enterprise/quickstart">
+  <Card title="Quickstart" icon="cloud" href="/cloud/quickstart">
     Connect, provision a database, and run your first search.
   </Card>
-  <Card title="Authentication" icon="key" href="/enterprise/authentication">
+  <Card title="Authentication" icon="key" href="/cloud/authentication">
     API keys, the Authorization header, and key rotation.
   </Card>
-  <Card title="Architecture" icon="sitemap" href="/enterprise/architecture">
+  <Card title="Architecture" icon="sitemap" href="/cloud/architecture">
     How the service separates control, compute, and storage.
   </Card>
 </CardGroup>

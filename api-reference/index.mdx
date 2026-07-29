@@ -29,7 +29,7 @@ Start with the [Quickstart](/quickstart) and [Guides](/guides/tables).
 ## Connecting to the hosted service
 
 The reference above is the whole API — the same calls run against the hosted service
-(Infino Enterprise). You point `connect` at an `https://<host>/<database>` URL and pass an
+(Infino Cloud). You point `connect` at an `https://<host>/<database>` URL and pass an
 API key; every table and search call after that is identical to local use. The hosted
 transport is enabled slightly differently per language:
 
@@ -39,14 +39,14 @@ transport is enabled slightly differently per language:
 # Built in — nothing to enable.
 import infino
 
-db = infino.connect("https://api.platform.infino.ai/my-app", api_key="ik_…")
+db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
 ```
 
 ```typescript Node.js icon="node-js"
 // Built in — nothing to enable.
 import { connect } from "@infino-ai/infino";
 
-const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "ik_…" });
+const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
 ```
 
 ```toml Rust icon="rust"
@@ -59,7 +59,7 @@ infino = { version = "0.1", features = ["remote"] }
 
 The API key can be passed to `connect` or read from the `INFINO_API_KEY` environment
 variable. For the full walkthrough and the credential model, see the hosted
-[Quickstart](/enterprise/quickstart) and [Authentication](/enterprise/authentication).
+[Quickstart](/cloud/quickstart) and [Authentication](/cloud/authentication).
 
 ## REST API
 
