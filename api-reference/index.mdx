@@ -1,10 +1,12 @@
 ---
 title: API reference for Rust, Python, and Node.js SDKs
 icon: "code"
-description: Complete API references for the Infino open-source retrieval engine across Rust, Python, and Node.js, covering connect, tables, indexing, search, and SQL.
+description: Complete API references for the Infino retrieval engine across Rust, Python, and Node.js — connect, tables, indexing, search, and SQL — for both local and hosted use.
 ---
 
-Full API reference for each language, generated from the published packages.
+Full API reference for each language, generated from the published packages. The same
+SDK connects to a local store (`./data`, `s3://…`) or to the hosted service — only the
+`connect` target changes.
 
 <CardGroup cols={3}>
   <Card title="Rust" icon="rust" href="https://docs.rs/infino">
@@ -23,3 +25,44 @@ The Python and Node.js references are generated from the published packages and
 regenerate on each release, so they always match the version you install. New to the API?
 Start with the [Quickstart](/quickstart) and [Guides](/guides/tables).
 </Note>
+
+## Connecting to the hosted service
+
+The reference above is the whole API — the same calls run against the hosted service
+(Infino Enterprise). You point `connect` at an `https://<host>/<database>` URL and pass an
+API key; every table and search call after that is identical to local use. The hosted
+transport is enabled slightly differently per language:
+
+<CodeGroup>
+
+```python Python icon="python"
+# Built in — nothing to enable.
+import infino
+
+db = infino.connect("https://api.platform.infino.ai/my-app", api_key="ik_…")
+```
+
+```typescript Node.js icon="node-js"
+// Built in — nothing to enable.
+import { connect } from "@infino-ai/infino";
+
+const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "ik_…" });
+```
+
+```toml Rust icon="rust"
+# Rust opts in via the `remote` feature.
+[dependencies]
+infino = { version = "0.1", features = ["remote"] }
+```
+
+</CodeGroup>
+
+The API key can be passed to `connect` or read from the `INFINO_API_KEY` environment
+variable. For the full walkthrough and the credential model, see the hosted
+[Quickstart](/enterprise/quickstart) and [Authentication](/enterprise/authentication).
+
+## REST API
+
+Not using one of the SDKs? The hosted service is also a plain HTTP API — the same
+per-database operations (tables, rows, search, SQL) over REST. See the **REST API**
+section in this tab.
