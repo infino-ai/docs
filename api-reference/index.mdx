@@ -50,10 +50,9 @@ import { connect } from "@infino-ai/infino";
 const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
 ```
 
-```toml Rust icon="rust"
-# Rust opts in via the `remote` feature.
-[dependencies]
-infino = { version = "0.1", features = ["remote"] }
+```bash Rust icon="rust"
+# Rust opts into the hosted transport via the `remote` feature.
+cargo add infino --features remote
 ```
 
 </CodeGroup>
