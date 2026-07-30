@@ -1,0 +1,52 @@
+---
+title: "Architecture"
+icon: "sitemap"
+description: How Infino Cloud is structured at a high level — a control plane, a serving layer, and object storage holding your data as Parquet, separating control, compute, and storage.
+---
+
+Infino Cloud separates control, compute, and storage. This is what lets the service
+scale each independently, run queries close to the data, and bill for usage rather than
+for provisioned capacity.
+
+## The three layers
+
+**Control plane.** Manages accounts, databases, API keys, and billing. When you create a
+database, rotate a key, or check usage, you are talking to the control plane. It holds no
+query data itself; it decides who can reach which database and with what key.
+
+**Serving layer.** Runs each database's queries. When you call `bm25_search`,
+`vector_search`, `hybrid_search`, `query_sql`, or a mutation, the request is
+authenticated, routed to the serving layer for your database, and executed there against
+the data in object storage. Because compute is separate from storage, capacity for a
+database can scale with its query load and settle back down when idle.
+
+**Object storage.** Holds your data as standard Apache Parquet, the same open format the
+open-source engine writes locally. Storage is durable and grows with your data. Nothing
+proprietary sits between your data and the Parquet on disk.
+
+## Object-storage-native
+
+The engine is built to query directly against object storage rather than requiring data
+to be loaded onto always-on local disks. Hot byte ranges are cached close to compute so
+warm queries stay fast, while the durable copy of record lives in object storage. This is
+the same design the open-source engine uses; see
+[Core concepts](/core-concepts) and [Connect & storage](/guides/storage).
+
+## Snapshot-isolated reads
+
+Reads see a consistent snapshot of a table. A query runs against a fixed view of the data
+and is not disturbed by writes that land while it executes, so results are internally
+consistent even under concurrent ingestion.
+
+## Scale-to-zero economics
+
+Because storage is decoupled from compute and the durable copy lives in object storage, a
+database that is not being queried does not need to hold always-on compute. You pay for
+the storage your data occupies and for the query usage you actually drive, rather than for
+provisioned capacity sitting idle. This is the "speed per dollar" positioning of the
+engine carried into a hosted service.
+
+## See also
+
+- [Core concepts](/core-concepts) — the object-storage-native retrieval model.
+- [Connect & storage](/guides/storage) — the storage backends the engine supports.

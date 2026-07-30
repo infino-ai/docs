@@ -76,6 +76,16 @@
             ]
           },
           {
+            "group": "Infino Cloud",
+            "pages": [
+              "cloud/index",
+              "cloud/quickstart",
+              "cloud/authentication",
+              "cloud/architecture",
+              "cloud/faq"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
               "cli",
@@ -119,8 +129,18 @@
       },
       {
         "tab": "API Reference",
-        "pages": [
-          "api-reference/index"
+        "groups": [
+          {
+            "group": "SDKs",
+            "pages": [
+              "api-reference/index",
+              "api-reference/parity"
+            ]
+          },
+          {
+            "group": "REST API",
+            "openapi": "/api-reference/openapi.json"
+          }
         ]
       }
     ]
@@ -137,7 +157,7 @@
       },
       {
         "label": "Infino Cloud",
-        "href": "https://infino.ai/enterprise"
+        "href": "https://infino.ai/cloud"
       },
       {
         "label": "GitHub",

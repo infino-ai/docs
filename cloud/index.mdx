@@ -1,0 +1,58 @@
+---
+title: "Infino Cloud"
+icon: "building"
+description: Infino Cloud is the Infino retrieval engine served as a fully-managed, object-storage-native hosted service. No servers to run or size, usage-based, same API as the open-source engine.
+---
+
+Infino Cloud is the same Infino retrieval engine you run locally, served as a
+fully-managed, object-storage-native hosted service. You get full-text, vector, hybrid,
+and SQL search over your data without running or sizing any storage or compute yourself.
+Data lives as Apache Parquet on object storage, and you pay for what you use.
+
+The API is identical to the open-source engine. A program written against
+`connect("./data")` or `connect("s3://…")` moves to the hosted service by changing only
+the `connect` target. See the [Quickstart](/cloud/quickstart) for the one-line change.
+
+## What you get
+
+- **Fully managed.** No servers to provision, patch, or scale. Storage grows with your
+  data, and table maintenance (`optimize` and `gc`) runs for you.
+- **Object-storage-native.** Your data is stored as standard Parquet on object storage,
+  the same open format the engine uses locally. No proprietary lock-in.
+- **The same retrieval surface.** BM25, vector kNN, hybrid, and SQL over one copy of your
+  data, indexed once. See [Search](/guides/search).
+- **Usage-based.** You pay for storage and query usage rather than for provisioned,
+  always-on capacity.
+
+## When to choose it vs. self-hosting
+
+Infino is open source, and you can always run the engine yourself against local disk or
+your own object-storage bucket. See [Connect & storage](/guides/storage) for the
+self-hosted backends.
+
+**Choose Infino Cloud when** you want retrieval as a service: you would rather not
+operate storage, tune caches, or run maintenance, and you want to go from an API key to a
+working table in minutes. It suits teams that want to focus on their application rather
+than on running infrastructure.
+
+**Self-host the open-source engine when** you need the data and compute to stay entirely
+inside your own environment, you already operate object storage, or you want to embed the
+engine directly in your process. The code you write is the same either way, so you can
+start self-hosted and move to the hosted service later without rewriting your application.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="cloud" href="/cloud/quickstart">
+    Connect, provision a database, and run your first search.
+  </Card>
+  <Card title="Authentication" icon="key" href="/cloud/authentication">
+    API keys, the Authorization header, and key rotation.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/cloud/architecture">
+    How the service separates control, compute, and storage.
+  </Card>
+  <Card title="REST API" icon="server" href="/api-reference">
+    Not using an SDK? Drive Infino Cloud over plain HTTP — the OpenAPI reference.
+  </Card>
+</CardGroup>

@@ -1,0 +1,267 @@
+---
+title: "Quickstart"
+icon: "cloud"
+description: Run the same Infino retrieval API against Infino Cloud, the hosted service. Only the connect target changes; every table and search call stays the same.
+---
+
+Infino Cloud is the same Infino API served as a hosted service. You don't run or size
+storage yourself. The code is identical to a local connection: **only the connect
+target changes**. Point `connect` at an `https://` URL, pass an API key, and every
+table and search call after that is the one you'd write for `connect("./data")` or
+`connect("s3://…")`.
+
+<Steps>
+
+<Step title="Before you start">
+
+You need two things from the Infino Cloud console at [platform.infino.ai](https://platform.infino.ai):
+
+1. **An API key** — a string beginning `inf_…`. Treat it like a password. See
+   [Authentication](/cloud/authentication).
+2. **Your endpoint URL**, in the form `https://api.platform.infino.ai/<database>`. The scheme
+   and host identify the service; the last path segment is the **database** this
+   connection targets (for example `https://api.platform.infino.ai/my-app`). One connection is
+   bound to one database.
+
+</Step>
+
+<Step title="Install">
+
+The packages are the same as for local use. Rust needs the `remote` feature for the
+hosted transport.
+
+<CodeGroup>
+
+```bash Python icon="python"
+pip install infino
+```
+
+```bash Node.js icon="node-js"
+npm install @infino-ai/infino
+```
+
+```bash Rust icon="rust"
+cargo add infino --features remote
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Connect">
+
+Pass the endpoint URL and your API key. The key can be given explicitly or read from the
+`INFINO_API_KEY` environment variable, in which case the key argument is optional.
+
+<CodeGroup>
+
+```python Python icon="python"
+import infino
+
+db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+```
+
+```typescript Node.js icon="node-js"
+import { connect } from "@infino-ai/infino";
+
+const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
+```
+
+```rust Rust icon="rust"
+use infino::{connect_with, ConnectOptions};
+
+let db = connect_with(
+    "https://api.platform.infino.ai/my-app",
+    ConnectOptions::new().with_api_key("inf_…"),
+)?;
+```
+
+</CodeGroup>
+
+With `INFINO_API_KEY` set in the environment, drop the key argument:
+`connect("https://api.platform.infino.ai/my-app")` picks it up.
+
+</Step>
+
+<Step title="Provision your database">
+
+Create the database this connection targets, once, from code:
+
+<CodeGroup>
+
+```python Python icon="python"
+db.create_database()
+```
+
+```typescript Node.js icon="node-js"
+db.createDatabase();
+```
+
+```rust Rust icon="rust"
+db.create_database()?;
+```
+
+</CodeGroup>
+
+`create_database` registers the database named in your connection URL, so you can go
+from a fresh API key to a working table without leaving your editor. It fails if the
+database already exists, so skip this step if you already created the database in the
+console. On a local connection the same call is a harmless no-op, so setup code
+written for Infino Cloud also runs against `./data` or `s3://…` unchanged.
+
+</Step>
+
+<Step title="Create a table, add data, search">
+
+From here, every call is exactly what you'd write locally.
+
+<CodeGroup>
+
+```python Python icon="python"
+import pyarrow as pa
+
+schema = pa.schema([
+    pa.field("source", pa.large_utf8(), nullable=False),
+    pa.field("body", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), 16), nullable=False),
+])
+docs = db.create_table(
+    "docs", schema,
+    infino.IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+)
+
+def embed(topic):                       # 0 = billing, 1 = appearance
+    v = [0.0] * 16
+    v[topic] = 1.0
+    return v
+
+docs.append([
+    {"source": "help-center", "body": "To cancel a subscription, open Settings then Billing.", "embedding": embed(0)},
+    {"source": "help-center", "body": "Refunds return to the original payment method.",         "embedding": embed(0)},
+    {"source": "blog",        "body": "Enable dark mode under Settings then Appearance.",        "embedding": embed(1)},
+])
+
+keyword  = docs.bm25_search("body", "cancel subscription", 5)                                 # BM25
+semantic = docs.vector_search("embedding", embed(0), 5, projection=["_id", "body"])           # vector kNN
+hybrid   = docs.hybrid_search("body", "cancel subscription", "embedding", embed(0), 5,
+                              projection=["_id", "body"])                                      # hybrid
+billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")                 # SQL
+```
+
+```typescript Node.js icon="node-js"
+import { IndexSpec } from "@infino-ai/infino";
+
+const docs = db.createTable(
+  "docs",
+  { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
+  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+);
+
+const embed = (topic) => { const v = Array(16).fill(0.0); v[topic] = 1.0; return v; };
+
+docs.append([
+  { source: "help-center", body: "To cancel a subscription, open Settings then Billing.", embedding: embed(0) },
+  { source: "help-center", body: "Refunds return to the original payment method.",         embedding: embed(0) },
+  { source: "blog",        body: "Enable dark mode under Settings then Appearance.",        embedding: embed(1) },
+]);
+
+const keyword  = docs.bm25Search("body", "cancel subscription", 5);                            // BM25
+const semantic = docs.vectorSearch("embedding", embed(0), 5, { projection: ["_id", "body"] }); // vector kNN
+const hybrid   = docs.hybridSearch("body", "cancel subscription", "embedding", embed(0), 5,
+                                   { projection: ["_id", "body"] });                           // hybrid
+const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");            // SQL
+```
+
+```rust Rust icon="rust"
+use std::sync::Arc;
+use infino::arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
+use infino::arrow_schema::{DataType, Field, Schema};
+use infino::{BoolMode, IndexSpec, Metric, VectorSearchOptions};
+
+let item = Arc::new(Field::new("item", DataType::Float32, true));
+let schema = Arc::new(Schema::new(vec![
+    Field::new("source", DataType::LargeUtf8, false),
+    Field::new("body", DataType::LargeUtf8, false),
+    Field::new("embedding", DataType::FixedSizeList(item.clone(), 16), false),
+]));
+let docs = db.create_table(
+    "docs",
+    schema.clone(),
+    IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
+)?;
+
+fn embed(topic: usize) -> Vec<f32> {
+    let mut v = vec![0.0_f32; 16];
+    v[topic] = 1.0;
+    v
+}
+
+let flat: Vec<f32> = [0usize, 0, 1].iter().flat_map(|&t| embed(t)).collect();
+docs.append(&RecordBatch::try_new(
+    schema,
+    vec![
+        Arc::new(LargeStringArray::from(vec!["help-center", "help-center", "blog"])),
+        Arc::new(LargeStringArray::from(vec![
+            "To cancel a subscription, open Settings then Billing.",
+            "Refunds return to the original payment method.",
+            "Enable dark mode under Settings then Appearance.",
+        ])),
+        Arc::new(FixedSizeListArray::new(item, 16, Arc::new(Float32Array::from(flat)), None)),
+    ],
+)?)?;
+
+let projection = ["_id", "body"];
+let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
+let semantic = docs.vector_search(
+    "embedding", &embed(0), 5, VectorSearchOptions::new(), None, Some(&projection),
+)?;                                                                                    // vector kNN
+let hybrid = docs.hybrid_search(
+    "body", "cancel subscription", BoolMode::Or,
+    "embedding", &embed(0), VectorSearchOptions::new(), 5, Some(&projection),
+)?;                                                                                    // hybrid
+let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?;     // SQL
+```
+
+</CodeGroup>
+
+<Note>
+On Infino Cloud, `vector_search` and `hybrid_search` require an explicit `projection`
+argument naming the columns to return (for example `["_id", "body"]`). `bm25_search`
+does not. This is the one call-site difference from a local connection.
+</Note>
+
+`vector_search`, `hybrid_search`, `count`, `query_sql`, `update`, `delete`,
+`list_tables`, and `drop_table` all work the same way over the hosted connection. For
+the full search surface see [Search](/guides/search); for tables and schema see
+[Tables](/guides/tables).
+
+</Step>
+
+</Steps>
+
+## Local to hosted is a one-line change
+
+The hosted connection is the local API with a different target. A program written
+against `connect("./data")` moves to Infino Cloud by changing only the `connect` line:
+
+```python
+# local
+db = infino.connect("./data")
+# hosted
+db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+```
+
+Everything after that line is identical, with the one exception noted above: on the
+hosted service, `vector_search` and `hybrid_search` take an explicit `projection`.
+
+<Note>
+Table maintenance (`optimize` and `gc`) is handled for you on Infino Cloud, so you
+never call it from the client.
+</Note>
+
+## See also
+
+- [Authentication](/cloud/authentication) — API keys, the `Authorization` header, and rotation.
+- [Search](/guides/search) — BM25, vector, hybrid, and SQL.
+- [Tables](/guides/tables) — schema, indexes, and mutations.
+- [Connect & storage](/guides/storage) — local and object-storage backends.

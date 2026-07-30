@@ -1,0 +1,33 @@
+---
+title: "Local vs Infino Cloud"
+icon: "table-columns"
+description: Which operations are available on a local Infino connection versus Infino Cloud, and where behavior differs.
+---
+
+import DataPlaneParity from "/snippets/data-plane-parity.mdx";
+
+The same SDK serves both a local connection (`./data`, `s3://…`) and the hosted
+service — you switch by changing only the `connect` target. Almost every
+operation is identical on both. This page is the exact list of where they
+differ, so you know before you deploy.
+
+The matrix is generated from the hosted API's contract, so it always reflects
+what the service actually exposes.
+
+<DataPlaneParity />
+
+## How to read this
+
+- **Local-only** — `optimize` and `gc` run compaction and cleanup yourself on a
+  local connection. On the hosted service these are managed for you, so the SDK
+  calls aren't available there.
+- **Hosted-only** — listing and deleting databases is an account-level action,
+  done over REST or the console rather than through the SDK. In the SDK you
+  create the database your connection targets with `create_database` (a no-op on
+  a local connection, so the same setup code runs either way).
+- **Same call, different runtime** — the Notes column flags these. They share
+  one signature; only behavior differs.
+
+See the hosted [Quickstart](/cloud/quickstart) and
+[Authentication](/cloud/authentication) for the connection details, and the
+**REST API** section for the raw HTTP contract.

@@ -1,0 +1,98 @@
+---
+title: "Authentication"
+icon: "key"
+description: How Infino Cloud authenticates requests — API keys, the INFINO_API_KEY environment variable, the Authorization Bearer header, the https requirement, and key rotation.
+---
+
+Requests to [Infino Cloud](/cloud/quickstart) are authenticated with an **API key**. This
+page covers where the key comes from, how to supply it, how it travels on the wire, and
+how to rotate it.
+
+## API keys
+
+An API key is a string beginning `inf_…`, created in the Infino Cloud console at
+[platform.infino.ai](https://platform.infino.ai) — the only place keys are minted (there
+is no SDK or API call to create one). Treat it like a password: it grants full access to
+the databases it's scoped to.
+
+You give the key to `connect` in one of two ways.
+
+**Pass it explicitly:**
+
+<CodeGroup>
+
+```python Python icon="python"
+import infino
+
+db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+```
+
+```typescript Node.js icon="node-js"
+import { connect } from "@infino-ai/infino";
+
+const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
+```
+
+```rust Rust icon="rust"
+use infino::{connect_with, ConnectOptions};
+
+let db = connect_with(
+    "https://api.platform.infino.ai/my-app",
+    ConnectOptions::new().with_api_key("inf_…"),
+)?;
+```
+
+</CodeGroup>
+
+**Or read it from the environment.** Set `INFINO_API_KEY` and the key argument becomes
+optional. This keeps the secret out of your source:
+
+```bash
+export INFINO_API_KEY="inf_…"
+```
+
+<CodeGroup>
+
+```python Python icon="python"
+db = infino.connect("https://api.platform.infino.ai/my-app")
+```
+
+```typescript Node.js icon="node-js"
+const db = connect("https://api.platform.infino.ai/my-app");
+```
+
+```rust Rust icon="rust"
+let db = connect("https://api.platform.infino.ai/my-app")?;
+```
+
+</CodeGroup>
+
+<Tip>
+Prefer `INFINO_API_KEY` over hard-coding the key. It keeps the secret out of your code
+and version control, and lets deployment tooling inject it at runtime.
+</Tip>
+
+## How the key is sent
+
+The API key is sent as an HTTP `Authorization: Bearer <key>` header on every request:
+
+```http
+Authorization: Bearer inf_…
+```
+
+**`https://` is required for any remote host** so the key is never sent in the clear.
+Plain `http://` is accepted only for `localhost` / `127.0.0.1` (loopback), for local
+development against a service you run yourself. A remote `http://` URL is rejected at
+`connect`, so a bearer token never travels over an unencrypted connection.
+
+## Rotating a key
+
+Rotate a leaked or expiring key in the [console](https://platform.infino.ai). Create a new key, roll it out to
+your deployments (update `INFINO_API_KEY` or the value you pass to `connect`), then
+revoke the old one. A revoked key stops working immediately, so revoke only after the
+new key is in place.
+
+## See also
+
+- [Quickstart](/cloud/quickstart) — connect, provision a database, and run your first search.
+- [Connect & storage](/guides/storage) — local and object-storage backends.
