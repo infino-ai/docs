@@ -14,13 +14,13 @@ table and search call after that is the one you'd write for `connect("./data")` 
 
 <Step title="Before you start">
 
-You need two things from the Infino Cloud console at [platform.infino.ai](https://platform.infino.ai):
+You need two things from the Infino Cloud console at [platform.infino.ws](https://platform.infino.ws):
 
 1. **An API key** — a string beginning `inf_…`. Treat it like a password. See
    [Authentication](/cloud/authentication).
-2. **Your endpoint URL**, in the form `https://api.platform.infino.ai/<database>`. The scheme
+2. **Your endpoint URL**, in the form `https://api.platform.infino.ws/<database>`. The scheme
    and host identify the service; the last path segment is the **database** this
-   connection targets (for example `https://api.platform.infino.ai/my-app`). One connection is
+   connection targets (for example `https://api.platform.infino.ws/my-app`). One connection is
    bound to one database.
 
 </Step>
@@ -58,20 +58,20 @@ Pass the endpoint URL and your API key. The key can be given explicitly or read 
 ```python Python icon="python"
 import infino
 
-db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+db = infino.connect("https://api.platform.infino.ws/my-app", api_key="inf_…")
 ```
 
 ```typescript Node.js icon="node-js"
 import { connect } from "@infino-ai/infino";
 
-const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
+const db = connect("https://api.platform.infino.ws/my-app", { apiKey: "inf_…" });
 ```
 
 ```rust Rust icon="rust"
 use infino::{connect_with, ConnectOptions};
 
 let db = connect_with(
-    "https://api.platform.infino.ai/my-app",
+    "https://api.platform.infino.ws/my-app",
     ConnectOptions::new().with_api_key("inf_…"),
 )?;
 ```
@@ -79,7 +79,7 @@ let db = connect_with(
 </CodeGroup>
 
 With `INFINO_API_KEY` set in the environment, drop the key argument:
-`connect("https://api.platform.infino.ai/my-app")` picks it up.
+`connect("https://api.platform.infino.ws/my-app")` picks it up.
 
 </Step>
 
@@ -248,7 +248,7 @@ against `connect("./data")` moves to Infino Cloud by changing only the `connect`
 # local
 db = infino.connect("./data")
 # hosted
-db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+db = infino.connect("https://api.platform.infino.ws/my-app", api_key="inf_…")
 ```
 
 Everything after that line is identical, with the one exception noted above: on the
@@ -266,3 +266,4 @@ never call it from the client.
 - [Tables](/guides/tables) — schema, indexes, and mutations.
 - [Connect & storage](/guides/storage) — local and object-storage backends.
 - [CLI](/cli) — connect to Infino Cloud from the terminal with `--api-key` and `create-database`.
+- [MCP server](/integrations/mcp) — serve your hosted database to an AI agent (Claude, Cursor, …) with `INFINO_MCP_URI` + `INFINO_API_KEY`.

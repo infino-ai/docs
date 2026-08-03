@@ -8,10 +8,20 @@ Let's get Infino running in a few minutes. We'll build a small knowledge base (a
 handful of help-center notes) and search it four ways: by keyword, by meaning, by both
 at once (hybrid), and with SQL. Pick your language; each step builds on the one before it.
 
-<Tip>
-Prefer the terminal, or driving Infino from a coding agent? The [CLI](/cli) does
-all of this — create, ingest, search, and query — without writing code.
-</Tip>
+**How do you want to use Infino?** This walkthrough uses the SDKs; the CLI and the MCP
+server do the same retrieval from the terminal or an AI agent.
+
+<CardGroup cols={3}>
+  <Card title="SDK" icon="code" href="#install">
+    Python, Node, or Rust — the walkthrough on this page.
+  </Card>
+  <Card title="CLI" icon="terminal" href="/cli">
+    Create, ingest, and search from the terminal or a coding agent — no code.
+  </Card>
+  <Card title="MCP server" icon="plug" href="/integrations/mcp">
+    Expose these searches as tools to an AI agent (Claude, Cursor, …).
+  </Card>
+</CardGroup>
 
 <Steps>
 
@@ -35,24 +45,15 @@ cargo add infino
 
 </CodeGroup>
 
-<Accordion title="Rust: companion crates and allocator">
-The Rust examples build Arrow data, and `update` / `delete` take DataFusion predicates
-(`col`, `lit`), so add these alongside `infino`, matching the Arrow and DataFusion
-versions Infino uses (Arrow 53 and DataFusion 53 for `infino` 0.1.x):
-
-```toml
-[dependencies]
-infino = "0.1"
-arrow-array = "53"
-arrow-schema = "53"
-datafusion-expr = "53"  # only needed for update / delete
-```
-
-Run `cargo tree -p infino` to check the versions if you are on a newer Infino.
+<Accordion title="Rust: Arrow types and allocator">
+Infino re-exports the Arrow crates it uses, so you don't add them separately or match
+versions — reach them as `infino::arrow_array` and `infino::arrow_schema` (as the examples
+below do). `update` / `delete` take DataFusion predicates (`col`, `lit`); if you use them,
+add `datafusion-expr` matching Infino's DataFusion version (`cargo tree -p infino`).
 
 Infino also installs the [mimalloc](https://github.com/microsoft/mimalloc) global
 allocator by default. If you embed it in a process that already sets a global allocator,
-turn it off: `infino = { version = "0.1", default-features = false }`.
+turn it off: `infino = { default-features = false }`.
 </Accordion>
 
 </Step>
@@ -80,9 +81,9 @@ const db = connect("memory://");
 
 ```rust Rust icon="rust"
 use std::sync::Arc;
-use arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
-use arrow_schema::{DataType, Field, Schema};
-use infino::{connect, BoolMode, IndexSpec, Metric, VectorSearchOptions};
+use infino::arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
+use infino::arrow_schema::{DataType, Field, Schema};
+use infino::{connect, Bm25SearchOptions, BoolMode, IndexSpec, Metric, VectorSearchOptions};
 
 let db = connect("memory://")?;
 ```
@@ -202,43 +203,58 @@ meaning, hybrid, and SQL.
 <CodeGroup>
 
 ```python Python icon="python"
-keyword  = docs.bm25_search("body", "cancel subscription", 5)               # BM25
-semantic = docs.vector_search("embedding", embed(0), 5)                     # vector kNN
+# Searches return `_id` + `score` by default; pass `projection` to name the
+# columns you want back (here, `body`).
+keyword  = docs.bm25_search("body", "cancel subscription", 5, projection=["body"])   # BM25
+semantic = docs.vector_search("embedding", embed(0), 5, projection=["body"])         # vector kNN
 # hybrid: BM25 + vector, fused with reciprocal-rank fusion:
-hybrid   = docs.hybrid_search("body", "cancel subscription", "embedding", embed(0), 5)
-billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")  # SQL
+hybrid   = docs.hybrid_search("body", "cancel subscription", "embedding", embed(0), 5, projection=["body"])
+billing  = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")        # SQL
+
+for name, hits in [("keyword", keyword), ("semantic", semantic), ("hybrid", hybrid), ("sql", billing)]:
+    print(name, hits.column("body").to_pylist())
 ```
 
 ```typescript Node.js icon="node-js"
-const keyword  = docs.bm25Search("body", "cancel subscription", 5);            // BM25
-const semantic = docs.vectorSearch("embedding", embed(0), 5);                  // vector kNN
+// Searches return `_id` + `score` by default; pass `projection` to name the
+// columns you want back (here, `body`).
+const keyword  = docs.bm25Search("body", "cancel subscription", 5, { projection: ["body"] });   // BM25
+const semantic = docs.vectorSearch("embedding", embed(0), 5, { projection: ["body"] });         // vector kNN
 // hybrid: BM25 + vector, fused with reciprocal-rank fusion:
-const hybrid   = docs.hybridSearch("body", "cancel subscription", "embedding", embed(0), 5);
-const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");  // SQL
+const hybrid   = docs.hybridSearch("body", "cancel subscription", "embedding", embed(0), 5, { projection: ["body"] });
+const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'");             // SQL
+
+for (const [name, hits] of [["keyword", keyword], ["semantic", semantic], ["hybrid", hybrid], ["sql", billing]]) {
+  console.log(name, hits.map((r) => r.body));
+}
 ```
 
 ```rust Rust icon="rust"
-let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
-let semantic =
-    docs.vector_search("embedding", &embed(0), 5, VectorSearchOptions::new(), None, None)?; // vector kNN
+// Searches return `_id` + `score` by default; pass a projection to name the
+// columns you want back (here, `body`).
+let keyword = docs.bm25_search(
+    "body", "cancel subscription", 5, Bm25SearchOptions::new(), Some(&["body"]),
+)?; // BM25
+let semantic = docs.vector_search(
+    "embedding", &embed(0), 5, VectorSearchOptions::new(), None, Some(&["body"]),
+)?; // vector kNN
 // hybrid: BM25 + vector, fused with reciprocal-rank fusion:
 let hybrid = docs.hybrid_search(
     "body", "cancel subscription", BoolMode::Or,
-    "embedding", &embed(0), VectorSearchOptions::new(), 5, None,
+    "embedding", &embed(0), VectorSearchOptions::new(), 5, Some(&["body"]),
 )?;
 let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL
 ```
 
 </CodeGroup>
 
-Each search returns Arrow rows. With this tiny corpus, the `body` of the rows you get
-back looks like this:
+Each search returns rows carrying the projected `body`. With this tiny corpus you get:
 
 ```text Expected output
 keyword   "To cancel a subscription, open Settings then Billing."
 
-semantic  "Refunds return to the original payment method."
-          "To cancel a subscription, open Settings then Billing."
+semantic  "To cancel a subscription, open Settings then Billing."
+          "Refunds return to the original payment method."
           "Enable dark mode under Settings then Appearance."
 
 hybrid    "To cancel a subscription, open Settings then Billing."

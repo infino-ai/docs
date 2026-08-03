@@ -1,26 +1,187 @@
 ---
 title: "Infino MCP server: retrieval for Claude, Cursor, and more"
 icon: "plug"
-description: Expose Infino retrieval (keyword, vector, hybrid, and SQL) to any Model Context Protocol client, including Claude Desktop, Cursor, and VS Code.
+description: Expose Infino retrieval (keyword, vector, hybrid, and SQL) to any Model Context Protocol client — Claude Code, Claude Desktop, Cursor, VS Code — over a local catalog, your own bucket, or Infino Cloud.
 ---
 
 The [`@infino-ai/mcp-server`](https://www.npmjs.com/package/@infino-ai/mcp-server)
 package is a [Model Context Protocol](https://modelcontextprotocol.io) server for
-Infino. It exposes keyword, vector, hybrid, and SQL retrieval (plus write tools) to any
-MCP client, including Claude, Cursor, and others.
+Infino. It gives an AI agent the same retrieval Infino exposes to the SDKs and the
+[CLI](/cli) — keyword (BM25), semantic (vector), hybrid, and SQL — as tools it can call
+in conversation, from any MCP client (Claude Code, Claude Desktop, Cursor, VS Code, and
+others). The tool descriptions are written so the model picks the right retrieval mode by
+question shape, so you rarely name a tool yourself.
+
+It connects to the same targets as the rest of Infino: a local path, your own
+object-storage bucket, or a hosted [Infino Cloud](/cloud/quickstart) database. Nothing
+extra runs — the server is the engine, in-process, behind the MCP transport.
+
+## Install
+
+The server is launched by your MCP client over stdio; you don't run it directly in normal
+use. Every client config is the same shape — command `npx -y @infino-ai/mcp-server`, with
+configuration supplied as environment variables.
 
 ```bash
 npx -y @infino-ai/mcp-server
 ```
 
-Point your MCP client at the `infino-mcp` command. The tool descriptions are written so
-the model picks the right retrieval mode by question shape (keyword ↔ semantic ↔
-hybrid). See the [infino-mcp repository](https://github.com/infino-ai/infino-mcp) for the
-full tool list and client configuration.
+## Connect
+
+Point the server at your data with `INFINO_MCP_URI`. The scheme selects the backend:
+
+| `INFINO_MCP_URI` | Backend |
+| --- | --- |
+| `~/.infino/mcp` (default) | a durable per-user directory, so a fresh install persists with no config |
+| `/path/to/data` | local disk |
+| `s3://<bucket>/<prefix>` | Amazon S3 (or S3-compatible: R2, MinIO, Backblaze B2 — set `AWS_ENDPOINT_URL`) |
+| `az://<container>/<prefix>` | Azure Blob |
+| `https://<host>/<database>` | [Infino Cloud](/cloud/quickstart), the hosted service |
+
+For a local path or bucket, storage credentials come from the standard `AWS_*` / `AZURE_*`
+environment variables (omit them to use ambient cloud identity). For a hosted `https://`
+endpoint, authenticate with an API key in `INFINO_API_KEY` — no object-storage
+credentials are needed, since the platform owns the storage.
+
+### Environment variables
+
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `INFINO_MCP_URI` | No | `~/.infino/mcp` | Data to serve — see the table above. |
+| `INFINO_API_KEY` | With a hosted URI | — | API key (`inf_…`) for a hosted `https://` endpoint. Ignored for local and bucket connections. |
+| `INFINO_MCP_ENABLE_WRITES` | No | _off_ | When set (`1`/`true`/`yes`), exposes the write tools and lets SQL run DDL/DML. Omit for a strictly read-only server. |
+| `INFINO_MCP_EMBED_PROVIDER` | No | `local` | Query-embedding provider: `local` (Hugging Face, no key) or `openai` (any OpenAI-compatible `/embeddings` endpoint, including Azure OpenAI). |
+| `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` | The embedding model — **must match the model that produced the table's stored vectors**. |
+
+<Note>
+The full list of embedding and validation variables is in the
+[infino-mcp README](https://github.com/infino-ai/infino-mcp#configuration).
+</Note>
+
+## Client setup
+
+<Tabs>
+
+<Tab title="Claude Code">
+
+Add the server with the CLI. Use `--scope user` to make it available in every project.
+
+```sh
+claude mcp add infino \
+  --scope user \
+  -e INFINO_MCP_URI=/Users/me/.infino/memory \
+  -- npx -y @infino-ai/mcp-server
+```
+
+Or install the [plugin](https://github.com/infino-ai/infino-mcp#claude-code-plugin-one-step-install),
+which wires the server plus a how-to-use skill and an `/infino-search` command in one step:
+
+```
+/plugin marketplace add infino-ai/infino-mcp
+/plugin install infino@infino-ai
+```
+
+</Tab>
+
+<Tab title="Claude Desktop / Cursor">
+
+Add to the client's MCP config (`claude_desktop_config.json`, or `~/.cursor/mcp.json`),
+then restart:
+
+```jsonc
+{
+  "mcpServers": {
+    "infino": {
+      "command": "npx",
+      "args": ["-y", "@infino-ai/mcp-server"],
+      "env": {
+        "INFINO_MCP_URI": "/Users/me/.infino/memory"
+      }
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab title="VS Code">
+
+VS Code (1.102+) reads servers from `.vscode/mcp.json`. Note the top-level key is
+`servers` and each entry declares `"type": "stdio"`:
+
+```jsonc
+{
+  "servers": {
+    "infino": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@infino-ai/mcp-server"],
+      "env": {
+        "INFINO_MCP_URI": "/Users/me/.infino/memory"
+      }
+    }
+  }
+}
+```
+
+</Tab>
+
+</Tabs>
+
+Any client that speaks MCP over stdio works — configure it to launch
+`npx -y @infino-ai/mcp-server` with the environment above.
+
+## Connect to Infino Cloud
+
+To serve a hosted database, point `INFINO_MCP_URI` at the `https://<host>/<database>`
+endpoint and supply your API key. Everything else — the tools, the read-only default — is
+identical to a local connection:
+
+```jsonc
+{
+  "command": "npx",
+  "args": ["-y", "@infino-ai/mcp-server"],
+  "env": {
+    "INFINO_MCP_URI": "https://api.platform.infino.ws/my-database",
+    "INFINO_API_KEY": "inf_…"
+  }
+}
+```
+
+Get the endpoint URL (the last path segment is your database) and an API key from the
+[Infino Cloud console](https://platform.infino.ws); see [Authentication](/cloud/authentication).
+Compaction and garbage collection are handled server-side on Infino Cloud, so they are not
+exposed as tools.
+
+## Tools
+
+The server exposes discovery, search, and (optionally) write tools. Tool descriptions
+steer the model to the right one by question shape.
+
+| Tool | What it does |
+| --- | --- |
+| `infino_list_tables` / `infino_describe_table` | Discover the tables in the catalog and their columns. |
+| `infino_keyword_search` | BM25 full-text search — literal terms, identifiers, error codes. |
+| `infino_semantic_search` | Vector search by meaning; optional keyword pre-filter. |
+| `infino_hybrid_search` | Fused keyword + vector ranking in one pass. |
+| `infino_token_match` / `infino_exact_match` | Unranked keyword / exact-equality filters. |
+| `infino_count` | Count rows matching a keyword query, without fetching them. |
+| `infino_sql` | Counts, joins, aggregates, and filtering by column value. |
+| `infino_add_documents` / `infino_update_documents` / `infino_delete_documents` | Writes — appended, replaced, or deleted rows. **Only when `INFINO_MCP_ENABLE_WRITES` is set.** |
+
+The server is **read-only by default**: the write tools aren't advertised, and `infino_sql`
+accepts only a single `SELECT`/`WITH`. Set `INFINO_MCP_ENABLE_WRITES` to enable writes.
+
+<Note>
+Semantic and hybrid search embed queries **locally** in the server (no embedding API key
+by default), so `INFINO_MCP_EMBED_MODEL` must match the model that produced the table's
+stored vectors — this matters especially on a hosted or shared database that someone else
+ingested. See [Embeddings](/guides/embeddings).
+</Note>
 
 ## See also
 
-- [CLI](/cli) — drive Infino from the terminal or a shell-native agent
-- [Quickstart](/quickstart)
-- [All integrations](/integrations)
-- [Vercel AI SDK](/integrations/ai-sdk)
+- [CLI](/cli) — the same retrieval from the terminal or a shell-native agent.
+- [Infino Cloud quickstart](/cloud/quickstart) — provision a hosted database to serve.
+- [Quickstart](/quickstart) — the SDK walkthrough.
+- [infino-mcp on GitHub](https://github.com/infino-ai/infino-mcp) — full tool arguments and configuration.

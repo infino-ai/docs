@@ -88,7 +88,6 @@
           {
             "group": "Reference",
             "pages": [
-              "cli",
               "sql-reference",
               "faq",
               "tradeoffs",
@@ -131,10 +130,11 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "SDKs",
+            "group": "SDKs & CLI",
             "pages": [
               "api-reference/index",
-              "api-reference/parity"
+              "api-reference/parity",
+              "cli"
             ]
           },
           {

@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.platform.infino.ai",
+      "url": "https://api.platform.infino.ws",
       "description": "Infino Cloud"
     }
   ],
