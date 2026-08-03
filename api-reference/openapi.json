@@ -49,6 +49,12 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "404": {
+            "description": "The target table does not exist. Append never creates a table — create it first with create_table."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -96,6 +102,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -143,6 +152,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -190,6 +202,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -366,6 +381,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -413,6 +431,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -460,6 +481,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -507,6 +531,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -541,6 +568,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -588,6 +618,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -635,6 +668,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -682,6 +718,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -735,6 +774,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -782,6 +824,9 @@
           },
           "401": {
             "description": "Missing or invalid API key."
+          },
+          "503": {
+            "description": "The database's workers are still activating, or no capacity is free to place them. Transient — retry after the `Retry-After` interval."
           }
         },
         "security": [
@@ -826,6 +871,17 @@
           },
           "query": {
             "type": "string"
+          },
+          "stats": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Stats",
+                "description": "BM25 corpus statistics for idf scoring. Absent ⇒ the engine default\n(per-superfile); the engine SDK's remote transport always sends it."
+              }
+            ]
           },
           "table_name": {
             "type": "string"
@@ -1176,6 +1232,14 @@
         },
         "additionalProperties": false
       },
+      "Stats": {
+        "type": "string",
+        "description": "Which BM25 corpus statistics to score term rarity (idf) with. Accepted\ncase-insensitively on the wire (`\"per_superfile\"`, `\"global\"`); serialized\ncanonically. Absent on a request ⇒ the engine default (per-superfile).",
+        "enum": [
+          "per_superfile",
+          "global"
+        ]
+      },
       "TokenMatchRequest": {
         "type": "object",
         "description": "`POST /v1/token_match/{database}`. Unranked; projection required.",
@@ -1250,14 +1314,6 @@
           },
           "metric": {
             "$ref": "#/components/schemas/Metric"
-          },
-          "n_centroids": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "IVF centroid count. Optional; the server applies a default when omitted.",
-            "minimum": 0
           }
         },
         "additionalProperties": false
