@@ -67,15 +67,15 @@ unreachable endpoint, instead of on the first query.
 
 ### Infino Cloud
 
-Point `--uri` at your `https://api.platform.infino.ai/<database>` URL and pass an
+Point `--uri` at your `https://api.platform.infino.ws/<database>` URL and pass an
 API key with `--api-key` (or the `INFINO_API_KEY` environment variable). Every
 command is identical to local use — only the `--uri` changes. Provision the
 database once with `create-database`:
 
 ```bash
 export INFINO_API_KEY=inf_…
-infino create-database --uri https://api.platform.infino.ai/my-app
-infino bm25-search docs body "object storage" -k 10 --uri https://api.platform.infino.ai/my-app
+infino create-database --uri https://api.platform.infino.ws/my-app
+infino bm25-search docs body "object storage" -k 10 --uri https://api.platform.infino.ws/my-app
 ```
 
 <Note>

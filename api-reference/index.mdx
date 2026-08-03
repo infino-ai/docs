@@ -45,14 +45,14 @@ differently per language:
 # Built in — nothing to enable.
 import infino
 
-db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+db = infino.connect("https://api.platform.infino.ws/my-app", api_key="inf_…")
 ```
 
 ```typescript Node.js icon="node-js"
 // Built in — nothing to enable.
 import { connect } from "@infino-ai/infino";
 
-const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
+const db = connect("https://api.platform.infino.ws/my-app", { apiKey: "inf_…" });
 ```
 
 ```bash Rust icon="rust"
@@ -74,7 +74,7 @@ section. REST is a Cloud feature: a local connection runs in-process, so it has 
 surface.
 
 The machine-readable OpenAPI 3.1 spec is served at
-[`https://api.platform.infino.ai/openapi.json`](https://api.platform.infino.ai/openapi.json) —
+[`https://api.platform.infino.ws/openapi.json`](https://api.platform.infino.ws/openapi.json) —
 point your code generator or client tooling at it as the source of truth.
 
 ## Local vs Cloud
