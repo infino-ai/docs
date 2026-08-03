@@ -142,14 +142,14 @@ identical to a local connection:
   "command": "npx",
   "args": ["-y", "@infino-ai/mcp-server"],
   "env": {
-    "INFINO_MCP_URI": "https://api.platform.infino.ai/my-database",
+    "INFINO_MCP_URI": "https://api.platform.infino.ws/my-database",
     "INFINO_API_KEY": "inf_…"
   }
 }
 ```
 
 Get the endpoint URL (the last path segment is your database) and an API key from the
-[Infino Cloud console](https://platform.infino.ai); see [Authentication](/cloud/authentication).
+[Infino Cloud console](https://platform.infino.ws); see [Authentication](/cloud/authentication).
 Compaction and garbage collection are handled server-side on Infino Cloud, so they are not
 exposed as tools.
 

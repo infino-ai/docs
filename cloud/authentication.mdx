@@ -11,7 +11,7 @@ how to rotate it.
 ## API keys
 
 An API key is a string beginning `inf_…`, created in the Infino Cloud console at
-[platform.infino.ai](https://platform.infino.ai) — the only place keys are minted (there
+[platform.infino.ws](https://platform.infino.ws) — the only place keys are minted (there
 is no SDK or API call to create one). Treat it like a password: it grants full access to
 the databases it's scoped to.
 
@@ -24,20 +24,20 @@ You give the key to `connect` in one of two ways.
 ```python Python icon="python"
 import infino
 
-db = infino.connect("https://api.platform.infino.ai/my-app", api_key="inf_…")
+db = infino.connect("https://api.platform.infino.ws/my-app", api_key="inf_…")
 ```
 
 ```typescript Node.js icon="node-js"
 import { connect } from "@infino-ai/infino";
 
-const db = connect("https://api.platform.infino.ai/my-app", { apiKey: "inf_…" });
+const db = connect("https://api.platform.infino.ws/my-app", { apiKey: "inf_…" });
 ```
 
 ```rust Rust icon="rust"
 use infino::{connect_with, ConnectOptions};
 
 let db = connect_with(
-    "https://api.platform.infino.ai/my-app",
+    "https://api.platform.infino.ws/my-app",
     ConnectOptions::new().with_api_key("inf_…"),
 )?;
 ```
@@ -54,15 +54,15 @@ export INFINO_API_KEY="inf_…"
 <CodeGroup>
 
 ```python Python icon="python"
-db = infino.connect("https://api.platform.infino.ai/my-app")
+db = infino.connect("https://api.platform.infino.ws/my-app")
 ```
 
 ```typescript Node.js icon="node-js"
-const db = connect("https://api.platform.infino.ai/my-app");
+const db = connect("https://api.platform.infino.ws/my-app");
 ```
 
 ```rust Rust icon="rust"
-let db = connect("https://api.platform.infino.ai/my-app")?;
+let db = connect("https://api.platform.infino.ws/my-app")?;
 ```
 
 </CodeGroup>
@@ -87,7 +87,7 @@ development against a service you run yourself. A remote `http://` URL is reject
 
 ## Rotating a key
 
-Rotate a leaked or expiring key in the [console](https://platform.infino.ai). Create a new key, roll it out to
+Rotate a leaked or expiring key in the [console](https://platform.infino.ws). Create a new key, roll it out to
 your deployments (update `INFINO_API_KEY` or the value you pass to `connect`), then
 revoke the old one. A revoked key stops working immediately, so revoke only after the
 new key is in place.
