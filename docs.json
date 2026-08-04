@@ -82,6 +82,7 @@
               "cloud/quickstart",
               "cloud/authentication",
               "cloud/architecture",
+              "cloud/errors",
               "cloud/faq"
             ]
           },

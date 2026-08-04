@@ -1,0 +1,139 @@
+---
+title: "Errors & retries"
+icon: "arrows-rotate"
+description: Infino Cloud starts databases on demand, so the first request to an idle or brand-new database can briefly return a transient 503. Learn which errors clear on a retry and how to handle them.
+---
+
+Infino Cloud activates databases on demand and adds capacity as load grows. You
+don't run or size anything yourself, and idle databases scale down so you don't
+pay for capacity you aren't using. The one thing to know as a client: the first
+request to a database that is idle or brand-new can briefly return a **transient
+error** while that database starts up. This is expected, and it clears on a
+retry.
+
+This page explains which errors are transient, how to retry them, and which
+errors are not worth retrying.
+
+## Transient errors: retry these
+
+<Warning>
+A transient error means the request **did not run**. It is always safe to
+retry, including writes. No data was appended, updated, or deleted.
+</Warning>
+
+**HTTP `503` (Service Unavailable).** The database's workers are still starting.
+You will see this on the first request after an idle period (a cold start), on
+the first request right after `create_database`, and occasionally while the
+service is adding capacity under a burst. The response carries a `Retry-After`
+header telling you how many seconds to wait. A cold start typically clears
+within a few seconds, on your first retry.
+
+**Network and timeout errors.** A dropped connection or a timeout may mean the
+request never reached the service. Retrying with a short backoff is safe.
+
+## How to retry
+
+**If you use the SDK**, wrap the call in a short retry with exponential backoff.
+The SDK does not retry automatically, and it does not surface the `Retry-After`
+value, so use your own backoff. A transient unavailability surfaces as an error
+whose message contains `server returned 503`, so you can retry only that and let
+everything else propagate.
+
+<CodeGroup>
+
+```python Python icon="python"
+import time
+
+def with_retry(call, attempts=5, base_delay=1.0):
+    """Retry a transient 503 with exponential backoff; re-raise anything else."""
+    for attempt in range(attempts):
+        try:
+            return call()
+        except Exception as e:
+            transient = "server returned 503" in str(e)
+            if transient and attempt < attempts - 1:
+                time.sleep(base_delay * (2 ** attempt))
+                continue
+            raise
+
+# The first search after an idle period may cold-start the database.
+results = with_retry(lambda: docs.bm25_search("body", "cancel subscription", 5))
+```
+
+```typescript Node.js icon="node-js"
+async function withRetry(call, attempts = 5, baseDelayMs = 1000) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return call();
+    } catch (e) {
+      const transient = String(e?.message ?? e).includes("server returned 503");
+      if (transient && attempt < attempts - 1) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+// The first search after an idle period may cold-start the database.
+const results = await withRetry(() => docs.bm25Search("body", "cancel subscription", 5));
+```
+
+```rust Rust icon="rust"
+use std::{thread::sleep, time::Duration};
+use infino::InfinoError;
+
+fn with_retry<T>(mut call: impl FnMut() -> Result<T, InfinoError>) -> Result<T, InfinoError> {
+    let mut attempt: u32 = 0;
+    loop {
+        match call() {
+            Ok(value) => return Ok(value),
+            Err(e) if e.to_string().contains("server returned 503") && attempt < 4 => {
+                sleep(Duration::from_secs(1u64 << attempt)); // 1s, 2s, 4s, 8s
+                attempt += 1;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
+// The first search after an idle period may cold-start the database.
+let results = with_retry(|| docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None))?;
+```
+
+</CodeGroup>
+
+**If you call the REST API directly**, read the `Retry-After` response header on
+a `503`, wait that many seconds, then resend the same request. See the
+[API Reference](/api-reference) for each endpoint's request shape; every data
+endpoint documents its `503` as transient.
+
+## Errors you should not retry
+
+These will not clear on a repeat. Fix the request instead. The table shows how
+each surfaces through the SDK.
+
+| Status | Meaning | Python | Node / Rust | What to do |
+|:------:|---------|--------|-------------|------------|
+| `400` | Invalid request (bad body or parameters) | `ValueError` | `Error` | Check the payload and arguments. |
+| `401` / `403` | Missing or invalid API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
+| `404` | Database or table does not exist | `KeyError` | `Error` | Check the name, or create it first. |
+| `409` | Already exists (for example `create_database` / `create_table` on an existing name) | `ValueError` | `Error` | Skip creation, or use a different name. |
+
+There is one conditional case. A write can return **`412` (Conflict)** when a
+concurrent write to the same table wins the race (surfaced as `ConflictError` in
+Python). That is not a transient availability error: re-read the current state
+and reissue the change only if you still want it, rather than blindly retrying.
+
+<Note>
+The [REST API Reference](/api-reference) is generated from the live service
+spec, so each endpoint lists its exact response codes, including the transient
+`503`.
+</Note>
+
+## See also
+
+- [Quickstart](/cloud/quickstart) — connect to Infino Cloud and run your first search.
+- [Authentication](/cloud/authentication) — API keys and the `Authorization` header.
+- [FAQ](/cloud/faq) — other common questions about the hosted service.
