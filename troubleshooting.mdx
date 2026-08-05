@@ -38,6 +38,12 @@ Appended rows must match the table's declared schema (column names and types). F
 vector column, **each vector's length must equal the index dimension** you declared in
 `IndexSpec.vector(column, dim, …)`, and that must match your embedding model's output.
 
+## `append` fails with HTTP 413 on Infino Cloud
+
+The request body went over the hosted data-plane cap of 5 MiB per request. Split the
+load into smaller appends; target 4 MiB or less of Arrow data per batch, sized down
+if rows carry wide vectors. See [Limits](/cloud/limits).
+
 ## Node.js: an integer column rejects a number
 
 Arrow `int64` columns expect a JavaScript **`bigint`**, not a `number`. Pass `2021n`,
