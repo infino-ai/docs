@@ -83,6 +83,7 @@
               "cloud/authentication",
               "cloud/architecture",
               "cloud/errors",
+              "cloud/limits",
               "cloud/faq"
             ]
           },
