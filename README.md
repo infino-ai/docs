@@ -16,3 +16,14 @@ with [Mintlify](https://mintlify.com).
 npm i -g mint
 mint dev
 ```
+
+## Contributing
+
+Fixes and improvements are welcome — open a PR. For anything larger than a
+typo or clarification, open an issue first so we can agree on the shape
+before you write.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE), the same license as
+[infino](https://github.com/infino-ai/infino) itself.
