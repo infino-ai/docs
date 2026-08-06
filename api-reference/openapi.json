@@ -331,6 +331,16 @@
                 }
               }
             }
+          },
+          "412": {
+            "description": "The database changed concurrently; retry the request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         },
         "security": [
