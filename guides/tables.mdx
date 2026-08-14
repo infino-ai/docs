@@ -25,7 +25,7 @@ schema = pa.schema([
 ])
 docs = db.create_table(
     "docs", schema,
-    infino.IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+    infino.IndexSpec().fts("body").vector("embedding", 384, "cosine"),
 )
 
 # One append is one atomic commit, durable when the call returns.
@@ -43,7 +43,7 @@ const db = connect("./data");
 const docs = db.createTable(
   "docs",
   { doc_id: "large_utf8", body: "large_utf8", embedding: { vector: 384 } },
-  new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+  new IndexSpec().fts("body").vector("embedding", 384, "cosine"),
 );
 
 // One append is one atomic commit, durable when the call returns.
@@ -68,7 +68,7 @@ let schema = Arc::new(Schema::new(vec![
 ]));
 let docs = db.create_table(
     "docs", schema,
-    IndexSpec::new().fts("body").vector("embedding", 384, 64, Metric::Cosine),
+    IndexSpec::new().fts("body").vector("embedding", 384, Metric::Cosine),
 )?;
 
 // One append is one atomic commit. Build `batch` as an Arrow RecordBatch

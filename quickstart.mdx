@@ -83,7 +83,7 @@ const db = connect("memory://");
 use std::sync::Arc;
 use infino::arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
 use infino::arrow_schema::{DataType, Field, Schema};
-use infino::{connect, Bm25SearchOptions, BoolMode, IndexSpec, Metric, VectorSearchOptions};
+use infino::{connect, Bm25SearchOptions, BoolMode, IndexSpec, Metric};
 
 let db = connect("memory://")?;
 ```
@@ -107,7 +107,7 @@ schema = pa.schema([
 ])
 docs = db.create_table(
     "docs", schema,
-    infino.IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+    infino.IndexSpec().fts("body").vector("embedding", 16, "cosine"),
 )
 ```
 
@@ -115,7 +115,7 @@ docs = db.create_table(
 const docs = db.createTable(
   "docs",
   { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
-  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+  new IndexSpec().fts("body").vector("embedding", 16, "cosine"),
 );
 ```
 
@@ -129,7 +129,7 @@ let schema = Arc::new(Schema::new(vec![
 let docs = db.create_table(
     "docs",
     schema.clone(),
-    IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
+    IndexSpec::new().fts("body").vector("embedding", 16, Metric::Cosine),
 )?;
 ```
 
@@ -236,12 +236,12 @@ let keyword = docs.bm25_search(
     "body", "cancel subscription", 5, Bm25SearchOptions::new(), Some(&["body"]),
 )?; // BM25
 let semantic = docs.vector_search(
-    "embedding", &embed(0), 5, VectorSearchOptions::new(), None, Some(&["body"]),
+    "embedding", &embed(0), 5, None, Some(&["body"]),
 )?; // vector kNN
 // hybrid: BM25 + vector, fused with reciprocal-rank fusion:
 let hybrid = docs.hybrid_search(
     "body", "cancel subscription", BoolMode::Or,
-    "embedding", &embed(0), VectorSearchOptions::new(), 5, Some(&["body"]),
+    "embedding", &embed(0), 5, Some(&["body"]),
 )?;
 let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?; // SQL
 ```

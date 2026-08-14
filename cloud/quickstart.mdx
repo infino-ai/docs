@@ -127,7 +127,7 @@ schema = pa.schema([
 ])
 docs = db.create_table(
     "docs", schema,
-    infino.IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+    infino.IndexSpec().fts("body").vector("embedding", 16, "cosine"),
 )
 
 def embed(topic):                       # 0 = billing, 1 = appearance
@@ -154,7 +154,7 @@ import { IndexSpec } from "@infino-ai/infino";
 const docs = db.createTable(
   "docs",
   { source: "large_utf8", body: "large_utf8", embedding: { vector: 16 } },
-  new IndexSpec().fts("body").vector("embedding", 16, 1, "cosine"),
+  new IndexSpec().fts("body").vector("embedding", 16, "cosine"),
 );
 
 const embed = (topic) => { const v = Array(16).fill(0.0); v[topic] = 1.0; return v; };
@@ -176,7 +176,7 @@ const billing  = db.querySql("SELECT body FROM docs WHERE source = 'help-center'
 use std::sync::Arc;
 use infino::arrow_array::{FixedSizeListArray, Float32Array, LargeStringArray, RecordBatch};
 use infino::arrow_schema::{DataType, Field, Schema};
-use infino::{BoolMode, IndexSpec, Metric, VectorSearchOptions};
+use infino::{Bm25SearchOptions, BoolMode, IndexSpec, Metric};
 
 let item = Arc::new(Field::new("item", DataType::Float32, true));
 let schema = Arc::new(Schema::new(vec![
@@ -187,7 +187,7 @@ let schema = Arc::new(Schema::new(vec![
 let docs = db.create_table(
     "docs",
     schema.clone(),
-    IndexSpec::new().fts("body").vector("embedding", 16, 1, Metric::Cosine),
+    IndexSpec::new().fts("body").vector("embedding", 16, Metric::Cosine),
 )?;
 
 fn embed(topic: usize) -> Vec<f32> {
@@ -211,13 +211,13 @@ docs.append(&RecordBatch::try_new(
 )?)?;
 
 let projection = ["_id", "body"];
-let keyword = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?; // BM25
+let keyword = docs.bm25_search("body", "cancel subscription", 5, Bm25SearchOptions::new(), None)?; // BM25
 let semantic = docs.vector_search(
-    "embedding", &embed(0), 5, VectorSearchOptions::new(), None, Some(&projection),
+    "embedding", &embed(0), 5, None, Some(&projection),
 )?;                                                                                    // vector kNN
 let hybrid = docs.hybrid_search(
     "body", "cancel subscription", BoolMode::Or,
-    "embedding", &embed(0), VectorSearchOptions::new(), 5, Some(&projection),
+    "embedding", &embed(0), 5, Some(&projection),
 )?;                                                                                    // hybrid
 let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")?;     // SQL
 ```
