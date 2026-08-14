@@ -24,7 +24,7 @@ def embed(text): return model.encode(text).tolist()
 # dim (384) must match the model and the index spec:
 docs = db.create_table(
     "docs", schema,
-    infino.IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+    infino.IndexSpec().fts("body").vector("embedding", 384, "cosine"),
 )
 docs.append([{"doc_id": "1", "body": text, "embedding": embed(text)}])
 ```
@@ -38,7 +38,7 @@ const embed = async (text) => Array.from((await extractor(text, { pooling: "mean
 const docs = db.createTable(
   "docs",
   { doc_id: "large_utf8", body: "large_utf8", embedding: { vector: 384 } },
-  new IndexSpec().fts("body").vector("embedding", 384, 64, "cosine"),
+  new IndexSpec().fts("body").vector("embedding", 384, "cosine"),
 );
 docs.append([{ doc_id: "1", body: text, embedding: await embed(text) }]);
 ```
@@ -49,7 +49,7 @@ use infino::{IndexSpec, Metric};
 // Compute embeddings with your model (e.g. via `candle`, `fastembed`, or an HTTP
 // service), then append the vectors as an Arrow RecordBatch (see the Quickstart).
 // dim (384) must match your model and the index spec:
-let spec = IndexSpec::new().fts("body").vector("embedding", 384, 64, Metric::Cosine);
+let spec = IndexSpec::new().fts("body").vector("embedding", 384, Metric::Cosine);
 ```
 
 </CodeGroup>

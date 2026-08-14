@@ -1,7 +1,7 @@
 ---
 title: "Indexing: BM25 full-text and IVF vector indexes"
 icon: "sitemap"
-description: Declare full-text BM25 and vector IVF indexes on your Infino tables, then tune parameters like analyzers, nlist, and nprobe for recall and speed.
+description: Declare full-text BM25 and vector IVF indexes on your Infino tables, and pick the dimension and distance metric that match your embeddings.
 ---
 
 You declare indexes once, at table creation, with an `IndexSpec`. Two index types,
@@ -10,7 +10,7 @@ chained fluently.
 | Index | Declare with | Powers |
 | --- | --- | --- |
 | Full-text (BM25) | `fts(column)` | keyword search, hybrid, the pushdown filter |
-| Vector (IVF) | `vector(column, dim, n_cent, metric)` | semantic kNN, hybrid |
+| Vector (IVF) | `vector(column, dim, metric)` | semantic kNN, hybrid |
 
 Declare both on a table to enable [hybrid search](/guides/search#hybrid-search). Scalar columns
 need no index; filter them with [SQL](/sql-reference).
@@ -21,14 +21,14 @@ need no index; filter them with [SQL](/sql-reference).
 spec = (
     infino.IndexSpec()
     .fts("body")                               # BM25 over `body`
-    .vector("embedding", 384, 64, "cosine")    # vector index over `embedding`
+    .vector("embedding", 384, "cosine")    # vector index over `embedding`
 )
 ```
 
 ```typescript Node.js icon="node-js"
 const spec = new IndexSpec()
   .fts("body")                                 // BM25 over `body`
-  .vector("embedding", 384, 64, "cosine");     // vector index over `embedding`
+  .vector("embedding", 384, "cosine");     // vector index over `embedding`
 ```
 
 ```rust Rust icon="rust"
@@ -36,7 +36,7 @@ use infino::{IndexSpec, Metric};
 
 let spec = IndexSpec::new()
     .fts("body")                                  // BM25 over `body`
-    .vector("embedding", 384, 64, Metric::Cosine); // vector index over `embedding`
+    .vector("embedding", 384, Metric::Cosine); // vector index over `embedding`
 ```
 
 </CodeGroup>
@@ -46,7 +46,7 @@ let spec = IndexSpec::new()
 Builds a BM25 inverted index over a text column, powering `bm25_search`, `token_match`,
 and the hybrid / pushdown-filter paths. Call `fts` once per text column you want to search.
 
-## Vector index: `vector(column, dim, n_cent, metric)`
+## Vector index: `vector(column, dim, metric)`
 
 Builds an IVF (inverted-file) vector index for kNN.
 
@@ -54,14 +54,12 @@ Builds an IVF (inverted-file) vector index for kNN.
 | --- | --- | --- |
 | `column` | string | the fixed-width vector column to index |
 | `dim` | int | embedding dimension; must match your model's output and the values you append |
-| `n_cent` | int | number of IVF partitions (centroids) |
 | `metric` | `cosine` / `l2sq` / `negdot` (`Metric::Cosine` …) | distance metric (see [Embeddings](/guides/embeddings)) |
 
-**Tuning `n_cent`.** It sets how many partitions the vectors are bucketed into. More
-partitions mean finer buckets and faster search **at scale**, at some recall cost per
-partition probed. Raise `nprobe` at query time to recover that recall. The engine clamps
-`n_cent` sensibly for small datasets, so a few dozen is a fine starting point; raise it
-as the table grows into the hundreds of thousands of rows and beyond.
+**Partitioning is automatic.** The engine derives the IVF partition (centroid) count
+from the data when the index is built, and it calibrates probe width and rerank budget
+per table and per `k` at query time. There are no partition or probe knobs to set, and
+the same declaration works from thousands of rows to hundreds of millions.
 
 <Note>
 You can index multiple text columns (call `fts` per column) and multiple vector columns.

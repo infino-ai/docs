@@ -18,13 +18,13 @@ Arrow rows, and you can pass a `projection` to choose which columns come back.
 | Look up an exact id or value | [`exact_match`](#unranked-lookups) | Unranked, precise |
 | Filter, aggregate, or join | [SQL](/sql-reference) | Compose over the same rows |
 
-| Mode | Ranked | Tunable recall | Text pre-filter | Compose in SQL |
-| --- | --- | --- | --- | --- |
-| BM25 | ✓ | n/a | n/a | ✓ (`bm25_search`) |
-| Vector kNN | ✓ | ✓ (`nprobe`) | ✓ (pushdown) | ✓ (`vector_search`) |
-| Hybrid | ✓ (RRF) | ✓ | n/a | ✓ (`hybrid_search`) |
-| `token_match` / `exact_match` | n/a | n/a | n/a | ✓ |
-| SQL | n/a | n/a | n/a | native |
+| Mode | Ranked | Text pre-filter | Compose in SQL |
+| --- | --- | --- | --- |
+| BM25 | ✓ | n/a | ✓ (`bm25_search`) |
+| Vector kNN | ✓ | ✓ (pushdown) | ✓ (`vector_search`) |
+| Hybrid | ✓ (RRF) | n/a | ✓ (`hybrid_search`) |
+| `token_match` / `exact_match` | n/a | n/a | ✓ |
+| SQL | n/a | n/a | native |
 
 <Tip>
 Always pass a sensible top-`k` on production queries: it bounds both the work and the
@@ -123,22 +123,14 @@ used to index (see [Embeddings](/guides/embeddings)).
 
 ```python Python icon="python"
 hits = docs.vector_search("embedding", embed("cancel subscription"), 5)
-# higher recall: probe more IVF partitions
-hits = docs.vector_search("embedding", embed("..."), 5, nprobe=32)
 ```
 
 ```typescript Node.js icon="node-js"
 const hits = docs.vectorSearch("embedding", embed("cancel subscription"), 5);
-// higher recall: probe more IVF partitions
-const more = docs.vectorSearch("embedding", embed("..."), 5, { nprobe: 32 });
 ```
 
 ```rust Rust icon="rust"
-use infino::VectorSearchOptions;
-let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(), None, None)?;
-// higher recall: probe more IVF partitions
-let more = docs.vector_search("embedding", &q, 5,
-    VectorSearchOptions::new().with_nprobe(32), None, None)?;
+let hits = docs.vector_search("embedding", &q, 5, None, None)?;
 ```
 
 </CodeGroup>
@@ -148,8 +140,6 @@ let more = docs.vector_search("embedding", &q, 5,
 | `column` | string | required | the vector-indexed column |
 | `query` | float[] | required | the query vector (same dim as the index) |
 | `k` | int | required | number of top results |
-| `nprobe` | int | engine default | IVF partitions to probe; higher = better recall, more work |
-| `rerank_mult` | int | engine default | over-fetch multiplier for the exact-rerank stage |
 | `filter` | text predicate | none | pushdown pre-filter (below) |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
@@ -178,8 +168,8 @@ const hits = docs.vectorSearch("embedding", embed("..."), 5,
 ```
 
 ```rust Rust icon="rust"
-use infino::{VectorFilter, VectorSearchOptions, BoolMode};
-let hits = docs.vector_search("embedding", &q, 5, VectorSearchOptions::new(),
+use infino::{VectorFilter, BoolMode};
+let hits = docs.vector_search("embedding", &q, 5,
     Some(VectorFilter { column: "body", query: "billing", mode: BoolMode::Or }), None)?;
 ```
 
@@ -200,24 +190,24 @@ and it returns ranked Arrow rows like the other searches:
 ```python Python icon="python"
 hits = docs.hybrid_search("body", "cancel subscription", "embedding",
                           embed("cancel subscription"), 5)
-# mode (BM25 boolean mode) and nprobe (vector recall) are optional:
+# mode (BM25 boolean mode) is optional:
 hits = docs.hybrid_search("body", "cancel subscription", "embedding",
-                          embed("..."), 5, mode="and", nprobe=32)
+                          embed("..."), 5, mode="and")
 ```
 
 ```typescript Node.js icon="node-js"
 const hits = docs.hybridSearch("body", "cancel subscription", "embedding",
   embed("cancel subscription"), 5);
-// mode (BM25 boolean mode) and nprobe (vector recall) are optional:
+// mode (BM25 boolean mode) is optional:
 const tuned = docs.hybridSearch("body", "cancel subscription", "embedding",
-  embed("..."), 5, { mode: "and", nprobe: 32 });
+  embed("..."), 5, { mode: "and" });
 ```
 
 ```rust Rust icon="rust"
-use infino::{BoolMode, VectorSearchOptions};
+use infino::BoolMode;
 let hits = docs.hybrid_search(
     "body", "cancel subscription", BoolMode::Or,
-    "embedding", &q, VectorSearchOptions::new(), 5, None,
+    "embedding", &q, 5, None,
 )?;
 ```
 
@@ -231,7 +221,6 @@ let hits = docs.hybrid_search(
 | `vector_query` | float[] | required | the query vector (same dim as the index) |
 | `k` | int | required | number of top results |
 | `mode` | `or` / `and` | `or` | BM25 boolean mode |
-| `nprobe` | int | engine default | IVF partitions to probe on the vector side |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 Hybrid search needs both indexes on the table: an `fts` index on the text column and a
@@ -240,8 +229,9 @@ the `hybrid_search` table function, where you can compose it with joins and filt
 
 ## Limitations
 
-- **Vector search is approximate (IVF).** It trades exactness for speed; raise `nprobe`
-  (and `rerank_mult`) to recover recall at some cost in work.
+- **Vector search is approximate (IVF).** It trades exactness for speed. Probe width
+  and rerank budget are calibrated by the engine per table and per `k`; there are no
+  tuning knobs to set.
 - **Bring your own embeddings.** Embed queries with the same model and dimension you
   indexed with.
 - **Filters in vector search are text predicates** over an FTS-indexed column. For scalar
