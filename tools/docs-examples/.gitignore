@@ -1,0 +1,4 @@
+# Installed by the workflow (and by hand when running this locally).
+node_modules/
+.venv/
+package-lock.json
