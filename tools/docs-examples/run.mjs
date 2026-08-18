@@ -464,7 +464,16 @@ function coverage() {
       else gaps.push(`${page} (${lang}, ${n})`);
     }
   }
-  console.log(`\nCoverage: ${checked}/${total} code blocks checked.`);
+  // Say when a run covered only some lanes, so its number is not mistaken for
+  // the whole picture: the workflow splits Rust into its own job, and 64/91 plus
+  // 27/91 is full coverage across the two.
+  const filter =
+    only.length > 0
+      ? ` (this run: ${only.join(", ")} only)`
+      : skip.length > 0
+        ? ` (this run: all lanes except ${skip.join(", ")})`
+        : "";
+  console.log(`\nCoverage: ${checked}/${total} code blocks checked${filter}.`);
   if (gaps.length > 0) {
     console.log("Not checked by any lane:");
     for (const g of gaps.sort()) console.log(`  ${g}`);
