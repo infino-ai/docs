@@ -62,7 +62,10 @@ turn it off: `infino = { default-features = false }`.
 
 First, open a connection. `"memory://"` keeps everything in memory for this
 walkthrough; point it at `"./data"` or an `"s3://bucket/prefix"` URI when you want your
-data to stick around.
+data to stick around. To run the same walkthrough against the hosted service, point it
+at `"https://<host>/<database>"` and pass an API key: see the
+[Infino Cloud quickstart](/cloud/quickstart). Everything after the connect line is the
+same either way.
 
 <CodeGroup>
 
