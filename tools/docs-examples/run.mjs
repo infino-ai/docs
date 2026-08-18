@@ -44,7 +44,15 @@
 // schedule as well as on pull requests.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -328,7 +336,10 @@ function typecheckRust(page, { fragments }) {
     "}",
   ].join("\n");
 
+  // The entrypoint is generated per page and not tracked, so on a fresh clone
+  // its directory does not exist yet.
   const dir = resolve(HERE, CONFIG.rustProject, "src");
+  mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "main.rs"), `${src}\n`);
   const what = `typecheck ${page} (${found.length} blocks, rust ${fragments ? "fragments" : "program"})`;
   try {
