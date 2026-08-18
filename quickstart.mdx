@@ -45,6 +45,13 @@ cargo add infino
 
 </CodeGroup>
 
+<Accordion title="Node: the examples are ESM">
+The Node examples below use `import`, so the file has to be a module. `npm init -y`
+writes `"type": "commonjs"`, and running an `import` under that fails with
+`Cannot use import statement outside a module`. Either add `"type": "module"` to
+your `package.json` or save the file as `.mjs`.
+</Accordion>
+
 <Accordion title="Rust: Arrow types and allocator">
 Infino re-exports the Arrow crates it uses, so you don't add them separately or match
 versions — reach them as `infino::arrow_array` and `infino::arrow_schema` (as the examples
