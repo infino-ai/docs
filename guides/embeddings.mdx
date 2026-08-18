@@ -21,6 +21,8 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("all-MiniLM-L6-v2")   # 384-dim
 def embed(text): return model.encode(text).tolist()
 
+text = "Refunds return to the original payment method."
+
 # dim (384) must match the model and the index spec:
 docs = db.create_table(
     "docs", schema,
@@ -33,6 +35,8 @@ docs.append([{"doc_id": "1", "body": text, "embedding": embed(text)}])
 import { pipeline } from "@huggingface/transformers";
 const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2"); // 384-dim
 const embed = async (text) => Array.from((await extractor(text, { pooling: "mean", normalize: true })).data);
+
+const text = "Refunds return to the original payment method.";
 
 // dim (384) must match the model and the index spec:
 const docs = db.createTable(
