@@ -3,13 +3,60 @@
   "nodePrelude": "prelude.ts",
   "nodeShims": "shims.d.ts",
   "checks": [
-    { "page": "quickstart.mdx", "mode": "run-node" },
-    { "page": "quickstart.mdx", "mode": "run-python" },
-    { "page": "cli.mdx", "mode": "cli", "section": "Quickstart" },
-    { "page": "cloud/quickstart.mdx", "mode": "typecheck-program" },
-    { "page": "guides/tables.mdx", "mode": "typecheck-fragments" },
-    { "page": "guides/search.mdx", "mode": "typecheck-fragments" },
-    { "page": "guides/indexing.mdx", "mode": "typecheck-fragments" },
-    { "page": "guides/embeddings.mdx", "mode": "typecheck-fragments" }
-  ]
+    {
+      "page": "quickstart.mdx",
+      "mode": "run-node"
+    },
+    {
+      "page": "quickstart.mdx",
+      "mode": "run-python"
+    },
+    {
+      "page": "cli.mdx",
+      "mode": "cli",
+      "section": "Quickstart"
+    },
+    {
+      "page": "cloud/quickstart.mdx",
+      "mode": "typecheck-program"
+    },
+    {
+      "page": "guides/tables.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "guides/search.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "guides/indexing.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "guides/embeddings.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "guides/search.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "guides/tables.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "guides/indexing.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "guides/embeddings.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "cloud/quickstart.mdx",
+      "mode": "typecheck-python-program"
+    }
+  ],
+  "pythonPrelude": "prelude.py",
+  "pythonStubs": "stubs"
 }

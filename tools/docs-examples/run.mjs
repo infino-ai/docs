@@ -20,6 +20,10 @@
 //                          own scope on top of a prelude, and the result is
 //                          compiled — enough to catch a removed argument or a
 //                          renamed type without pretending the fragment runs.
+//   typecheck-python       The same idea for Python, checked with pyright against
+//                          the installed package's stubs. Python has no block
+//                          scope and rebinding a name is legal, so the blocks are
+//                          concatenated onto a prelude as they are.
 //
 // The SDKs install at their latest published versions, because that is what the
 // install instructions on these pages resolve to. A new SDK release that breaks
@@ -206,6 +210,55 @@ function typecheckNode(page, { fragments }) {
   }
 }
 
+/** Type-check a page's Python against the installed package's stubs. */
+function typecheckPython(page, { fragments }) {
+  const found = langBlocks(page, "python");
+  const dir = workdir(`${page}-pyright`);
+  const prelude = fragments ? `${readFileSync(join(HERE, CONFIG.pythonPrelude), "utf8")}\n` : "";
+  writeFileSync(join(dir, "example.py"), `${prelude}${found.map((b) => b.body).join("\n")}\n`);
+  // Stubs stand in for third-party packages an example imports to illustrate a
+  // workflow; a missing `infino` would still be reported, which is the point.
+  writeFileSync(
+    join(dir, "pyrightconfig.json"),
+    JSON.stringify(
+      {
+        include: ["example.py"],
+        stubPath: join(HERE, CONFIG.pythonStubs),
+        typeCheckingMode: "basic",
+        reportMissingModuleSource: "none",
+        // Stacking page code on a prelude rebinds names by construction (a page
+        // that defines its own `embed` shadows the prelude's), and a page's
+        // later block routinely rebinds an earlier one. Neither is drift.
+        reportRedeclaration: "none",
+      },
+      null,
+      2,
+    ),
+  );
+  const what = `typecheck ${page} (${found.length} blocks, python ${fragments ? "fragments" : "program"})`;
+  try {
+    execFileSync(
+      join(HERE, "node_modules", ".bin", "pyright"),
+      ["--pythonpath", PYTHON, "--outputjson", "example.py"],
+      { cwd: dir, stdio: "pipe", timeout: TIMEOUT_MS },
+    );
+    ok(what);
+  } catch (err) {
+    // pyright's json output is far more readable than its exit status.
+    let summary = String(err.stdout ?? "");
+    try {
+      const report = JSON.parse(summary);
+      summary = report.generalDiagnostics
+        .filter((d) => d.severity === "error")
+        .map((d) => `example.py(${d.range.start.line + 1}): ${d.message.split("\n")[0]}`)
+        .join("\n");
+    } catch {
+      /* fall back to the raw output */
+    }
+    fail(what, { stdout: summary, stderr: "" });
+  }
+}
+
 for (const entry of CONFIG.checks) {
   console.log(`\n${entry.page}  [${entry.mode}]`);
   try {
@@ -224,6 +277,12 @@ for (const entry of CONFIG.checks) {
         break;
       case "typecheck-fragments":
         typecheckNode(entry.page, { fragments: true });
+        break;
+      case "typecheck-python":
+        typecheckPython(entry.page, { fragments: true });
+        break;
+      case "typecheck-python-program":
+        typecheckPython(entry.page, { fragments: false });
         break;
       default:
         throw new Error(`unknown mode ${entry.mode}`);

@@ -53,6 +53,8 @@ jobs:
           python3 -m venv .venv
           .venv/bin/pip install --quiet --upgrade pip
           .venv/bin/pip install --quiet infino
+          # pyright resolves the Python examples against this venv's installed
+          # stubs, so the SDK has to be in place before it runs.
           npm install --no-save --global @infino-ai/infino-cli
           # Record what the examples actually ran against, so a failure a month
           # from now is readable without re-resolving anything.
