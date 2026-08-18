@@ -16,7 +16,7 @@ name: Examples
 on:
   pull_request:
     paths:
-      - "**/*.mdx"
+      - "**.mdx"
       - "tools/docs-examples/**"
       - ".github/workflows/examples.yml"
   schedule:
