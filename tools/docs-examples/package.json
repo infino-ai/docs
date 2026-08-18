@@ -1,0 +1,14 @@
+{
+  "name": "docs-examples",
+  "private": true,
+  "description": "Harness that runs and type-checks this site's code examples against the published SDKs.",
+  "type": "module",
+  "scripts": {
+    "check": "node run.mjs"
+  },
+  "dependencies": {
+    "@infino-ai/infino": "latest",
+    "pyright": "^1.1.413",
+    "typescript": "^5"
+  }
+}

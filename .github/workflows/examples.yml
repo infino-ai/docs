@@ -1,0 +1,98 @@
+name: Examples
+
+# Runs this site's code examples against the published SDKs, so a page that
+# documents an API the SDK no longer has fails here instead of in a reader's
+# terminal. See tools/docs-examples/run.mjs for what each mode does.
+#
+# Two triggers, for two different failures:
+#   - pull_request: an edit that breaks an example.
+#   - schedule: an SDK release that breaks an example we did not touch. This is
+#     the one that matters most, because nothing about the docs changes when the
+#     engine does.
+#
+# The SDKs install unpinned, matching the install instructions the pages give a
+# reader. A red run therefore means the pages need updating, not the harness.
+
+on:
+  pull_request:
+    paths:
+      - "**.mdx"
+      - "tools/docs-examples/**"
+      - ".github/workflows/examples.yml"
+  schedule:
+    - cron: "20 6 * * *" # daily, 11:50 IST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  examples:
+    name: Run and type-check the documented examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the published SDKs and the CLI
+        working-directory: tools/docs-examples
+        run: |
+          set -euo pipefail
+          npm install --no-package-lock
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          .venv/bin/pip install --quiet infino
+          # pyright resolves the Python examples against this venv's installed
+          # stubs, so the SDK has to be in place before it runs.
+          npm install --no-save --global @infino-ai/infino-cli
+          # Record what the examples actually ran against, so a failure a month
+          # from now is readable without re-resolving anything.
+          {
+            echo "| Package | Version |"
+            echo "| --- | --- |"
+            echo "| @infino-ai/infino | $(node -p "require('./node_modules/@infino-ai/infino/package.json').version") |"
+            echo "| infino (PyPI) | $(.venv/bin/python -c 'import infino; print(infino.__version__)' 2>/dev/null || echo unknown) |"
+            echo "| infino CLI | $(infino --version | awk '{print $2}') |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the examples
+        working-directory: tools/docs-examples
+        env:
+          DOCS_EXAMPLES_PYTHON: .venv/bin/python
+          # The Rust lanes are their own job below: they compile the engine, so
+          # they must not hold up the lanes that finish in seconds.
+          DOCS_EXAMPLES_SKIP_MODES: typecheck-rust,typecheck-rust-program
+        run: node run.mjs
+
+  rust:
+    name: Compile the documented Rust examples
+    runs-on: ubuntu-latest
+    # Separate from the job above because it builds the engine's dependency
+    # graph (datafusion, lance, tantivy): several minutes cold, and about a
+    # minute once the cache is warm.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/docs-examples/rust-check
+      - name: Compile each page's Rust
+        working-directory: tools/docs-examples
+        env:
+          DOCS_EXAMPLES_ONLY_MODES: typecheck-rust,typecheck-rust-program
+        run: node run.mjs

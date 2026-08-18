@@ -53,6 +53,9 @@ order by relevance, so add `ORDER BY score DESC` (and a `LIMIT`) for control.
   (`'0.12,0.04,-0.31,...'`) or a SQL array literal (`[0.12, 0.04, -0.31, ...]`).
 - **`token_match` / `exact_match`** are unranked: `score` is present (for schema
   uniformity) but constant `0.0`, and order is unspecified, so use `ORDER BY` / `LIMIT`.
+  Both read the full-text index, so `column` must be one you declared as an FTS
+  column; naming an unindexed column fails with `unknown FTS column`. To match on
+  a column without an index, filter it with plain SQL (`WHERE doc_id = '42'`).
 
 ### Examples
 

@@ -46,8 +46,11 @@ const hits = docs.bm25Search("body", "cancel subscription", 5, { mode: "or" });
 ```
 
 ```rust Rust icon="rust"
-use infino::BoolMode;
-let hits = docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None)?;
+use infino::{Bm25SearchOptions, BoolMode};
+let hits = docs.bm25_search(
+    "body", "cancel subscription", 5,
+    Bm25SearchOptions::new().with_mode(BoolMode::Or), None,
+)?;
 ```
 
 </CodeGroup>

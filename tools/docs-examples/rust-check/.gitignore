@@ -1,0 +1,4 @@
+target/
+Cargo.lock
+# Written by run.mjs for each page it checks.
+src/main.rs
