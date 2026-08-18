@@ -20,6 +20,19 @@
 //                          own scope on top of a prelude, and the result is
 //                          compiled — enough to catch a removed argument or a
 //                          renamed type without pretending the fragment runs.
+//   typecheck-rust         The same idea for Rust, compiled with `cargo check` in a
+//                          scratch crate that depends on the published engine.
+//                          Every fragment uses `?`, so they are assembled inside
+//                          one `fn main() -> Result<…>`; `use` lines are hoisted
+//                          and deduplicated, since Rust rejects a repeated import.
+//   sql-functions          The SQL pages' blocks carry deliberate placeholders (an
+//                          elided query vector, an illustrative join table), so
+//                          they cannot be executed as written. What is checkable
+//                          is that every search function they name still exists
+//                          with that shape, so each one is exercised against a
+//                          fixture table with real arguments. A function the docs
+//                          introduce with no smoke query fails, rather than
+//                          silently going unchecked.
 //   typecheck-python       The same idea for Python, checked with pyright against
 //                          the installed package's stubs. Python has no block
 //                          scope and rebinding a name is legal, so the blocks are
@@ -31,8 +44,8 @@
 // schedule as well as on pull requests.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { mkdtempSync, readFileSync, readdirSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
@@ -44,6 +57,14 @@ const PYTHON_SETTING = process.env.DOCS_EXAMPLES_PYTHON ?? CONFIG.python;
 // be resolved here rather than left for the child process to look up.
 const PYTHON = PYTHON_SETTING.includes("/") ? resolve(HERE, PYTHON_SETTING) : PYTHON_SETTING;
 const TIMEOUT_MS = 300_000;
+
+// The workflow splits the lanes across two jobs: the Rust ones compile the
+// engine and belong on their own, cached runner.
+const only = (process.env.DOCS_EXAMPLES_ONLY_MODES ?? "").split(",").filter(Boolean);
+const skip = (process.env.DOCS_EXAMPLES_SKIP_MODES ?? "").split(",").filter(Boolean);
+const wanted = (mode) =>
+  (only.length === 0 || only.includes(mode)) && !skip.includes(mode);
+
 
 const read = (page) => readFileSync(join(DOCS_ROOT, page), "utf8");
 
@@ -72,6 +93,16 @@ const langBlocks = (page, lang) => {
   if (found.length === 0) throw new Error(`no ${lang} blocks in ${page}`);
   return found;
 };
+
+/** Split a block at its top-level declarations, one statement per entry. */
+function topLevelStatements(code) {
+  const out = [];
+  for (const line of code.split("\n")) {
+    if (/^(const|let|var)\s/.test(line) || out.length === 0) out.push(line);
+    else out[out.length - 1] += `\n${line}`;
+  }
+  return out.filter((s) => s.trim());
+}
 
 /** Separate a block's import lines from the rest of it. */
 function splitImports(body) {
@@ -165,7 +196,7 @@ function runCli(page, heading) {
 }
 
 /** Compile a page's TypeScript: as one program, or as prelude + scoped blocks. */
-function typecheckNode(page, { fragments }) {
+function typecheckNode(page, { fragments, alternatives }) {
   const found = langBlocks(page, "typescript");
   let source;
   if (fragments) {
@@ -175,7 +206,13 @@ function typecheckNode(page, { fragments }) {
       // The prelude owns the SDK import; a fragment's own copy of it would
       // redeclare those names here. Third-party imports are kept.
       imports.push(...split.imports.filter((l) => !l.includes("@infino-ai/infino")));
-      return `// ${page} block ${i + 1}\n{\n${split.rest}\n}`;
+      // A menu block declares the same name once per alternative it presents
+      // (three ways to call `connect`, say), which cannot compile as one unit.
+      // Scope each top-level statement instead, so every alternative is still
+      // checked. Only for pages flagged as menus: elsewhere a later statement
+      // legitimately uses an earlier one's binding.
+      const scopes = alternatives ? topLevelStatements(split.rest) : [split.rest];
+      return scopes.map((code) => `// ${page} block ${i + 1}\n{\n${code}\n}`).join("\n");
     });
     source = [
       ...new Set(imports.map((l) => l.trim())),
@@ -259,7 +296,195 @@ function typecheckPython(page, { fragments }) {
   }
 }
 
+/** Compile a page's Rust in a scratch crate against the published engine. */
+function typecheckRust(page, { fragments }) {
+  const found = langBlocks(page, "rust");
+  const uses = [];
+  const bodies = found.map((b, i) => {
+    // A fragment keeps its own `use` lines, which is legal inside a block and
+    // avoids two blocks importing the same name by different paths (`use
+    // infino::BoolMode` and `use infino::{VectorFilter, BoolMode}`) colliding at
+    // file scope. A program's blocks share one scope, so its imports are
+    // hoisted and deduplicated instead.
+    if (!fragments) {
+      const rest = [];
+      for (const line of b.body.split("\n")) {
+        if (/^\s*use\s/.test(line)) uses.push(line.trim());
+        else rest.push(line);
+      }
+      return `    // ${page} block ${i + 1}\n${rest.join("\n")}`;
+    }
+    return `    // ${page} block ${i + 1}\n    {\n${b.body}\n    }`;
+  });
+  const prelude = fragments ? readFileSync(join(HERE, CONFIG.rustPrelude), "utf8") : "";
+  const src = [
+    "#![allow(unused_variables, unused_imports, unused_mut, dead_code, unreachable_code)]",
+    ...new Set(uses),
+    "",
+    "fn main() -> Result<(), Box<dyn std::error::Error>> {",
+    prelude,
+    ...bodies,
+    "    Ok(())",
+    "}",
+  ].join("\n");
+
+  const dir = resolve(HERE, CONFIG.rustProject, "src");
+  writeFileSync(join(dir, "main.rs"), `${src}\n`);
+  const what = `typecheck ${page} (${found.length} blocks, rust ${fragments ? "fragments" : "program"})`;
+  try {
+    execFileSync("cargo", ["check", "--quiet"], {
+      cwd: resolve(HERE, CONFIG.rustProject),
+      stdio: "pipe",
+      timeout: 1_800_000,
+    });
+    ok(what);
+  } catch (err) {
+    fail(what, err);
+  }
+}
+
+/** Every `FROM fn(` name used in a page's SQL blocks. */
+function sqlFunctionsUsed(page) {
+  const names = new Set();
+  for (const b of blocks(read(page)).filter((b) => b.lang === "sql")) {
+    for (const m of b.body.matchAll(/\b(?:FROM|JOIN)\s+([a-z_][a-z0-9_]*)\s*\(/gi)) {
+      names.add(m[1].toLowerCase());
+    }
+  }
+  return [...names];
+}
+
+/** A local table the SQL smoke queries can run against. */
+function sqlFixture() {
+  const dir = workdir("sql-fixture");
+  writeFileSync(
+    join(dir, "schema.yaml"),
+    [
+      // large_utf8 because an FTS column has to be, and doc_id is indexed below.
+      "- { name: doc_id, type: large_utf8 }",
+      "- { name: source, type: utf8 }",
+      "- { name: body, type: large_utf8 }",
+      '- { name: embedding, type: "fixed_size_list<float32,16>" }',
+      "",
+    ].join("\n"),
+  );
+  const vector = Array(16).fill(0).map((_, i) => (i === 0 ? 1 : 0));
+  writeFileSync(
+    join(dir, "seed.ndjson"),
+    `${JSON.stringify({ doc_id: "42", source: "help-center", body: "object storage and search", embedding: vector })}\n`,
+  );
+  execFileSync(
+    "bash",
+    [
+      "-c",
+      // doc_id is full-text indexed too: token_match and exact_match read the
+        // FTS index, so the column they are given has to be one.
+        "infino create-table docs --uri file://./data --schema schema.yaml " +
+        "--fts body --fts doc_id --vector embedding:16:cosine --file seed.ndjson",
+    ],
+    { cwd: dir, stdio: "pipe", timeout: TIMEOUT_MS },
+  );
+  return dir;
+}
+
+function sqlChecks(pages) {
+  const used = [...new Set(pages.flatMap(sqlFunctionsUsed))].sort();
+  let dir;
+  try {
+    dir = sqlFixture();
+  } catch (err) {
+    fail("sql fixture", err);
+    return;
+  }
+  for (const name of used) {
+    const query = CONFIG.sqlFunctions[name];
+    if (query === undefined) {
+      fail(`sql ${name}`, {
+        message:
+          `the docs use ${name}() but config.json has no smoke query for it. ` +
+          "Add one, or map it to null if it cannot be exercised here.",
+      });
+      continue;
+    }
+    if (query === null) {
+      console.log(`  skip  sql ${name} (documented, not exercised here)`);
+      continue;
+    }
+    try {
+      execFileSync("bash", ["-c", `infino query ${JSON.stringify(query)} --uri file://./data`], {
+        cwd: dir,
+        stdio: "pipe",
+        timeout: TIMEOUT_MS,
+      });
+      ok(`sql ${name}()`);
+    } catch (err) {
+      fail(`sql ${name}()`, err);
+    }
+  }
+}
+
+/** What the run covered, and what it did not. */
+function coverage() {
+  const modeLang = {
+    "run-node": "typescript",
+    "run-python": "python",
+    "typecheck-program": "typescript",
+    "typecheck-fragments": "typescript",
+    "typecheck-python": "python",
+    "typecheck-python-program": "python",
+    "sql-functions": "sql",
+    "typecheck-rust": "rust",
+    "typecheck-rust-program": "rust",
+    cli: "bash",
+  };
+  const checkedPairs = new Set(
+    CONFIG.checks.filter((c) => wanted(c.mode)).map((c) => `${c.page}:${modeLang[c.mode]}`),
+  );
+  const gaps = [];
+  let checked = 0;
+  let total = 0;
+  for (const page of pagesWithCode()) {
+    const counts = {};
+    for (const b of blocks(read(page))) counts[b.lang] = (counts[b.lang] ?? 0) + 1;
+    for (const [lang, n] of Object.entries(counts)) {
+      if (!["typescript", "python", "rust", "sql"].includes(lang)) continue;
+      total += n;
+      if (checkedPairs.has(`${page}:${lang}`)) checked += n;
+      else gaps.push(`${page} (${lang}, ${n})`);
+    }
+  }
+  console.log(`\nCoverage: ${checked}/${total} code blocks checked.`);
+  if (gaps.length > 0) {
+    console.log("Not checked by any lane:");
+    for (const g of gaps.sort()) console.log(`  ${g}`);
+  }
+}
+
+function pagesWithCode() {
+  const out = [];
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      if (name === "node_modules" || name === "snippets" || name.startsWith(".")) continue;
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (name.endsWith(".mdx")) out.push(relative(DOCS_ROOT, full));
+    }
+  };
+  walk(DOCS_ROOT);
+  return out.sort();
+}
+
+const sqlPages = CONFIG.checks
+  .filter((c) => c.mode === "sql-functions" && wanted(c.mode))
+  .map((c) => c.page);
+if (sqlPages.length > 0) {
+  console.log(`\n${sqlPages.join(", ")}  [sql-functions]`);
+  sqlChecks(sqlPages);
+}
+
 for (const entry of CONFIG.checks) {
+  if (entry.mode === "sql-functions") continue;
+  if (!wanted(entry.mode)) continue;
   console.log(`\n${entry.page}  [${entry.mode}]`);
   try {
     switch (entry.mode) {
@@ -276,13 +501,19 @@ for (const entry of CONFIG.checks) {
         typecheckNode(entry.page, { fragments: false });
         break;
       case "typecheck-fragments":
-        typecheckNode(entry.page, { fragments: true });
+        typecheckNode(entry.page, { fragments: true, alternatives: entry.alternatives === true });
         break;
       case "typecheck-python":
         typecheckPython(entry.page, { fragments: true });
         break;
       case "typecheck-python-program":
         typecheckPython(entry.page, { fragments: false });
+        break;
+      case "typecheck-rust":
+        typecheckRust(entry.page, { fragments: true });
+        break;
+      case "typecheck-rust-program":
+        typecheckRust(entry.page, { fragments: false });
         break;
       default:
         throw new Error(`unknown mode ${entry.mode}`);
@@ -291,6 +522,8 @@ for (const entry of CONFIG.checks) {
     fail(`${entry.mode} ${entry.page}`, err);
   }
 }
+
+coverage();
 
 console.log(
   failures.length === 0

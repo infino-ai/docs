@@ -99,7 +99,9 @@ fn with_retry<T>(mut call: impl FnMut() -> Result<T, InfinoError>) -> Result<T, 
 }
 
 // The first search after an idle period may cold-start the database.
-let results = with_retry(|| docs.bm25_search("body", "cancel subscription", 5, BoolMode::Or, None))?;
+let results = with_retry(|| {
+    docs.bm25_search("body", "cancel subscription", 5, Bm25SearchOptions::new(), None)
+})?;
 ```
 
 </CodeGroup>

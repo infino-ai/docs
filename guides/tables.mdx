@@ -54,7 +54,7 @@ docs.append([
 
 ```rust Rust icon="rust"
 use std::sync::Arc;
-use arrow_schema::{DataType, Field, Schema};
+use infino::arrow_schema::{DataType, Field, Schema};
 use infino::{connect, IndexSpec, Metric};
 
 // Durable storage (a path or s3:// URI), required if you'll update/delete later.
@@ -144,7 +144,7 @@ docs.update(col("doc_id").eq(lit("1")), &batch)?;
 
 // Delete rows matching a predicate:
 let stats = docs.delete(col("doc_id").eq(lit("1")))?;
-println!("{} matched, {} tombstoned", stats.matched, stats.n_tombstoned);
+println!("{} matched, {} tombstoned", stats.matched(), stats.n_tombstoned());
 ```
 
 </CodeGroup>

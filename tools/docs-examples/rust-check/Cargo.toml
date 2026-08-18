@@ -1,0 +1,18 @@
+# Scratch crate the Rust lane compiles each page's blocks in. It depends on the
+# published engine at its latest release, plus the crates the examples import
+# directly: arrow (re-exported by infino, but named in its own right by some
+# pages) and datafusion-expr, which the update/delete examples build predicates
+# with. Both track the engine's majors, as the guides tell a reader they must.
+[package]
+name = "docs-rust-check"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+infino = { version = "*", features = ["remote"] }
+datafusion-expr = "54"
+
+[[bin]]
+name = "docs-rust-check"
+path = "src/main.rs"

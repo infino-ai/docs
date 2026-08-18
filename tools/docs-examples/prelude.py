@@ -33,6 +33,8 @@ def embed(_text: str) -> List[float]:
 # A query vector by its other common name on these pages.
 q: List[float] = embed("query")
 
-# Values a fragment may reference without introducing them.
+# Values a fragment may reference without introducing them: a table handle under
+# its other common name, and a batch of rows to append.
+table = docs
 text: str = "Refunds return to the original payment method."
-rows: Any = None
+rows: List[Any] = []

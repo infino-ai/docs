@@ -70,4 +70,29 @@ jobs:
         working-directory: tools/docs-examples
         env:
           DOCS_EXAMPLES_PYTHON: .venv/bin/python
+          # The Rust lanes are their own job below: they compile the engine, so
+          # they must not hold up the lanes that finish in seconds.
+          DOCS_EXAMPLES_SKIP_MODES: typecheck-rust,typecheck-rust-program
+        run: node run.mjs
+
+  rust:
+    name: Compile the documented Rust examples
+    runs-on: ubuntu-latest
+    # Separate from the job above because it builds the engine's dependency
+    # graph (datafusion, lance, tantivy): several minutes cold, and about a
+    # minute once the cache is warm.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/docs-examples/rust-check
+      - name: Compile each page's Rust
+        working-directory: tools/docs-examples
+        env:
+          DOCS_EXAMPLES_ONLY_MODES: typecheck-rust,typecheck-rust-program
         run: node run.mjs

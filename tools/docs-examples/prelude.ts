@@ -19,9 +19,16 @@ const embed = (_text: string): number[] => Array(DIM).fill(0);
 // A query vector by its other common name on these pages.
 const q: number[] = embed("query");
 
+// Names a fragment may reference without introducing them: a table handle under
+// its other common name, and a batch of rows to append.
+const table = docs;
+const rows: Array<Record<string, unknown>> = [];
+
 // Keep the prelude's own bindings "used" so an unused-locals setting can be
 // turned on later without this file failing first.
 void db;
 void docs;
 void embed;
 void q;
+void table;
+void rows;

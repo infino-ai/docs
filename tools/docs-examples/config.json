@@ -55,8 +55,123 @@
     {
       "page": "cloud/quickstart.mdx",
       "mode": "typecheck-python-program"
+    },
+    {
+      "page": "guides/storage.mdx",
+      "mode": "typecheck-fragments",
+      "alternatives": true
+    },
+    {
+      "page": "guides/storage.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "cloud/authentication.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "cloud/authentication.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "cloud/errors.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "cloud/errors.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "cloud/limits.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "cloud/limits.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "sql-reference.mdx",
+      "mode": "typecheck-fragments"
+    },
+    {
+      "page": "sql-reference.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "guides/parquet-interop.mdx",
+      "mode": "typecheck-python"
+    },
+    {
+      "page": "api-reference/index.mdx",
+      "mode": "typecheck-program"
+    },
+    {
+      "page": "api-reference/index.mdx",
+      "mode": "typecheck-python-program"
+    },
+    {
+      "page": "sql-reference.mdx",
+      "mode": "sql-functions"
+    },
+    {
+      "page": "guides/parquet-interop.mdx",
+      "mode": "sql-functions"
+    },
+    {
+      "page": "quickstart.mdx",
+      "mode": "typecheck-rust-program"
+    },
+    {
+      "page": "cloud/quickstart.mdx",
+      "mode": "typecheck-rust-program"
+    },
+    {
+      "page": "guides/search.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "guides/tables.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "guides/indexing.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "guides/embeddings.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "guides/storage.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "cloud/errors.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "cloud/authentication.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "sql-reference.mdx",
+      "mode": "typecheck-rust"
+    },
+    {
+      "page": "troubleshooting.mdx",
+      "mode": "typecheck-python"
     }
   ],
   "pythonPrelude": "prelude.py",
-  "pythonStubs": "stubs"
+  "pythonStubs": "stubs",
+  "sqlFunctions": {
+    "bm25_search": "SELECT _id, score FROM bm25_search('docs', 'body', 'storage', 5)",
+    "vector_search": "SELECT _id, score FROM vector_search('docs', 'embedding', '1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0', 5)",
+    "hybrid_search": "SELECT _id, score FROM hybrid_search('docs', 'body', 'storage', 'embedding', '1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0', 5)",
+    "exact_match": "SELECT _id FROM exact_match('docs', 'doc_id', '42')",
+    "token_match": "SELECT _id FROM token_match('docs', 'body', 'storage')",
+    "read_parquet": null
+  },
+  "rustPrelude": "prelude.rs",
+  "rustProject": "rust-check"
 }
