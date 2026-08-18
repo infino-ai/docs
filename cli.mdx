@@ -33,7 +33,18 @@ curl --proto '=https' --tlsv1.2 -LsSf \
 
 </CodeGroup>
 
-All install the `infino` binary.
+All install the `infino` binary. Check it landed:
+
+```bash
+infino --version   # prints e.g. `infino 0.3.0`
+```
+
+<Note>
+On npm 11 and later the install prints a warning that it blocked a
+`postinstall` script. That is expected and the install is fine: the platform
+binary is fetched on first run instead. If you would rather avoid the warning,
+use Homebrew or the shell installer.
+</Note>
 
 ## Connect
 
@@ -79,29 +90,82 @@ infino bm25-search docs body "object storage" -k 10 --uri https://api.platform.i
 ```
 
 <Note>
-On Infino Cloud, `vector-search` and `hybrid-search` need an explicit
-`--fields` (the columns to return, e.g. `--fields _id,body`); `bm25-search` does
-not. This is the one difference from a local connection. See the hosted
-[Quickstart](/cloud/quickstart) and [Authentication](/cloud/authentication).
+`--fields` names the columns to return, and it is worth passing on every search:
+without it a search returns `_id` and `score` only, never your text. On Infino
+Cloud `vector-search` requires it; everywhere else it is optional but usually
+what you want. See the hosted [Quickstart](/cloud/quickstart) and
+[Authentication](/cloud/authentication).
 </Note>
 
 ## Quickstart
 
-```bash
-# Create a table and load its first rows (body full-text indexed)
-infino create-table docs --uri file://./data --schema schema.yaml --fts body --file seed.ndjson
+A table becomes durable on its first commit, so `create-table` loads initial
+rows too: either from a Parquet file (`--from-parquet`, which also infers the
+schema) or from a YAML schema plus a data file. Taking the second path, write
+the two input files first.
 
-# Append more rows
+<CodeGroup>
+
+```yaml schema.yaml
+- { name: id, type: int64 }
+- { name: body, type: large_utf8 }
+```
+
+```json seed.ndjson
+{"id": 1, "body": "Infino stores your data on object storage and searches it in place."}
+{"id": 2, "body": "One copy of the data serves SQL, full-text, and vector search."}
+```
+
+```json more.ndjson
+{"id": 3, "body": "A table becomes durable on its first commit."}
+```
+
+</CodeGroup>
+
+The schema is a list of `{name, type}` columns (see [column
+types](#column-types)); a full-text index needs a `large_utf8` column. Each line
+of the `.ndjson` file is one row, keyed by column name.
+
+```bash
+# Create the table and load its first rows (body full-text indexed)
+infino create-table docs --uri file://./data --schema schema.yaml --fts body --file seed.ndjson
+# created table `docs` with 2 rows
+
+# Append more rows from another NDJSON file
 infino ingest docs --uri file://./data --file more.ndjson --format ndjson
 
-# Search
-infino bm25-search docs body "object storage" -k 10 --uri file://./data
+# Search. `--fields` names the columns to return; without it you get
+# `_id` and `score` only.
+infino bm25-search docs body "object storage" -k 10 --fields _id,body --uri file://./data
+```
+
+```
++----------------------------------+---------------------------------------------------------------------+
+| _id                              | body                                                                |
++----------------------------------+---------------------------------------------------------------------+
+| 32964926044218061712633356091392 | Infino stores your data on object storage and searches it in place. |
++----------------------------------+---------------------------------------------------------------------+
+```
+
+```bash
+# SQL over the same table
 infino query "SELECT id, body FROM docs LIMIT 10" --uri file://./data --output json
 ```
 
-A table becomes durable on its first commit, so `create-table` loads initial
-rows too — from a Parquet file (`--from-parquet`, which also infers the schema)
-or a YAML schema plus `--file`.
+### Column types
+
+Use these in a `--schema` YAML file. `nullable: true` is optional per column.
+
+| Type | Notes |
+| --- | --- |
+| `int8` `int16` `int32` `int64` | `int` is an alias for `int64` |
+| `uint8` `uint16` `uint32` `uint64` | |
+| `float32` `float64` | `float` and `double` are aliases |
+| `utf8` | short strings; `string` and `str` are aliases |
+| `large_utf8` | text; **required for a full-text (`--fts`) column** |
+| `bool` | `boolean` is an alias |
+| `date32` | days since the Unix epoch |
+| `fixed_size_list<float32,N>` | a vector column of dimension `N`, for `--vector` |
 
 ## Commands
 
@@ -133,8 +197,10 @@ vector as a JSON array (or `-` for stdin):
 infino vector-search docs embedding --vector-file query.json -k 10 --uri file://./data
 ```
 
-Give the column a vector index when you create the table:
-`--vector embedding:384:cosine` (`column:dim:metric`).
+Declare the column as `fixed_size_list<float32,384>` in the schema and index it
+when you create the table: `--vector embedding:384:cosine`
+(`column:dim:metric`). Pass `--fields` here too, or results come back as `_id`
+and `score` alone.
 
 ## Agent skills
 
