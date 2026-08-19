@@ -3,7 +3,8 @@
 | Create a database | ✅ | ✅ | A no-op on a local connection, so hosted setup code runs unchanged locally. |
 | List databases | — | ✅ | Account-level; available over REST and the dashboard, not the SDK. |
 | Delete a database | — | ✅ | Account-level; available over REST and the dashboard, not the SDK. |
-| Create a table | ✅ | ✅ | Hosted accepts a subset of Arrow column types (scalar, vector, list). |
+| Verify a storage binding | — | ✅ | Bring-your-own-bucket only: proves the grant end to end; hosted-only by nature. |
+| Create a table | ✅ | ✅ | Send the Arrow schema as `schema_ipc` for any column type, nested included; the JSON `schema` descriptors cover scalar, vector, and list. |
 | Drop a table | ✅ | ✅ |  |
 | List tables | ✅ | ✅ |  |
 | Describe a table's schema | ✅ | ✅ |  |
