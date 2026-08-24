@@ -476,7 +476,7 @@
           },
           {
             "name": "table",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -484,7 +484,7 @@
           },
           {
             "name": "predicate",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -872,7 +872,7 @@
           },
           {
             "name": "table",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
@@ -880,7 +880,7 @@
           },
           {
             "name": "predicate",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string"
