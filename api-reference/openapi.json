@@ -1369,6 +1369,39 @@
         },
         "additionalProperties": false
       },
+      "FtsColumn": {
+        "type": "object",
+        "description": "One FTS index declaration under `indexes.fts` — a column plus the analyzer\nits text is tokenized with (`{\"column\": \"body\", \"analyzer\": \"standard\"}`).\n`analyzer` is optional and, when omitted, the engine's default `ascii_lower`\napplies — the same default a bare-string entry gets (see [`FtsIndex`]).",
+        "required": [
+          "column"
+        ],
+        "properties": {
+          "analyzer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Analyzer name (`\"ascii_lower\"` or `\"standard\"`). Omitted means the\nengine default, `ascii_lower`."
+          },
+          "column": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FtsIndex": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "`\"body\"` — index the column with the default analyzer."
+          },
+          {
+            "$ref": "#/components/schemas/FtsColumn",
+            "description": "`{\"column\": \"body\", \"analyzer\": \"standard\"}`."
+          }
+        ],
+        "description": "One entry in `indexes.fts`. Either a bare column name — which uses the\nengine's default `ascii_lower` analyzer — or a `{column, analyzer}` object\nthat names the analyzer explicitly. The bare-string form keeps clients that\nsend `\"fts\": [\"body\"]` working unchanged. An analyzer applies per column,\nnot per table."
+      },
       "HybridSearchRequest": {
         "type": "object",
         "description": "`POST /v1/hybrid_search/{database}`. BM25 + vector fused with RRF.\nProjection is optional; vector-leg serving is engine-decided.",
@@ -1430,9 +1463,9 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FtsIndex"
             },
-            "description": "FTS-indexed column names."
+            "description": "FTS index declarations — a bare column name (default `ascii_lower`\nanalyzer) or a `{column, analyzer}` object per column."
           },
           "vector": {
             "type": [
