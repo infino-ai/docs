@@ -122,7 +122,7 @@ each surfaces through the SDK.
 | `401` / `403` | Missing or invalid API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
 | `404` | Database or table does not exist | `KeyError` | `Error` | Check the name, or create it first. |
 | `409` | Already exists (for example `create_database` / `create_table` on an existing name) | `ValueError` | `Error` | Skip creation, or use a different name. |
-| `413` | Request body over the 5 MiB cap (an `append` / `update` batch too large) | `RuntimeError` | `Error` | Split into smaller batches. See [Limits](/cloud/limits). |
+| `413` | Request body over the 128 MiB cap (an `append` / `update` batch too large) | `RuntimeError` | `Error` | Permanent for that batch: split it. See [Limits](/cloud/limits). |
 
 There is one conditional case. A write can return **`412` (Conflict)** when a
 concurrent write to the same table wins the race (surfaced as `ConflictError` in

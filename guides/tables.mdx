@@ -80,8 +80,8 @@ docs.append(&batch)?;
 
 <Note>
 One `append` == one atomic commit, durable on return. Append in batches rather than
-row-by-row for throughput. On Infino Cloud, one append request is capped at 5 MiB of
-Arrow data; target 4 MiB or less per batch (see [Limits](/cloud/limits)).
+row-by-row for throughput. On Infino Cloud, one append request is capped at 128 MiB of
+Arrow data; target 100 MiB or less per batch (see [Limits](/cloud/limits)).
 </Note>
 
 ## Open an existing table
