@@ -447,6 +447,16 @@
                 }
               }
             }
+          },
+          "410": {
+            "description": "The database is being purged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1282,7 +1292,7 @@
           },
           "verified": {
             "type": "boolean",
-            "description": "Always `false` at create. Call `POST /v1/databases/{name}/storage/verify`\nonce the grant is in place; workers will not start for this database\nuntil the binding verifies."
+            "description": "Whether the bind-time probe already passed. GCS and Azure try the\nprobe at create when the grant is already in place. AWS is always\n`false` here: the external id did not exist until this response, so\nthe customer cannot have written the trust policy yet — call\n`POST /v1/databases/{name}/storage/verify` (or the first query, which\nre-probes) once it is."
           }
         }
       },
@@ -1343,19 +1353,21 @@
       },
       "ExactMatchRequest": {
         "type": "object",
-        "description": "`POST /v1/exact_match/{database}`. Unranked; projection required.",
+        "description": "`POST /v1/exact_match/{database}`. Unranked; projection is optional\n(absent ⇒ the engine-native `_id` + `score`).",
         "required": [
           "table_name",
           "field_name",
-          "value",
-          "projection"
+          "value"
         ],
         "properties": {
           "field_name": {
             "type": "string"
           },
           "projection": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             }
@@ -1615,13 +1627,12 @@
       },
       "TokenMatchRequest": {
         "type": "object",
-        "description": "`POST /v1/token_match/{database}`. Unranked; projection required.",
+        "description": "`POST /v1/token_match/{database}`. Unranked; projection is optional\n(absent ⇒ the engine-native `_id` + `score`).",
         "required": [
           "table_name",
           "field_name",
           "query",
-          "mode",
-          "projection"
+          "mode"
         ],
         "properties": {
           "field_name": {
@@ -1631,7 +1642,10 @@
             "$ref": "#/components/schemas/Mode"
           },
           "projection": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             }
@@ -1693,13 +1707,12 @@
       },
       "VectorSearchRequest": {
         "type": "object",
-        "description": "`POST /v1/vector_search/{database}`. Projection required; `filter` is an\noptional pushdown text pre-filter. Probe width and rerank budget are\nengine-decided (drain-time calibration) — there are no tuning knobs.",
+        "description": "`POST /v1/vector_search/{database}`. Projection is optional (absent ⇒ the\nengine-native `_id` + `score`); `filter` is an optional pushdown text\npre-filter. Probe width and rerank budget are engine-decided (drain-time\ncalibration) — there are no tuning knobs.",
         "required": [
           "table_name",
           "field_name",
           "query",
-          "k",
-          "projection"
+          "k"
         ],
         "properties": {
           "field_name": {
@@ -1720,7 +1733,10 @@
             "minimum": 0
           },
           "projection": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             }
