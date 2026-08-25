@@ -7,49 +7,74 @@ description: Request-size limits on Infino Cloud, what happens when you exceed t
 Limits that apply to Infino Cloud connections. The open-source engine running locally
 has no request cap, because there is no request: writes go straight to storage.
 
-## Request body: 5 MiB
+## Request body: 128 MiB
 
-A single data-plane request body is capped at **5 MiB**. In practice this applies to
+A single data-plane request body is capped at **128 MiB**. In practice this applies to
 `append` and `update`, whose bodies carry your rows as Arrow IPC; a request over the
 cap is rejected with HTTP `413` and nothing is written.
 
-## Target 4 MiB or less per batch
+A `413` is permanent. Retrying the same batch will fail the same way, so split it.
 
-The SDK re-encodes rows before sending, so the bytes on the wire are not exactly the
-bytes you measured client-side. A batch sized right at the cap can pass or fail on
-that small encoding difference. Keep a margin: **aim for at most 4 MiB of Arrow data
-per append**, and treat the last MiB as headroom rather than budget.
+## Target 100 MiB or less per batch
+
+The SDK re-encodes rows before sending, so the bytes on the wire are not the bytes you
+measured client-side, and the difference can run to tens of percent. A batch sized
+right at the cap can pass or fail on that difference. Keep a margin: **aim for at most
+100 MiB of Arrow data per append**, and treat the rest as headroom rather than budget.
 
 Rough row budgets, dominated by the vector column (4 bytes per dimension):
 
-| row shape | approx. bytes per row | rows per 4 MiB batch |
+| row shape | approx. bytes per row | rows per 100 MiB batch |
 | --- | --- | --- |
-| `vector(384)` + ~200 B of text | ~1.7 KiB | ~2,400 |
-| `vector(768)` + ~200 B of text | ~3.2 KiB | ~1,200 |
-| `vector(1536)` + ~200 B of text | ~6.2 KiB | ~650 |
+| `vector(384)` + ~200 B of text | ~1.7 KiB | ~60,000 |
+| `vector(768)` + ~200 B of text | ~3.2 KiB | ~32,000 |
+| `vector(1536)` + ~200 B of text | ~6.2 KiB | ~16,500 |
+
+## Concurrency: HTTP 503 under a large-ingest burst
+
+Separately from the per-request cap, the service bounds the **total** in-flight
+request-body bytes across all concurrent requests. Each body is buffered in memory
+before it is decoded, so a burst of large concurrent appends is bounded to protect the
+shared process.
+
+When admitting a request would exceed that budget, the request is **shed** with HTTP
+`503` and a `Retry-After: 1` header. It is not queued: the aim is to keep normal-load
+throughput untouched and reject only at the memory edge.
+
+Unlike a `413`, a `503` here is **transient**. The pressure is in-flight bytes draining
+as other requests complete, which clears in well under a second, so honour
+`Retry-After` and retry the same batch unchanged. Because the budget is shared, a large
+burst from one workload can shed another's requests.
+
+Practical consequence: raising concurrency past a handful of in-flight 100 MiB appends
+buys throughput you cannot use. Prefer fewer, larger batches over many large ones in
+parallel.
 
 ## Batching and throughput
 
 One `append` is one atomic commit, so batch size is the main ingest-throughput knob:
-prefer batches near the 4 MiB target over many small appends, and split large loads
+prefer batches near the 100 MiB target over many small appends, and split large loads
 into a loop.
 
 <CodeGroup>
 
 ```python Python icon="python"
-BATCH = 2000  # ~4 MiB for 384-dim vectors with short text
+BATCH = 30_000  # ~50 MiB for 384-dim vectors with short text
 for i in range(0, len(rows), BATCH):
     table.append(rows[i : i + BATCH])
 ```
 
 ```typescript Node.js icon="node-js"
-const BATCH = 2000; // ~4 MiB for 384-dim vectors with short text
+const BATCH = 30_000; // ~50 MiB for 384-dim vectors with short text
 for (let i = 0; i < rows.length; i += BATCH) {
   table.append(rows.slice(i, i + BATCH));
 }
 ```
 
 </CodeGroup>
+
+If you load with the [CLI](/cli), bulk ingest is already streamed and committed in
+windows: size them with `--batch-size-mb` and keep the value under the cap.
 
 ## See also
 
