@@ -36,7 +36,7 @@ curl --proto '=https' --tlsv1.2 -LsSf \
 All install the `infino` binary. Check it landed:
 
 ```bash
-infino --version   # prints e.g. `infino 0.3.0`
+infino --version   # prints e.g. `infino 0.6.0`
 ```
 
 <Note>
@@ -66,7 +66,7 @@ map the [SDKs](/api-reference) take. Nothing is read from `AWS_*` / `AZURE_*`;
 omit them to use ambient cloud identity (IAM role / managed identity).
 
 ```bash
-infino tables --uri s3://my-bucket \
+infino table ls --uri s3://my-bucket \
   --storage-option aws_access_key_id=… \
   --storage-option aws_secret_access_key=… \
   --storage-option aws_region=us-east-1 \
@@ -81,11 +81,11 @@ unreachable endpoint, instead of on the first query.
 Point `--uri` at your `https://api.platform.infino.ws/<database>` URL and pass an
 API key with `--api-key` (or the `INFINO_API_KEY` environment variable). Every
 command is identical to local use — only the `--uri` changes. Provision the
-database once with `create-database`:
+database once with `database create`:
 
 ```bash
 export INFINO_API_KEY=inf_…
-infino create-database --uri https://api.platform.infino.ws/my-app
+infino database create --uri https://api.platform.infino.ws/my-app
 infino bm25-search docs body "object storage" -k 10 --uri https://api.platform.infino.ws/my-app
 ```
 
@@ -99,7 +99,7 @@ what you want. See the hosted [Quickstart](/cloud/quickstart) and
 
 ## Quickstart
 
-A table becomes durable on its first commit, so `create-table` loads initial
+A table becomes durable on its first commit, so `table create` loads initial
 rows too: either from a Parquet file (`--from-parquet`, which also infers the
 schema) or from a YAML schema plus a data file. Taking the second path, write
 the two input files first.
@@ -128,11 +128,11 @@ of the `.ndjson` file is one row, keyed by column name.
 
 ```bash
 # Create the table and load its first rows (body full-text indexed)
-infino create-table docs --uri file://./data --schema schema.yaml --fts body --file seed.ndjson
+infino table create docs --uri file://./data --schema schema.yaml --fts body --file seed.ndjson
 # created table `docs` with 2 rows
 
 # Append more rows from another NDJSON file
-infino ingest docs --uri file://./data --file more.ndjson --format ndjson
+infino row insert docs --uri file://./data --file more.ndjson --format ndjson
 
 # Search. `--fields` names the columns to return; without it you get
 # `_id` and `score` only.
@@ -169,21 +169,33 @@ Use these in a `--schema` YAML file. `nullable: true` is optional per column.
 
 ## Commands
 
+Commands are grouped by what they act on. `query` and the search commands stay
+at the top level, since those are what a session mostly runs.
+
 | Command | Description |
 | --- | --- |
-| `create-table` | Create a table and load initial rows; declare `--fts` / `--vector` indexes |
-| `ingest` | Append rows from Parquet or NDJSON (file or stdin) |
+| `table create` | Create a table and load initial rows; declare `--fts` / `--vector` indexes |
+| `table ls` / `table describe` | List tables / show a table's schema |
+| `table rm` | Remove a table and reclaim its storage (`--keep-storage` leaves the bytes) |
+| `table optimize` | Compact a table |
+| `table gc` | Reclaim orphaned storage objects (requires durable storage) |
+| `row insert` | Append rows from Parquet or NDJSON (file or stdin) |
+| `row update` / `row delete` | Change or remove rows matching a `--where` SQL predicate |
+| `database create` | Provision an [Infino Cloud](/cloud/quickstart) database (a no-op for local backends) |
 | `bm25-search` | Ranked keyword (BM25) search |
 | `vector-search` | Vector similarity (kNN) search |
 | `hybrid-search` | Hybrid BM25 + vector search, fused with reciprocal-rank fusion |
 | `token-match` / `exact-match` | Unranked token / exact-value match |
 | `count` | Count rows matching a keyword query, without fetching them |
 | `query` | Run SQL, including the `bm25_search()` / `vector_search()` table functions |
-| `tables` / `describe` | List tables / show a table's schema |
-| `create-database` | Provision an [Infino Cloud](/cloud/quickstart) database (a no-op for local backends) |
-| `update` / `delete` | Change rows matching a `--where` SQL predicate |
-| `optimize` | Compact a table |
 | `skills install` | Install the bundled agent skills for Claude Code / Cursor |
+
+<Note>
+The commands were flat before 0.6.0 (`create-table`, `tables`, `ingest`, and so
+on). The old names still parse and report their replacement, so an existing
+script tells you what to change rather than failing with a generic error. They
+will be removed in a later release.
+</Note>
 
 Run `infino <command> --help` for the full flags. Every row-returning command
 takes `--output table` (default), `json`, or `csv`.
