@@ -1325,12 +1325,12 @@
         "type": "object",
         "description": "`POST /v1/drop_table/{database}`.",
         "required": [
-          "table_name",
-          "purge"
+          "table_name"
         ],
         "properties": {
           "purge": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Also delete the table's storage subtree after the catalog commit.\nDefaults to `true` (reclaim storage); pass `false` to only unregister\nthe table from the catalog and leave the bytes in place."
           },
           "table_name": {
             "type": "string"
