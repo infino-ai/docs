@@ -161,13 +161,15 @@ println!("{} matched, {} tombstoned", stats.matched(), stats.n_tombstoned());
 ```python Python icon="python"
 docs.optimize()                    # merge small / underfilled superfiles
 db.list_tables()                   # ["docs"]
-db.drop_table("docs", purge=True)  # purge=True also deletes the table's storage
+db.drop_table("docs")              # drop + reclaim storage (purge defaults to True)
+db.drop_table("docs", purge=False) # …or unregister only, leaving the bytes
 ```
 
 ```typescript Node.js icon="node-js"
 docs.optimize();                   // merge small / underfilled superfiles
 db.listTables();                   // ["docs"]
-db.dropTable("docs", true);        // purge=true also deletes the table's storage
+db.dropTable("docs");              // drop + reclaim storage (purge defaults to true)
+db.dropTable("docs", false);       // …or unregister only, leaving the bytes
 ```
 
 ```rust Rust icon="rust"
@@ -175,7 +177,7 @@ use infino::OptimizeOptions;
 
 docs.optimize(&OptimizeOptions::default())?;  // merge small / underfilled superfiles
 db.list_tables()?;                            // Vec<String>
-db.drop_table("docs", true)?;                 // purge = true also deletes storage
+db.drop_table("docs", true)?;                 // true reclaims storage; false unregisters only
 ```
 
 </CodeGroup>
