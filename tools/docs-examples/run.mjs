@@ -390,7 +390,7 @@ function sqlFixture() {
       "-c",
       // doc_id is full-text indexed too: token_match and exact_match read the
         // FTS index, so the column they are given has to be one.
-        "infino create-table docs --uri file://./data --schema schema.yaml " +
+        "infino table create docs --uri file://./data --schema schema.yaml " +
         "--fts body --fts doc_id --vector embedding:16:cosine --file seed.ndjson",
     ],
     { cwd: dir, stdio: "pipe", timeout: TIMEOUT_MS },
