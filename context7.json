@@ -20,6 +20,6 @@
     "Provide your own embedding vectors for vector columns and vector queries; Infino stores and searches vectors but does not generate embeddings.",
     "Not every local capability is hosted yet — check the local-vs-hosted parity matrix in the API reference before assuming a feature works on Infino Cloud.",
     "Infino Cloud errors carry retry guidance: some clear on retry and some never will — consult the Errors & retries page rather than retrying everything.",
-    "For AI agents, the Infino MCP server (@infino-ai/mcp-server) exposes the same search tools locally and on Infino Cloud; LangChain, CrewAI, and Vercel AI SDK integrations are documented under Integrations."
+    "For AI agents, the Infino MCP server (@infino-ai/mcp-server) exposes the same search tools locally and on Infino Cloud."
   ]
 }

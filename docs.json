@@ -101,10 +101,6 @@
       {
         "tab": "Integrations",
         "pages": [
-          "integrations/index",
-          "integrations/langchain",
-          "integrations/ai-sdk",
-          "integrations/crewai",
           "integrations/mcp"
         ]
       },
@@ -224,6 +220,22 @@
     {
       "source": "/guides/search/hybrid",
       "destination": "/guides/search#hybrid-search"
+    },
+    {
+      "source": "/integrations",
+      "destination": "/integrations/mcp"
+    },
+    {
+      "source": "/integrations/langchain",
+      "destination": "/integrations/mcp"
+    },
+    {
+      "source": "/integrations/ai-sdk",
+      "destination": "/integrations/mcp"
+    },
+    {
+      "source": "/integrations/crewai",
+      "destination": "/integrations/mcp"
     }
   ]
 }
