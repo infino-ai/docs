@@ -1,54 +1,54 @@
 ---
 title: "Agent memory: long-term recall for AI agents"
 icon: "brain"
-description: Give AI agents long-term memory with Infino. Hybrid BM25 and vector recall over past conversations, ready-made as the memory-infino OpenClaw plugin.
+description: Give AI agents long-term memory with Infino. Hybrid BM25 and vector recall over an agent's history, with SQL over the same store, on object storage.
 ---
 
-[`memory-infino`](https://clawhub.ai/infino-ai/plugins/memory-infino) is a drop-in
-memory plugin for [OpenClaw](https://docs.openclaw.ai) agents, built on Infino. An agent
-stores what it sees and recalls the relevant pieces later, searched by keyword and by
-meaning together. It's all queryable with SQL and kept on object storage.
+An agent that talks with someone over weeks needs to remember the conversation and recall
+the right pieces later. Infino stores each message once, its text alongside an embedding,
+and serves recall over that single table: by keyword, by meaning, by both fused together,
+and by SQL. Memory lives on a local path or object storage, so it grows with the agent's
+history rather than a fixed cluster.
 
-## The memory-infino plugin
+## What memory needs from a store
 
-[`memory-infino`](https://clawhub.ai/infino-ai/plugins/memory-infino) implements OpenClaw's
-memory-plugin contract with three tools:
-
-| Tool | What it does |
+| Need | How Infino serves it |
 | --- | --- |
-| `memory_recall` | Hybrid (BM25 + vector) search over long-term memory, fused with reciprocal-rank fusion |
-| `memory_store` | Save a memory (embedded on write) |
-| `memory_forget` | Delete by id, or find-and-delete by query |
+| Recall by meaning and by exact terms | Hybrid search fuses BM25 and vector matches with reciprocal-rank fusion, in one query |
+| Structured questions over history | SQL over the same table: filter by session or date, `GROUP BY`, `COUNT` |
+| Forgetting | `delete` by id, or find-and-delete by query |
 
-## Install
+A plain vector store gives you the first of these and nothing else. Keeping keyword search,
+semantic search, and SQL in one engine is what removes the separate keyword index, the
+rerank service, and the second database an agent memory usually needs.
+
+## Build it
+
+The [agent-memory example](https://github.com/infino-ai/infino/tree/main/infino-node/examples/agent-memory)
+is a runnable implementation on the Node binding. It loads one real, months-long,
+multi-session conversation from [LOCOMO](https://github.com/snap-research/locomo), a public
+long-term conversational-memory dataset, turns each message into a memory timestamped with
+its session, and then demonstrates hybrid recall, SQL over memory, and deletion against it.
 
 ```bash
-npm install @infino-ai/memory-infino
+npm install @infino-ai/infino
 ```
 
-Find it on [ClawHub](https://clawhub.ai/infino-ai/plugins/memory-infino) and enable it as
-a memory plugin in your OpenClaw configuration. See the
-[OpenClaw docs](https://docs.openclaw.ai) for wiring a memory plugin into an agent. Memory
-lives on a local path or object storage (S3 / GCS / Azure).
+Start from the [Quickstart](/quickstart) for the shape of a table, embeddings, and search,
+then follow the example for the memory-specific parts.
 
 ## Why Infino for agent memory
 
-- **Hybrid recall in one engine.** `memory_recall` fuses keyword (BM25) and semantic
-  (vector) matches, so an agent finds memories by exact terms and by meaning at once, with no
-  separate keyword index or rerank service.
+- **Hybrid recall in one engine.** Keyword (BM25) and semantic (vector) matches are fused
+  in a single query, so an agent finds memories by exact terms and by meaning at once, with
+  no separate keyword index or rerank service.
 - **Object-storage-native.** Memory is stored as Apache Parquet on a local path or object
   storage; it scales with the agent's history rather than a fixed cluster.
 - **SQL over memory.** The same store answers structured and time-based questions over an
   agent's history.
 
-## Build it yourself
-
-Not on OpenClaw, or want memory tailored to your own stack? Build the same pattern
-directly on the Infino Node binding. See the
-[agent-memory tutorial](/tutorials) and the [Quickstart](/quickstart).
-
 ## See also
 
-- [memory-infino on ClawHub](https://clawhub.ai/infino-ai/plugins/memory-infino)
-- [memory-infino on GitHub](https://github.com/infino-ai/memory-infino)
+- [Agent-memory example](https://github.com/infino-ai/infino/tree/main/infino-node/examples/agent-memory)
+- [Tutorials](/tutorials)
 - [How Infino works](/core-concepts)
