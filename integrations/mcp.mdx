@@ -49,7 +49,6 @@ credentials are needed, since the platform owns the storage.
 | --- | --- | --- | --- |
 | `INFINO_MCP_URI` | No | `~/.infino/mcp` | Data to serve — see the table above. |
 | `INFINO_API_KEY` | With a hosted URI | — | API key (`inf_…`) for a hosted `https://` endpoint. Ignored for local and bucket connections. |
-| `INFINO_MCP_ENABLE_WRITES` | No | _off_ | When set (`1`/`true`/`yes`), exposes the write tools and lets SQL run DDL/DML. Omit for a strictly read-only server. |
 | `INFINO_MCP_EMBED_PROVIDER` | No | `local` | Query-embedding provider: `local` (Hugging Face, no key) or `openai` (any OpenAI-compatible `/embeddings` endpoint, including Azure OpenAI). |
 | `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` | The embedding model — **must match the model that produced the table's stored vectors**. |
 
@@ -134,8 +133,9 @@ Any client that speaks MCP over stdio works — configure it to launch
 ## Connect to Infino Cloud
 
 To serve a hosted database, point `INFINO_MCP_URI` at the `https://<host>/<database>`
-endpoint and supply your API key. Everything else — the tools, the read-only default — is
-identical to a local connection:
+endpoint and supply your API key. Everything else is identical to a local connection. The
+key's capabilities decide what the connection may do: a read-scoped key is refused every
+write.
 
 ```jsonc
 {
@@ -166,11 +166,15 @@ steer the model to the right one by question shape.
 | `infino_hybrid_search` | Fused keyword + vector ranking in one pass. |
 | `infino_token_match` / `infino_exact_match` | Unranked keyword / exact-equality filters. |
 | `infino_count` | Count rows matching a keyword query, without fetching them. |
-| `infino_sql` | Counts, joins, aggregates, and filtering by column value. |
-| `infino_add_documents` / `infino_update_documents` / `infino_delete_documents` | Writes — appended, replaced, or deleted rows. **Only when `INFINO_MCP_ENABLE_WRITES` is set.** |
+| `infino_sql` | Counts, joins, aggregates, and filtering by column value; any single statement. |
+| `infino_create_database` / `infino_create_table` / `infino_drop_table` | Provision the database, create a table from a `{column: type}` descriptor (with `vector: true` the server adds an `embedding` column sized to its embedder), drop a table. |
+| `infino_add_documents` / `infino_update_documents` / `infino_delete_documents` | Writes: appended, replaced, or deleted rows. Rows without a vector are embedded from their text in one batch. |
 
-The server is **read-only by default**: the write tools aren't advertised, and `infino_sql`
-accepts only a single `SELECT`/`WITH`. Set `INFINO_MCP_ENABLE_WRITES` to enable writes.
+The full toolset is always available; there is no server-side write gate. Who may write is
+decided by the API key's capabilities on Infino Cloud and by which path or bucket you point
+the server at locally. Every tool carries MCP annotations (`readOnlyHint`, `destructiveHint`)
+so your client can ask for confirmation on its own terms. A tool call carries tens of rows;
+for a whole corpus use the [CLI](/cli) or an SDK.
 
 <Note>
 Semantic and hybrid search embed queries **locally** in the server (no embedding API key
