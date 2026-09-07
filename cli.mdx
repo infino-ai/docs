@@ -91,10 +91,9 @@ infino bm25-search docs body "object storage" -k 10 --uri https://api.platform.i
 
 <Note>
 `--fields` names the columns to return, and it is worth passing on every search:
-without it a search returns `_id` and `score` only, never your text. On Infino
-Cloud `vector-search` requires it; everywhere else it is optional but usually
-what you want. See the hosted [Quickstart](/cloud/quickstart) and
-[Authentication](/cloud/authentication).
+without it a search returns `_id` and `score` only, never your text. It is
+optional everywhere, local or hosted. See the hosted [Quickstart](/cloud/quickstart)
+and [Authentication](/cloud/authentication).
 </Note>
 
 ## Quickstart

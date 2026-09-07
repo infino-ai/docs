@@ -224,12 +224,6 @@ let billing = db.query_sql("SELECT body FROM docs WHERE source = 'help-center'")
 
 </CodeGroup>
 
-<Note>
-On Infino Cloud, `vector_search` and `hybrid_search` require an explicit `projection`
-argument naming the columns to return (for example `["_id", "body"]`). `bm25_search`
-does not. This is the one call-site difference from a local connection.
-</Note>
-
 `vector_search`, `hybrid_search`, `count`, `query_sql`, `update`, `delete`,
 `list_tables`, and `drop_table` all work the same way over the hosted connection. For
 the full search surface see [Search](/guides/search); for tables and schema see
@@ -251,8 +245,7 @@ db = infino.connect("./data")
 db = infino.connect("https://api.platform.infino.ws/my-app", api_key="inf_…")
 ```
 
-Everything after that line is identical, with the one exception noted above: on the
-hosted service, `vector_search` and `hybrid_search` take an explicit `projection`.
+Everything after that line is identical.
 
 <Note>
 Table maintenance (`optimize` and `gc`) is handled for you on Infino Cloud, so you
