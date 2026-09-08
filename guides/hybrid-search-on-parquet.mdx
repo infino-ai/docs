@@ -1,0 +1,340 @@
+---
+title: "Implementing hybrid search on Apache Parquet files"
+icon: "layer-group"
+description: Implement hybrid search, full-text, and SQL analytics directly on Apache Parquet data, without moving it into a specialized vector database. A runnable walkthrough with a real dataset and real embeddings.
+---
+
+This guide implements hybrid search directly on Apache Parquet files, start to
+finish. You will index 10,003 real customer questions, run keyword, semantic,
+and fused queries against them, filter and aggregate the results in SQL, and
+then open the index files with DuckDB to confirm the data never left Parquet.
+Everything runs locally in a few minutes, and the same code targets S3 by
+changing one string. Nothing needs an account, a key, or a server.
+
+```bash
+pip install infino pyarrow sentence-transformers datasets duckdb
+```
+
+## Keep Parquet as the source of truth
+
+Say you have millions of events, documents, or tickets already sitting as
+Parquet on S3, and you need full-text and vector search over them. The usual
+route is migration: copy the rows into a search cluster or a specialized
+vector database, then operate two systems and keep them in sync forever. The
+copy costs storage, the sync costs pipeline work, and every schema change
+lands twice.
+
+The alternative is a file-based architecture: index the data where it lives.
+Infino is an embedded retrieval library that writes BM25, vector, and scalar
+indexes into the Parquet files themselves. Each file it produces is a
+superfile, a spec-compliant Apache Parquet file with the index regions spliced
+in ahead of the standard footer, referenced by `inf.*` metadata keys that a
+conformant Parquet reader ignores. One copy of the data serves hybrid search
+and analytics together, and every Parquet tool already pointed at your bucket
+keeps working.
+
+Storage is wherever your data already sits. This walkthrough uses a local
+directory so it runs anywhere. To make Parquet on object storage searchable
+without moving it into another database, point the connection at the bucket
+instead:
+
+```python
+db = infino.connect("./bankhelp")            # local disk
+db = infino.connect("s3://bucket/prefix")    # S3; GCS and Azure work too
+```
+
+The indexes persist with the data: built once, rebuildable, and read by any
+number of processes. There is no cluster to size and no index server to keep
+warm. The engine is a library in your process, which is what makes it fit
+agent-memory and serverless shapes where a database connection pool does not,
+and retrieval for an agent is many small queries rather than one big one.
+
+One cost note before building. On object storage the first query from a fresh
+reader pays real round trips, fetching the table manifest and the index
+regions it cannot prune. Warm readers hold a pinned snapshot and skip that
+work. A long-running service pays the cold cost once, a scale-to-zero function
+pays it per cold start. Measure against your own bucket before deciding. On
+local disk the cold cost was single-digit milliseconds on this corpus. The
+[storage guide](/guides/storage) covers backends and credentials.
+
+## Build a persistent index
+
+[banking77](https://huggingface.co/datasets/banking77) is 10,003 real
+questions customers asked an online bank, labeled with 77 intents. It is a
+good hybrid testbed because the questions mix exact terms where keyword search
+wins (SWIFT, Apple Pay, PIN) with everyday paraphrases where it loses.
+
+Infino is bring-your-own-embeddings: you compute vectors with whatever model
+you like and the engine indexes them (the [embeddings
+guide](/guides/embeddings) covers dimension and metric rules). This guide uses
+a small local model, so the pipeline stays key-free. Embedding all 10,003 rows
+took about five seconds on a laptop:
+
+```python
+from datasets import load_dataset
+from sentence_transformers import SentenceTransformer
+
+ds = load_dataset("banking77", split="train")
+labels = ds.features["label"].names
+texts = ds["text"]
+topics = [labels[i].replace("_", " ") for i in ds["label"]]
+
+model = SentenceTransformer("all-MiniLM-L6-v2")   # 384-dim
+vecs = model.encode(texts, batch_size=256)
+```
+
+One table carries the text, its topic label, and the embedding, with a BM25
+index on both text columns and a vector index on the embedding:
+
+```python
+import pyarrow as pa
+import infino
+
+db = infino.connect("./bankhelp")
+
+schema = pa.schema([
+    pa.field("text", pa.large_utf8(), nullable=False),
+    pa.field("topic", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), 384), nullable=False),
+])
+
+table = db.create_table(
+    "questions",
+    schema,
+    infino.IndexSpec().fts("text").fts("topic").vector("embedding", 384, "cosine"),
+)
+
+table.append([
+    {"text": t, "topic": g, "embedding": v.tolist()}
+    for t, g, v in zip(texts, topics, vecs)
+])
+```
+
+The append indexes as it writes. On this corpus it took about three seconds,
+and what lands on disk is a handful of `*.sf.parquet` files under the table's
+directory. Those files are the whole system: data, keyword index, and vector
+index in one place, durable and rebuildable, growing with the dataset rather
+than with a cluster plan. Search performance stays stable as the table grows
+because the indexes are persistent, not rebuilt per process or held per node
+in RAM.
+
+## Query it: hybrid search and analytics
+
+BM25 ranks rows by the exact tokens they share with the query. On a term of
+art it is precise. Scores are relevance, higher is better:
+
+```python
+table.bm25_search("text", "SWIFT transfer", 5, projection=["text", "score"])
+```
+
+```text
+9.46  Is a SWIFT transfer acceptable?
+9.46  Can I transfer using SWIFT?
+9.46  Can I Transfer from SWIFT?
+9.08  Can I do a SWIFT transfer?
+8.72  is there a fee for swift transfer
+```
+
+Give the same index a paraphrase and it latches onto the wrong tokens. This
+user is asking about a card that never arrived, and BM25 anchors on "not shown
+up" and drifts into refund territory by the second hit:
+
+```python
+table.bm25_search("text", "my new card still has not shown up", 5)
+```
+
+```text
+17.39  Why has my new card still not come?
+15.52  My refund has not shown up on my statement.
+15.15  my check or cash deposit has not shown up
+14.04  My refund has not shown up in my account.   Where is it?
+13.42  My statement has not shown my refund.
+```
+
+Vector search inverts the trade. It matches meaning, so the paraphrase works
+even where a hit shares almost no vocabulary with the query. Scores are cosine
+distance, lower is closer:
+
+```python
+query = "my new card still has not shown up"
+qvec = model.encode(query).tolist()
+table.vector_search("embedding", qvec, 5, projection=["text", "score"])
+```
+
+```text
+0.117  Why has my new card still not come?
+0.165  why have i not got my new card?
+0.172  I just got a new card how do I get it to start working?
+0.180  where is my new card?
+0.181  2 weeks ago I ordered my new card.  It isn't here.  What should I do?
+```
+
+But vector search has no notion of an exact token, so a rare identifier, a
+product name, or an error code can dissolve into its neighborhood. A real
+query stream contains both shapes daily, which is the case for hybrid.
+`hybrid_search` runs both retrievers and fuses the two rankings with
+reciprocal rank fusion, so a row both retrievers surface outranks a row only
+one of them found:
+
+```python
+hq = "top up with Apple Pay"
+table.hybrid_search("text", hq, "embedding", model.encode(hq).tolist(), 5,
+                    projection=["text", "score"])
+```
+
+```text
+0.0323  Is top-up possible with Apple Pay?
+0.0320  How can I top up with Apple Pay?
+0.0308  Am I able to top up with Apple Pay?
+0.0161  My Apple Pay top up with my American Express card is not working?
+0.0161  is there a way to do top up with apple pay
+```
+
+The exact-token half of the query (Apple Pay) and the intent half (topping
+up) each pull their weight. Neither retriever alone ranks this list this way.
+The [search guide](/guides/search) covers every mode argument by argument.
+
+### Filtered vector search
+
+Most production vector queries carry a filter: this tenant, this document
+type, this language. Infino pushes a text predicate into the vector search
+itself, so you get the k nearest rows that match the filter, not a thinned
+slice of the global top k:
+
+```python
+table.vector_search(
+    "embedding", qvec, 5,
+    filter_column="topic", filter_query="card arrival", filter_mode="and",
+    projection=["text", "topic"],
+)
+```
+
+```text
+card arrival | Why has my new card still not come?
+card arrival | why have i not got my new card?
+card arrival | 2 weeks ago I ordered my new card.  It isn't here.
+card arrival | My new card hasn't came in.
+card arrival | Why have I not gotten my new card?
+```
+
+The filter column must be FTS-indexed, which is why the schema indexed
+`topic`. Predicates on numeric or other scalar columns compose in SQL instead,
+as below. That path filters after the top k rather than inside it, so
+over-fetch when the predicate is selective.
+
+### Search as a relation in SQL
+
+Search functions are table-valued, so a result set is a relation you can
+join, filter, and aggregate. One query answers a question no single search
+call can: which topics dominate the neighborhood of this query?
+
+```python
+qcsv = ",".join(str(x) for x in qvec)
+db.query_sql(f"""
+    SELECT q.topic, COUNT(*) AS hits
+    FROM vector_search('questions', 'embedding', '{qcsv}', 100) v
+    JOIN questions q ON q._id = v._id
+    GROUP BY q.topic
+    ORDER BY hits DESC
+    LIMIT 5
+""")
+```
+
+```text
+card not working     33
+card arrival         29
+activate my card     17
+card linking          8
+lost or stolen card   8
+```
+
+`bm25_search` and `hybrid_search` are available as table functions the same
+way, so a hybrid ranking can feed a join or a window function directly. This
+is where hybrid search and analytics in one engine pays: the retrieval step is
+the first stage of a SQL plan, not a separate system's output stitched
+together client-side. The [SQL reference](/sql-reference) covers the table
+functions.
+
+### Read the files back with DuckDB
+
+The index did not take the data hostage. Open the same files with DuckDB,
+which knows nothing about Infino:
+
+```python
+import duckdb
+
+duckdb.sql("""
+    SELECT count(*) FROM read_parquet('./bankhelp/**/*.sf.parquet')
+""").show()
+```
+
+```text
+10003
+```
+
+DuckDB sees `_id`, `text`, and `topic`. It does not see `embedding`, because
+the vectors are consumed into the embedded index rather than stored twice as
+a plain column, and the index regions are invisible to a standard reader.
+pandas and pyarrow read the same files the same way (the [Parquet interop
+guide](/guides/parquet-interop) covers those paths). Your search index and
+your analytics tables are one copy of the data.
+
+## The complete script
+
+```python
+import pyarrow as pa
+from datasets import load_dataset
+from sentence_transformers import SentenceTransformer
+import duckdb
+import infino
+
+ds = load_dataset("banking77", split="train")
+labels = ds.features["label"].names
+texts = ds["text"]
+topics = [labels[i].replace("_", " ") for i in ds["label"]]
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+vecs = model.encode(texts, batch_size=256)
+
+db = infino.connect("./bankhelp")
+schema = pa.schema([
+    pa.field("text", pa.large_utf8(), nullable=False),
+    pa.field("topic", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), 384), nullable=False),
+])
+table = db.create_table(
+    "questions", schema,
+    infino.IndexSpec().fts("text").fts("topic").vector("embedding", 384, "cosine"),
+)
+table.append([
+    {"text": t, "topic": g, "embedding": v.tolist()}
+    for t, g, v in zip(texts, topics, vecs)
+])
+
+print(table.bm25_search("text", "SWIFT transfer", 5, projection=["text", "score"]))
+
+query = "my new card still has not shown up"
+qvec = model.encode(query).tolist()
+print(table.vector_search("embedding", qvec, 5, projection=["text", "score"]))
+
+hq = "top up with Apple Pay"
+print(table.hybrid_search("text", hq, "embedding", model.encode(hq).tolist(), 5,
+                          projection=["text", "score"]))
+
+print(table.vector_search("embedding", qvec, 5,
+                          filter_column="topic", filter_query="card arrival",
+                          filter_mode="and", projection=["text", "topic"]))
+
+qcsv = ",".join(str(x) for x in qvec)
+print(db.query_sql(f"""
+    SELECT q.topic, COUNT(*) AS hits
+    FROM vector_search('questions', 'embedding', '{qcsv}', 100) v
+    JOIN questions q ON q._id = v._id
+    GROUP BY q.topic ORDER BY hits DESC LIMIT 5
+"""))
+
+duckdb.sql("SELECT count(*) FROM read_parquet('./bankhelp/**/*.sf.parquet')").show()
+```
+
+Every output shown on this page comes from running this script against the
+released `infino` package.

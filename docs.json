@@ -72,6 +72,7 @@
               "guides/embeddings",
               "guides/indexing",
               "guides/search",
+              "guides/hybrid-search-on-parquet",
               "guides/parquet-interop"
             ]
           },
