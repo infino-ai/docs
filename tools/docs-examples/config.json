@@ -41,6 +41,10 @@
       "mode": "typecheck-python"
     },
     {
+      "page": "guides/hybrid-search-on-parquet.mdx",
+      "mode": "typecheck-python"
+    },
+    {
       "page": "guides/tables.mdx",
       "mode": "typecheck-python"
     },
