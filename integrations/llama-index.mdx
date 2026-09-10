@@ -1,0 +1,87 @@
+---
+title: LlamaIndex integration with Infino vector store
+icon: "layer-group"
+description: Use Infino as a LlamaIndex vector store for vector, BM25 full-text, hybrid (RRF), and SQL retrieval over one copy of your data on object storage.
+---
+
+Infino is a LlamaIndex vector store: vector, full-text (BM25), hybrid (RRF), and
+SQL retrieval over a single copy of your data on object storage. It stores the
+node text alongside the embedding, so one Infino table replaces both the vector
+store and the docstore. Bring your own embeddings.
+
+```bash
+pip install llama-index-vector-stores-infino
+```
+
+The [`llama-index-vector-stores-infino`](https://pypi.org/project/llama-index-vector-stores-infino/)
+package provides `InfinoVectorStore`, a `BasePydanticVectorStore` with
+`stores_text=True`. Requires Python 3.10+; bring an embeddings provider
+separately (for example `pip install llama-index-embeddings-openai`).
+
+## Quickstart
+
+```python
+import infino
+from llama_index.core import Document, StorageContext, VectorStoreIndex
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.vector_stores.infino import InfinoVectorStore
+
+connection = infino.connect("./data")
+store = InfinoVectorStore(connection, table_name="docs", dim=1536)
+
+storage_context = StorageContext.from_defaults(vector_store=store)
+index = VectorStoreIndex.from_documents(
+    [Document(text="Infino runs search on object storage.")],
+    storage_context=storage_context,
+    embed_model=OpenAIEmbedding(),
+)
+
+retriever = index.as_retriever(similarity_top_k=4)
+```
+
+## Local, object storage, or hosted cloud
+
+The store construction is identical everywhere; only the `infino.connect(...)`
+call differs.
+
+```python
+import infino
+
+# Local (embedded): Parquet under a directory, no server.
+connection = infino.connect("./data")
+
+# Object storage (embedded): Parquet in your bucket, queried in place.
+connection = infino.connect(
+    "s3://my-bucket/rag", storage_options={"aws_region": "us-east-1"}
+)
+
+# Hosted Infino Cloud: sign up at https://platform.infino.ws for an API key.
+connection = infino.connect(
+    "https://api.platform.infino.ws/<database>", api_key="..."
+)
+```
+
+## Query modes
+
+All four `VectorStoreQueryMode`s are first-class on the same store:
+
+```python
+index.as_retriever(similarity_top_k=10)                                            # vector (default)
+index.as_retriever(similarity_top_k=10, vector_store_query_mode="text_search")     # BM25
+index.as_retriever(similarity_top_k=10, vector_store_query_mode="hybrid")          # hybrid (RRF)
+index.as_retriever(similarity_top_k=10, vector_store_query_mode="mmr",
+                   vector_store_kwargs={"embed_model": embed_model})               # MMR
+```
+
+Hybrid fuses BM25 and vector search with reciprocal-rank fusion in one engine
+call. Structured metadata filters (the full LlamaIndex operator set), a
+text-pushdown pre-filter, a SQL escape hatch, and async variants are all
+supported; see the
+[package README](https://github.com/infino-ai/llama-index-vector-stores-infino)
+for the complete reference.
+
+## See also
+
+- [Quickstart](/quickstart)
+- [Search: full-text, vector, hybrid](/guides/search)
+- [MCP server](/integrations/mcp)
