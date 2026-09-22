@@ -184,11 +184,13 @@ db.drop_table("docs", true)?;                 // true reclaims storage; false un
 
 `optimize` accepts options (omit for engine defaults):
 
-| Option (Python / Node.js / Rust) | Description |
+| Option (Python / Node.js) | Description |
 | --- | --- |
 | `max_memory_mb` / `maxMemoryMb` | build-time memory budget, in MB |
 | `min_fill_percent` / `minFillPercent` | only compact superfiles below this fill percent (0 to 100) |
 | `target_superfile_size_mb` / `targetSuperfileSizeMb` | target merged-superfile size, in MB |
+| `stale_seal_timeout_ms` / `staleSealTimeoutMs` | how old a sealed tombstone sidecar must be, in ms, before compaction treats its owner as dead |
+| `recalibrate` | vector probe-law recalibration: `auto` (default), `force`, or `skip` |
 
 ## Reclaim storage (gc)
 
