@@ -53,7 +53,7 @@ Builds an IVF (inverted-file) vector index for kNN.
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `column` | string | the fixed-width vector column to index |
-| `dim` | int | embedding dimension; must match your model's output and the values you append |
+| `dim` | int | embedding dimension, in [16, 4096]; must match your model's output and the values you append |
 | `metric` | `cosine` / `l2sq` / `negdot` (`Metric::Cosine` …) | distance metric (see [Embeddings](/guides/embeddings)) |
 
 **Partitioning is automatic.** The engine derives the IVF partition (centroid) count
