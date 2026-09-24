@@ -4,12 +4,28 @@ icon: "layer-group"
 description: Implement hybrid search, full-text, and SQL analytics directly on Apache Parquet data, without moving it into a specialized vector database. A runnable walkthrough with a real dataset and real embeddings.
 ---
 
-This guide implements hybrid search directly on Apache Parquet files, start to
-finish. You will index 10,003 real customer questions, run keyword, semantic,
-and fused queries against them, filter and aggregate the results in SQL, and
-then open the index files with DuckDB to confirm the data never left Parquet.
-Everything runs locally in a few minutes, and the same code targets S3 by
-changing one string. Nothing needs an account, a key, or a server.
+To run hybrid search on Apache Parquet files without a separate vector database,
+keep the data as Parquet and put the indexes inside it. Infino is an
+open-source retrieval library that writes BM25 and vector indexes into the
+Parquet files it stores, on local disk or on S3, GCS, and Azure. A single call
+then fuses keyword and semantic rankings, and any Parquet reader still opens
+the same files for analytics.
+
+The steps, each shown below with runnable code and its real output:
+
+1. Connect to a storage root: a local directory or an `s3://` prefix.
+2. Create a table with a BM25 index on the text and a vector index on the embedding.
+3. Append rows with embeddings from any model. Indexing happens as the rows are written.
+4. Query with `bm25_search`, `vector_search`, or `hybrid_search`, which fuses the two with reciprocal rank fusion.
+5. Filter and aggregate results in SQL, where each search function is a table.
+6. Read the files back with DuckDB to confirm they are plain Parquet.
+
+This guide does all six, start to finish. You will index 10,003 real customer
+questions, run keyword, semantic, and fused queries against them, filter and
+aggregate the results in SQL, and then open the index files with DuckDB to
+confirm the data never left Parquet. Everything runs locally in a few minutes,
+and the same code targets S3 by changing one string. Nothing needs an account,
+a key, or a server.
 
 ```bash
 pip install infino pyarrow sentence-transformers datasets duckdb
@@ -338,3 +354,71 @@ duckdb.sql("SELECT count(*) FROM read_parquet('./bankhelp/**/*.sf.parquet')").sh
 
 Every output shown on this page comes from running this script against the
 released `infino` package.
+
+## Common questions
+
+### How do I run vector search over Parquet files on S3 without a separate vector database?
+
+Connect to the bucket with `infino.connect("s3://bucket/prefix")`, create a
+table with a vector index, and append rows with their embeddings. The vector
+index is written into the table's Parquet files in that bucket, and
+`vector_search` or the `vector_search` SQL function queries it from your own
+process. There is no vector database to provision or keep in sync. The
+[storage guide](/guides/storage) covers credentials for each backend.
+
+### Can I add search to Parquet files I already have?
+
+Yes, with one pass over the data. Read the existing rows and append them to an
+Infino table, and Infino writes new Parquet files with the indexes inside,
+into whatever bucket you point it at. Your original files are not modified.
+Because the new files are themselves standard Parquet, the analytics tools
+already pointed at your data can read them, so one copy can serve both search
+and analytics from then on.
+
+### Which object stores does it work with?
+
+Amazon S3, Google Cloud Storage, and Azure Blob Storage, plus local disk. The
+code is the same for all of them. Only the connection string changes.
+
+### Can DuckDB, pandas, or pyarrow still read the data?
+
+Yes. Each file Infino writes is spec-compliant Parquet, so any conformant
+reader opens it and sees the scalar and text columns. Two things differ from a
+plain Parquet table: the embedding column lives inside the vector index rather
+than as a Parquet column, and a raw read does not apply updates or deletes. The
+[Parquet interop guide](/guides/parquet-interop) covers both.
+
+### Does it work for AI agent memory?
+
+Yes. Infino runs as a library inside the agent's process, so a memory read is
+a function call against a pinned snapshot of the table, with no connection pool
+or server in between. Hybrid search suits agent memory because an agent's queries mix exact
+names and identifiers with loosely worded recall. Agents that speak MCP can use
+the [Infino MCP server](/integrations/mcp), and the
+[agent memory use case](/use-cases/agent-memory) walks through the pattern.
+
+### I have millions of events stored as Parquet on S3. How does this hold up?
+
+The indexes persist in the files, so a query reads only the index regions and
+byte ranges it cannot prune, not the whole dataset. Warm queries run from
+cached bytes: a warm single-term BM25 query on a 1-million-document index
+returns in the microsecond range. The first query to touch a file on object
+storage pays a round trip of hundreds of milliseconds. Each table has one
+active writer at a time. [Tradeoffs](/tradeoffs) states the full envelope, and
+the engine's
+[benchmarks](https://github.com/infino-ai/infino/blob/main/benches/README.md)
+record ingest, cold, and warm numbers with the hardware they ran on.
+
+### How does hybrid search combine keyword and vector results?
+
+`hybrid_search` runs BM25 and vector search separately and merges the two
+ranked lists with reciprocal rank fusion. A row gets credit for its rank in
+each list, so a row both retrievers place near the top outranks a row only
+one of them found. Scores are fusion scores, not BM25 or cosine values. The
+[search guide](/guides/search) covers the arguments.
+
+### Is Infino open source?
+
+Yes. The engine is Apache-2.0 licensed and
+[developed on GitHub](https://github.com/infino-ai/infino). It is available
+for Python, Node.js, and Rust.
