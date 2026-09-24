@@ -46,6 +46,18 @@ let spec = IndexSpec::new()
 Builds a BM25 inverted index over a text column, powering `bm25_search`, `token_match`,
 and the hybrid / pushdown-filter paths. Call `fts` once per text column you want to search.
 
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `column` | string | the text column to index |
+| `analyzer` | `standard` / `ascii_lower` | tokenizer; default `standard` (Unicode-aware) |
+| `stored` | bool | keep the raw text in the table; default `true`. `false` makes the column searchable but not readable back |
+| `k1` / `b` | float | BM25 term-frequency saturation and length normalization; pass both or neither |
+| `stopwords` | string (`english`) | stopword set removed at index and query time; default none |
+| `stemmer` | string (`english`) | stemmer applied at index and query time; default none |
+| `positions` | bool | record token positions; default `false`. Needed for phrase queries: a column without them errors on a phrase query |
+
+Each option is recorded with the table at create time and cannot be changed afterwards.
+
 ## Vector index: `vector(column, dim, metric)`
 
 Builds an IVF (inverted-file) vector index for kNN.
