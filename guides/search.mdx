@@ -61,6 +61,8 @@ let hits = docs.bm25_search(
 | `query` | string | required | query terms, tokenized by the index |
 | `k` | int | required | number of top results |
 | `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
+| `stats` | `global` / `per_superfile` | `global` | BM25 statistics scope |
+| `k1` / `b` | float | column's values | per-search BM25 override; pass both or neither |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 <Note>BM25 `score` is a **similarity** — higher is better. (Vector `score` is a distance; the two run in opposite directions.)</Note>
