@@ -1,0 +1,37 @@
+<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pharos demo">
+  <rect width="640" height="360" fill="#131410"/>
+  <!-- faint plotting grid -->
+  <g stroke="#1e2019" stroke-width="1">
+    <path d="M0 90 H640 M0 180 H640 M0 270 H640"/>
+    <path d="M160 0 V360 M320 0 V360 M480 0 V360"/>
+  </g>
+  <!-- twin beacon beams sweeping the field of papers -->
+  <path d="M314 124 L70 236 L70 300 Z" fill="#d3ff4d" opacity="0.06"/>
+  <path d="M326 124 L570 236 L570 300 Z" fill="#d3ff4d" opacity="0.06"/>
+  <!-- lighthouse tower -->
+  <path d="M300 322 h40 l-10 -182 h-20 z" fill="none" stroke="#9a9d92" stroke-width="2"/>
+  <!-- gallery / lantern room -->
+  <rect x="306" y="116" width="28" height="24" fill="none" stroke="#9a9d92" stroke-width="2"/>
+  <!-- roof -->
+  <path d="M304 116 L320 100 L336 116 Z" fill="none" stroke="#9a9d92" stroke-width="2"/>
+  <!-- light -->
+  <circle cx="320" cy="128" r="16" fill="#d3ff4d" opacity="0.16"/>
+  <circle cx="320" cy="128" r="7" fill="#d3ff4d"/>
+  <!-- papers in the beams (found) -->
+  <g fill="#d3ff4d">
+    <rect x="80" y="272" width="20" height="14" rx="1" opacity="0.55"/>
+    <rect x="104" y="298" width="20" height="14" rx="1" opacity="0.4"/>
+    <rect x="132" y="278" width="20" height="14" rx="1" opacity="0.5"/>
+    <rect x="512" y="272" width="20" height="14" rx="1" opacity="0.5"/>
+    <rect x="488" y="298" width="20" height="14" rx="1" opacity="0.4"/>
+    <rect x="460" y="278" width="20" height="14" rx="1" opacity="0.3"/>
+  </g>
+  <!-- papers still in the dark -->
+  <g fill="#272921">
+    <rect x="240" y="300" width="20" height="14" rx="1"/>
+    <rect x="286" y="306" width="20" height="14" rx="1"/>
+    <rect x="332" y="300" width="20" height="14" rx="1"/>
+    <rect x="252" y="276" width="20" height="14" rx="1"/>
+    <rect x="374" y="278" width="20" height="14" rx="1"/>
+  </g>
+</svg>

@@ -124,7 +124,8 @@
         "tab": "Demos",
         "pages": [
           "demos/index",
-          "demos/lantern"
+          "demos/lantern",
+          "demos/pharos"
         ]
       },
       {
