@@ -37,7 +37,13 @@ scalar/aggregate functions.
 Call a search function in the `FROM` clause as a relation. Every one takes a **leading
 table-name argument** (a string literal naming the catalog table to search) and returns that
 table's **`_id`**, its **scalar columns**, and a **`score`** column. The ranked functions
-order by relevance, so add `ORDER BY score DESC` (and a `LIMIT`) for control.
+return rows best first. Their scores point in different directions, so when you re-sort
+after a join or filter, match the function:
+
+- **`bm25_search`** and **`hybrid_search`**: higher is better, so `ORDER BY score DESC`.
+  A hybrid score is the reciprocal rank fusion of the two rankings, not a BM25 or distance value.
+- **`vector_search`**: `score` is the distance under the index's metric (cosine distance
+  for a cosine index), so lower is closer: `ORDER BY score ASC`.
 
 | Function | Signature | Returns |
 | --- | --- | --- |
@@ -68,10 +74,10 @@ ORDER BY score DESC;
 -- require all terms (AND)
 SELECT _id, score FROM bm25_search('docs', 'body', 'error timeout', 10, 'and');
 
--- vector kNN, query vector as a string literal
+-- vector kNN, query vector as a string literal (score is a distance: lower is closer)
 SELECT _id, score
 FROM vector_search('docs', 'embedding', '0.12,0.04,-0.31, ...', 10)
-ORDER BY score DESC;
+ORDER BY score ASC;
 
 -- hybrid (BM25 + vector, fused with reciprocal-rank fusion)
 SELECT _id, body, score

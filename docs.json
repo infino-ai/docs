@@ -73,6 +73,7 @@
               "guides/indexing",
               "guides/search",
               "guides/hybrid-search-on-parquet",
+              "guides/sql-analytics-with-search",
               "guides/parquet-interop"
             ]
           },
