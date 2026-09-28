@@ -1,0 +1,45 @@
+---
+title: "Pharos"
+description: "Search nearly 100 million scholarly papers stored as plain Parquet on a bucket. Keyword, semantic, and hybrid retrieval, then analytics over the results in one SQL pass."
+---
+
+Pharos is a live demo of Infino serving the OpenAlex scholarly corpus
+from 2018 to 2025, nearly 100 million works, as tables on a storage
+bucket. The papers are plain Parquet with BM25 and vector indexes built
+in. Search them three ways, then aggregate over the results in a single
+SQL pass. There is no search cluster, no vector database, and no
+warehouse behind it, just files in a bucket.
+
+<Card title="Open Pharos" icon="arrow-up-right-from-square" href="https://pharos.infino.ai" horizontal>
+  Runs in the browser, no login. Query nearly 100 million papers straight off object storage.
+</Card>
+
+## What to try
+
+- Search a topic like *graph neural networks* and read the ranked
+  papers. Keyword results come back in milliseconds.
+- Switch the mode between keyword, semantic, and hybrid to see how the
+  ranking shifts for the same query.
+- Narrow the year range to watch results come back from a single yearly
+  partition.
+- Open the **insights** tab to aggregate over the matched papers in one
+  SQL round trip: counts by year and country, average citations and
+  field-weighted impact, open-access share.
+- Open **under the hood** to see the schema, sample rows, and the
+  Parquet layout Infino keeps on the bucket.
+
+## How Infino powers it
+
+| In the demo | Infino feature |
+| --- | --- |
+| Keyword search | BM25 full-text search |
+| Semantic search | Vector search over paper embeddings |
+| Hybrid search | Fused keyword and vector ranking in one call |
+| Compare the three modes | The same query run keyword, semantic, and hybrid, side by side |
+| Insights tab | SQL over the same tables, aggregating the matched papers |
+| Under-the-hood inspector | The literal Parquet layout on object storage |
+
+Every year of the corpus is one Infino table, stored as Parquet on the
+bucket with its full-text and vector indexes alongside. A query reads
+only the bytes it needs, so the corpus grows with the bucket instead of
+a cluster.
