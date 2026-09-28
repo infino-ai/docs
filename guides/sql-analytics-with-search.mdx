@@ -1,0 +1,294 @@
+---
+title: "Integrating SQL analytics with vector and full-text search"
+icon: "table"
+description: Run vector, BM25, and hybrid search as SQL table functions, then join, filter, group, and window over the ranked results in one query. A runnable walkthrough on real data, over Parquet files on disk or object storage.
+---
+
+To combine SQL analytics with vector and full-text search, run the search inside the SQL
+query instead of beside it. In Infino, `vector_search`, `bm25_search`, and `hybrid_search`
+are table functions: each returns its ranked hits as a relation, so the same statement can
+join them to other tables, filter them, count them with `GROUP BY`, and rank within groups
+with window functions. There is no second system to query and no stitching of result sets
+in application code. The data stays as Parquet files, on local disk or in object storage.
+
+This guide builds two tables from 10,003 real customer questions to an online bank and a
+lookup table of which support team owns each topic, then runs five queries that no single
+search call can answer. Run the blocks in order in one Python session. Nothing needs an
+account, a key, or a server.
+
+```bash
+pip install infino pyarrow pandas sentence-transformers datasets
+```
+
+The [hybrid search on Parquet guide](/guides/hybrid-search-on-parquet) covers the search
+calls themselves on the same dataset. This guide is about what SQL adds on top of them.
+
+## Do you need a separate vector database for this?
+
+The usual stack keeps vectors in one system, full-text search in a second, and analytics
+in a warehouse. A question like "which teams own the requests that sound like this
+complaint" then takes three calls and a join in application code, over three copies of the
+data kept in sync.
+
+A dedicated vector database is still the right call when the workload is vector serving
+alone at a very high sustained query rate, with no keyword relevance and no aggregation.
+When the questions mix meaning, exact terms, and counting, running all three in one SQL
+engine removes the sync and the stitching. Infino runs search and SQL in your own process
+over one copy of the data, with the indexes stored inside the table's Parquet files.
+
+## Build the tables
+
+`questions` holds the text, its topic, and an embedding, with full-text indexes on both
+text columns and a vector index on the embedding. `teams` is an ordinary table with no
+search index, the kind of lookup table an application already has.
+
+```python
+import pyarrow as pa
+from datasets import load_dataset
+from sentence_transformers import SentenceTransformer
+import infino
+
+ds = load_dataset("banking77", split="train")
+labels = ds.features["label"].names
+texts = ds["text"]
+topics = [labels[i].replace("_", " ") for i in ds["label"]]
+
+model = SentenceTransformer("all-MiniLM-L6-v2")   # 384 dimensions
+vecs = model.encode(texts, batch_size=256)
+
+db = infino.connect("./bankhelp-sql")   # or "s3://bucket/prefix"
+
+questions = db.create_table(
+    "questions",
+    pa.schema([
+        pa.field("text", pa.large_utf8(), nullable=False),
+        pa.field("topic", pa.large_utf8(), nullable=False),
+        pa.field("embedding", pa.list_(pa.float32(), 384), nullable=False),
+    ]),
+    infino.IndexSpec().fts("text").fts("topic").vector("embedding", 384, "cosine"),
+)
+questions.append([
+    {"text": t, "topic": g, "embedding": v.tolist()}
+    for t, g, v in zip(texts, topics, vecs)
+])
+
+
+def team_for(topic):
+    if any(w in topic for w in ("card", "atm", "pin")):
+        return "cards"
+    if "transfer" in topic or "beneficiary" in topic:
+        return "transfers"
+    if "top up" in topic or "topping up" in topic:
+        return "top-ups"
+    if any(w in topic for w in ("exchange", "currency", "fiat")):
+        return "currency"
+    return "accounts"
+
+
+teams = db.create_table(
+    "teams",
+    pa.schema([
+        pa.field("topic", pa.large_utf8(), nullable=False),
+        pa.field("team", pa.large_utf8(), nullable=False),
+    ]),
+    infino.IndexSpec(),
+)
+teams.append([
+    {"topic": l.replace("_", " "), "team": team_for(l.replace("_", " "))}
+    for l in labels
+])
+```
+
+Two small helpers keep the queries readable. SQL takes the query embedding as a
+comma-separated string literal:
+
+```python
+def vec(text):
+    return ",".join(str(x) for x in model.encode(text).tolist())
+
+
+def show(sql):
+    print(db.query_sql(sql).to_pandas().to_string(index=False))
+```
+
+## Search as a table: join, count, and group the hits
+
+Each search function returns the table's `_id`, its text and scalar columns, and a `score`,
+so a hit can be joined like any row. Which teams own the 200 questions nearest in meaning
+to a complaint?
+
+```python
+complaint = "my card payment was declined at the shop"
+show(f"""
+SELECT t.team, COUNT(*) AS questions
+FROM vector_search('questions', 'embedding', '{vec(complaint)}', 200) AS v
+JOIN teams AS t ON t.topic = v.topic
+GROUP BY t.team
+ORDER BY questions DESC
+""")
+```
+
+```text
+     team  questions
+    cards        182
+ accounts          9
+transfers          7
+  top-ups          2
+```
+
+The same shape works on keywords. How many questions mention fees, by team?
+
+```python
+show("""
+SELECT t.team, COUNT(*) AS mentions
+FROM bm25_search('questions', 'text', 'fee', 1000) AS b
+JOIN teams AS t ON t.topic = b.topic
+GROUP BY t.team
+ORDER BY mentions DESC
+""")
+```
+
+```text
+     team  mentions
+    cards       153
+ accounts       141
+transfers       114
+ currency        33
+```
+
+The last argument, `k`, is how many hits the search returns before SQL sees them. An
+aggregate should use a `k` large enough to hold every row it means to count.
+
+## Rank within groups, and filter by another table
+
+Window functions work over search results too. The best hybrid match for one question,
+per team:
+
+```python
+hq = "refund for a transfer that never arrived"
+show(f"""
+SELECT team, text, score
+FROM (
+  SELECT t.team, h.text, h.score,
+         ROW_NUMBER() OVER (PARTITION BY t.team ORDER BY h.score DESC) AS rank
+  FROM hybrid_search('questions', 'text', '{hq}', 'embedding', '{vec(hq)}', 100) AS h
+  JOIN teams AS t ON t.topic = h.topic
+) AS ranked
+WHERE rank = 1
+ORDER BY score DESC
+""")
+```
+
+```text
+     team                                                                    text    score
+transfers                                              My transfer hasn't arrived 0.030090
+ accounts How can I get a refund for an item I purchased but has not yet arrived? 0.022618
+    cards                                                  My card never arrived. 0.016393
+```
+
+A join can also restrict the ranking to one slice, here the transfers team:
+
+```python
+show(f"""
+SELECT h.text, h.topic, h.score
+FROM hybrid_search('questions', 'text', '{hq}', 'embedding', '{vec(hq)}', 100) AS h
+JOIN teams AS t ON t.topic = h.topic
+WHERE t.team = 'transfers'
+ORDER BY h.score DESC
+LIMIT 5
+""")
+```
+
+```text
+                                                 text                                   topic    score
+                           My transfer hasn't arrived      transfer not received by recipient 0.030090
+                         My transfer has not arrived.      transfer not received by recipient 0.029851
+     Money that I have transferred hasn't arrived yet balance not updated after bank transfer 0.025978
+The money that I have transferred hasn't arrived yet. balance not updated after bank transfer 0.022918
+                 Why has my transfer not arrived yet?      transfer not received by recipient 0.022160
+```
+
+A `WHERE` clause on a joined table filters after the top `k` is chosen, so fetch more than
+you keep when the filter is selective. For a filter pushed into the vector search itself,
+use `filter_column` on `vector_search` in the [search guide](/guides/search#vector-search).
+
+Score directions differ by function. BM25 and hybrid scores are higher for a better match,
+while a vector `score` is a distance, lower for a closer match. The
+[SQL reference](/sql-reference) lists each one.
+
+## Measure where keyword and meaning disagree
+
+Running each retriever on its own and joining the two relations on `_id` shows what hybrid
+fusion hides: how many rows only one retriever finds.
+
+```python
+dq = "why was I charged extra"
+show(f"""
+WITH sides AS (
+  SELECT CASE
+           WHEN v._id IS NULL THEN 'keyword only'
+           WHEN k._id IS NULL THEN 'meaning only'
+           ELSE 'both'
+         END AS found_by
+  FROM bm25_search('questions', 'text', '{dq}', 100) AS k
+  FULL OUTER JOIN vector_search('questions', 'embedding', '{vec(dq)}', 100) AS v
+    ON v._id = k._id
+)
+SELECT found_by, COUNT(*) AS questions
+FROM sides
+GROUP BY found_by
+ORDER BY questions DESC
+""")
+```
+
+```text
+    found_by  questions
+meaning only         57
+keyword only         57
+        both         43
+```
+
+Of 157 distinct questions the two retrievers returned, only 43 came back from both. That
+gap is the case for fusing them, and a query like this one is how to watch it per query
+class as the data changes.
+
+On latency, the engine's continuous benchmark measures `hybrid_search` through SQL at
+3.47 ms p50 for 10 rows, on 1M-document tables in object storage with a warm cache. The
+numbers and how to reproduce them are on the [benchmarks page](https://infino.ai/benchmarks/).
+Vector search is approximate nearest-neighbor search, so check recall on your own data as
+well as latency. The first query to touch a file on object storage pays a round trip before
+its bytes are cached, covered in [tradeoffs](/tradeoffs).
+
+## Common questions
+
+### Can I run vector search in SQL?
+
+Yes. `vector_search('table', 'column', vector, k)` is a table function you call in the
+`FROM` clause, with the query embedding passed as a comma-separated string or an array
+literal. The result is a relation of the nearest rows with a distance `score`, which the
+rest of the statement can join, filter, and aggregate.
+
+### How do I combine full-text and vector search in one SQL query?
+
+Call `hybrid_search`, which runs BM25 and vector search and fuses the two rankings with
+reciprocal rank fusion, or call `bm25_search` and `vector_search` separately and join them
+on `_id` to see where they agree.
+
+### Does a WHERE clause filter before or after the search?
+
+After. The search returns its top `k` hits and SQL filters those, so a selective filter
+needs a larger `k`. A text predicate can instead be pushed into the vector search itself
+with `filter_column`, which returns the nearest rows that match rather than a thinned
+slice of the global top `k`.
+
+### Do I need to move data out of Parquet to query it this way?
+
+No. Each Infino table is stored as Parquet files with the indexes inside them, on local
+disk or in object storage, and SQL runs over those files in your process. Any Parquet
+reader can still open the same files for other analytics.
+
+### Can I join search results with tables that have no search index?
+
+Yes. A table created with an empty `IndexSpec()` is queryable by SQL like any other, so
+lookup tables, metadata, and ownership tables can sit next to the searchable ones and
+join to their hits.

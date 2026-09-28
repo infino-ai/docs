@@ -45,6 +45,10 @@
       "mode": "typecheck-python"
     },
     {
+      "page": "guides/sql-analytics-with-search.mdx",
+      "mode": "typecheck-python"
+    },
+    {
       "page": "guides/tables.mdx",
       "mode": "typecheck-python"
     },
