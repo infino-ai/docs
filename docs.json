@@ -240,6 +240,42 @@
     {
       "source": "/integrations/crewai",
       "destination": "/integrations/mcp"
+    },
+    {
+      "source": "/docs/api/client-sdks",
+      "destination": "/quickstart"
+    },
+    {
+      "source": "/docs/api/core-concepts/authentication",
+      "destination": "/cloud/authentication"
+    },
+    {
+      "source": "/docs/api/govern/security-access/authentication-apis",
+      "destination": "/cloud/authentication"
+    },
+    {
+      "source": "/docs/api/query/search-query/sql-queries/:slug*",
+      "destination": "/sql-reference"
+    },
+    {
+      "source": "/docs/search",
+      "destination": "/guides/search"
+    },
+    {
+      "source": "/docs/category/getting-started",
+      "destination": "/quickstart"
+    },
+    {
+      "source": "/docs/api/:slug*",
+      "destination": "/api-reference"
+    },
+    {
+      "source": "/docs/category/core-concepts",
+      "destination": "/core-concepts"
+    },
+    {
+      "source": "/docs/category/:slug*",
+      "destination": "/"
     }
   ]
 }
