@@ -74,6 +74,7 @@
               "guides/search",
               "guides/hybrid-search-on-parquet",
               "guides/sql-analytics-with-search",
+              "guides/hybrid-rag-over-documents",
               "guides/parquet-interop"
             ]
           },
