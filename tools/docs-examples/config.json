@@ -49,6 +49,10 @@
       "mode": "typecheck-python"
     },
     {
+      "page": "guides/hybrid-rag-over-documents.mdx",
+      "mode": "typecheck-python-program"
+    },
+    {
       "page": "guides/tables.mdx",
       "mode": "typecheck-python"
     },

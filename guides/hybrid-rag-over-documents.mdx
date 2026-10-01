@@ -1,0 +1,341 @@
+---
+title: "Building a hybrid RAG pipeline over company documents"
+icon: "file-lines"
+description: Chunk a folder of Markdown and PDF documents, index them for BM25 and vector search in one table on local disk or object storage, retrieve with hybrid search and SQL filters, rerank, and build a cited prompt. A runnable walkthrough in Python.
+---
+
+To build RAG over company documents with hybrid search, split each document into chunks,
+store every chunk's text and embedding on the same row of one table, and retrieve with a
+single query that runs keyword (BM25) and vector search together and fuses the two
+rankings. Keyword search finds exact identifiers such as an error code or a policy number,
+and vector search finds passages that answer the question in other words. Company
+documents are full of both, which is why either retriever alone misses answers.
+
+This guide builds that pipeline end to end over a small folder of policies, a runbook, and
+a handbook, then keeps it current as documents change. Run the blocks in order in one
+Python session. Nothing needs an account, a key, or a server.
+
+```bash
+pip install infino pyarrow pypdf sentence-transformers
+```
+
+## Where should the documents live?
+
+Wherever they already are. The index is itself a set of Apache Parquet files, so it can
+sit in the same bucket as the documents: connect to an `s3://` URI instead of a local
+path and nothing else in this guide changes. There is no separate database to load the
+chunks into and no second service for keyword search.
+
+What the index does not do is read PDFs. Text extraction, and OCR for scanned pages, is a
+step you run first. For a large archive it is the slow step, so run it as its own batch
+job and index what it produces. The loader below reads Markdown directly and extracts the
+text layer of a PDF with `pypdf`.
+
+## Prepare the documents
+
+Write a few sample documents to a folder. Point `DOCS` at your own folder to use your
+documents instead.
+
+```python Python icon="python"
+from pathlib import Path
+
+DOCS = Path("company-docs")
+samples = {
+    "policies/expenses.md": """# Expense policy
+
+## Travel
+Book flights through the travel portal. Economy class for flights under six hours.
+Submit travel expense claims within 30 days of the trip, with receipts attached.
+Claims over $500 need approval from your manager before reimbursement.
+
+## Meals
+Meals on business travel are reimbursed up to $75 per day. Alcohol is not reimbursed.
+""",
+    "policies/security.md": """# Security policy
+
+## Devices
+Company laptops must use full-disk encryption and lock after five minutes idle.
+If a laptop or phone is lost or stolen, report it to security@example.com within 24 hours
+so the device can be wiped remotely.
+
+## Access
+Access to production systems requires a hardware security key. Access reviews run quarterly.
+""",
+    "runbooks/payments.md": """# Payments runbook
+
+## ERR-4012 card declined by issuer
+The issuer declined the charge. Do not retry more than twice within an hour.
+If the merchant reports more than 50 ERR-4012 errors in ten minutes, page the payments on-call.
+
+## ERR-5003 settlement timeout
+The settlement batch did not finish in time. Re-run the batch from the admin console.
+""",
+    "handbook/onboarding.md": """# Onboarding
+
+## First week
+Your manager schedules a welcome call on day one. Set up your laptop, join the team channels,
+and read the security policy before you are granted production access.
+
+## Time off
+Request time off in the HR portal at least two weeks ahead for anything longer than three days.
+""",
+}
+for rel, body in samples.items():
+    path = DOCS / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body)
+```
+
+Split each document at its headings, and split any long section at paragraph breaks. A
+chunk that follows the document's own structure keeps one topic per chunk, and its heading
+becomes a label the answer can cite.
+
+```python Python icon="python"
+import re
+
+from pypdf import PdfReader
+
+
+def read_text(path: Path) -> str:
+    if path.suffix == ".pdf":
+        return "\n\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+    return path.read_text()
+
+
+def chunks(path: Path, max_chars: int = 1200):
+    """Split a document at its headings, then split long sections at paragraphs."""
+    section = path.stem
+    for part in re.split(r"(?m)^(#{1,3} .*)$", read_text(path)):
+        if re.match(r"^#{1,3} ", part):
+            section = part.lstrip("#").strip()
+            continue
+        buf = ""
+        for para in (p.strip() for p in part.split("\n\n") if p.strip()):
+            if buf and len(buf) + len(para) > max_chars:
+                yield section, buf
+                buf = ""
+            buf = f"{buf}\n\n{para}".strip()
+        if buf:
+            yield section, buf
+```
+
+## Index keyword and vector search together
+
+Create one table whose rows are chunks: the text, the section it came from, the document
+path, and the embedding. Declare a full-text index on the text and a vector index on the
+embedding, and both are built as the rows are written.
+
+```python Python icon="python"
+import infino
+import pyarrow as pa
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")  # 384 dimensions
+DIM = 384
+
+
+def embed(text: str) -> list[float]:
+    return model.encode(text, normalize_embeddings=True).tolist()
+
+
+db = infino.connect("./rag-index")  # or "s3://your-bucket/rag-index"
+schema = pa.schema([
+    pa.field("chunk_id", pa.large_utf8(), nullable=False),
+    pa.field("doc_path", pa.large_utf8(), nullable=False),
+    pa.field("section", pa.large_utf8(), nullable=False),
+    pa.field("body", pa.large_utf8(), nullable=False),
+    pa.field("embedding", pa.list_(pa.float32(), DIM), nullable=False),
+])
+table = db.create_table(
+    "chunks", schema,
+    infino.IndexSpec()
+    .fts("body", stopwords="english", stemmer="english")
+    .vector("embedding", DIM, "cosine"),
+)
+
+
+def rows_for(path: Path) -> list[dict]:
+    rel = path.relative_to(DOCS).as_posix()
+    return [
+        {"chunk_id": f"{rel}#{i}", "doc_path": rel, "section": section,
+         "body": body, "embedding": embed(f"{section}\n{body}")}
+        for i, (section, body) in enumerate(chunks(path))
+    ]
+
+
+rows = [r for path in sorted(DOCS.rglob("*")) if path.suffix in {".md", ".pdf"} for r in rows_for(path)]
+table.append(rows)  # one batch, one commit
+print(len(rows), "chunks indexed")
+```
+
+```text
+8 chunks indexed
+```
+
+Two choices here matter for RAG:
+
+- **The English analyzer.** Questions are written in plain language, and without
+  `stopwords="english"` the keyword half matches words like "to", "a", and "do", which
+  appear in every chunk and pull unrelated passages up the ranking. `stemmer="english"`
+  lets "claims" match "claim". Identifiers such as `ERR-4012` still index as their own
+  terms.
+- **The embedding text.** Each chunk is embedded with its section heading in front, so a
+  short passage under "Travel" still carries what it is about.
+
+Embed questions with the same model at query time. Infino stores and searches the vectors
+you give it and does not call an embedding model itself. See
+[Embeddings](/guides/embeddings).
+
+## Retrieve with hybrid search
+
+`hybrid_search` runs BM25 and vector search over the same rows and fuses the two ranked
+lists with reciprocal rank fusion, in one call.
+
+```python Python icon="python"
+COLS = ["chunk_id", "doc_path", "section", "body"]
+
+
+def retrieve(question: str, k: int = 5):
+    hits = table.hybrid_search("body", question, "embedding", embed(question), k, projection=COLS)
+    return hits.to_pylist()
+
+
+for question in ["ERR-4012", "my laptop was stolen, who do I tell?"]:
+    top = retrieve(question, 3)
+    print(question, "->", [h["chunk_id"] for h in top])
+```
+
+```text
+ERR-4012 -> ['runbooks/payments.md#0', 'runbooks/payments.md#1', 'handbook/onboarding.md#1']
+my laptop was stolen, who do I tell? -> ['policies/security.md#0', 'handbook/onboarding.md#0', 'runbooks/payments.md#0']
+```
+
+The first question is an exact identifier. An embedding model has no reliable sense of
+what `ERR-4012` means, and BM25 finds it by the term. The second shares no words with the
+answer ("lost or stolen, report it to security"), and vector search finds it by meaning.
+One pipeline answers both, which is the case for hybrid retrieval in RAG.
+
+### Filter by folder, team, or date in SQL
+
+The same search is a SQL table function, so a question can be restricted to part of the
+corpus, such as the policies folder, in one statement. A `WHERE` on `hybrid_search` is
+applied to both the keyword and the vector half before they are fused, so the filter
+ranks within the matching chunks rather than trimming a list that was ranked across
+everything.
+
+```python Python icon="python"
+def retrieve_in(question: str, folder: str, k: int = 5):
+    vec = ",".join(str(x) for x in embed(question))
+    text = question.replace("'", "''")  # a question can contain an apostrophe
+    return db.query_sql(f"""
+        SELECT chunk_id, doc_path, section, body, score
+        FROM hybrid_search('chunks', 'body', '{text}', 'embedding', '{vec}', {k})
+        WHERE doc_path LIKE '{folder}/%'
+        ORDER BY score DESC
+    """).to_pylist()
+
+
+print([h["chunk_id"] for h in retrieve_in("how long do I have to file a claim", "policies")])
+```
+
+```text
+['policies/expenses.md#0', 'policies/security.md#0', 'policies/expenses.md#1', 'policies/security.md#1']
+```
+
+A column you filter on often, such as a team, a customer, or an access group, belongs on
+the chunk row next to `doc_path`. That is also how to keep a user's retrieval inside the
+documents they are allowed to read. The
+[SQL analytics guide](/guides/sql-analytics-with-search) covers joins, grouping, and
+windows over search results.
+
+## Rerank and build the prompt
+
+Fusion decides which chunks are candidates. A cross-encoder reranker then reads the
+question and each candidate together and orders them by how well the passage answers it,
+which is slower per chunk and more precise. Retrieve a generous set, rerank it, and keep
+the top few for the prompt.
+
+```python Python icon="python"
+from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+
+def context_for(question: str, k: int = 3, candidates: int = 10):
+    hits = retrieve(question, candidates)
+    scores = reranker.predict([(question, h["body"]) for h in hits])
+    ranked = [h for _, h in sorted(zip(scores, hits), key=lambda p: -p[0])]
+    return ranked[:k]
+
+
+question = "When do I need my manager to approve a travel claim?"
+context = context_for(question)
+prompt = "Answer using only the sources below, and cite each by its id.\n\n"
+prompt += "\n\n".join(f"[{h['chunk_id']}] {h['section']}\n{h['body']}" for h in context)
+prompt += f"\n\nQuestion: {question}"
+print(prompt)
+```
+
+```text
+Answer using only the sources below, and cite each by its id.
+
+[policies/expenses.md#0] Travel
+Book flights through the travel portal. Economy class for flights under six hours.
+Submit travel expense claims within 30 days of the trip, with receipts attached.
+Claims over $500 need approval from your manager before reimbursement.
+
+[handbook/onboarding.md#0] First week
+...
+```
+
+Send `prompt` to the model of your choice. Each source carries its `chunk_id`, so an answer
+that cites `[policies/expenses.md#0]` points back to the exact file and section, and a
+reader can check it.
+
+## Keep the index current
+
+When a document changes, replace its chunks: delete the rows for that path and append the
+new ones. Updates and deletes need durable storage, a local path or an `s3://` URI, which
+is why this guide connects to `./rag-index` rather than `memory://`.
+
+```python Python icon="python"
+def reindex(path: Path):
+    rel = path.relative_to(DOCS).as_posix()
+    table.delete(f"doc_path = '{rel}'")  # drop the old chunks of this document
+    table.append(rows_for(path))  # and write the new ones as one commit
+
+
+(DOCS / "policies/expenses.md").write_text(samples["policies/expenses.md"].replace("30 days", "45 days"))
+reindex(DOCS / "policies/expenses.md")
+table.optimize()  # merge small files and rebuild the table-wide vector index
+print("45 days" in retrieve("travel claim deadline", 1)[0]["body"])
+```
+
+```text
+True
+```
+
+Every `append` is a commit that writes new files, so write in batches, a document or a
+folder at a time rather than a chunk at a time. `optimize()` is where maintenance happens:
+it merges small files and rebuilds the table-wide vector index. Nothing runs in the
+background inside your process, so call it after a batch of changes or on a schedule.
+
+## Scaling to a larger archive
+
+- **Separate extraction from indexing.** Run text extraction and OCR as a batch job that
+  writes plain text, then index its output. Re-indexing never repeats the OCR.
+- **Batch the writes.** Append thousands of chunks per call and run `optimize()` after each
+  large batch.
+- **Keep the index next to the data.** Connect to `s3://` or `az://` with a local cache
+  directory, so repeated queries read from disk instead of the bucket. See
+  [Connect and storage](/guides/storage).
+- **Re-embed into a new table when you change models.** Vectors from two models are not
+  comparable, so build the new table alongside the old one and switch when it is complete.
+
+## See also
+
+- [Search](/guides/search): every retrieval mode, including how hybrid fusion works
+- [Implementing hybrid search on Apache Parquet files](/guides/hybrid-search-on-parquet):
+  keyword, vector, and hybrid retrieval compared on 10,003 real questions
+- [Integrating SQL analytics with vector and full-text search](/guides/sql-analytics-with-search)
+- [Agent memory](/use-cases/agent-memory): the same table pattern for an agent's history
