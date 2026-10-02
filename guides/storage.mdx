@@ -194,6 +194,58 @@ This budget is RAM only. It is separate from `cache_budget_bytes`, which bounds 
 disk cache, and it does not cap memory-mapped reads (the OS reclaims those on its own).
 Give each independent workload its own connection so their budgets stay isolated rather
 than sharing one ceiling. Omit it (or pass `0`) to only measure usage, never enforce.
+The rows a SQL query streams aren't counted against it; the
+[process memory limit](#process-memory-limit-for-sql) below covers those.
+</Note>
+
+## Process memory limit for SQL
+
+The connection memory budget counts what SQL's buffering steps reserve (sorts,
+aggregations, joins). The rows a query streams between its steps, such as what a scan,
+a filter, or an `unnest` produces, are never reserved, so one SQL query can grow past
+the budget. The process memory limit covers those rows: while a SQL query runs, Infino
+reads the process's anonymous resident memory (the memory a container limit kills on)
+about every 100 ms and stops the query once it is over the limit.
+
+**Under a container memory limit it is on by default, with nothing to set.** When the
+process runs under a Docker `--memory` limit, a Kubernetes memory limit, or a systemd
+`MemoryMax=` / `MemoryHigh=`, the limit is 90% of the tightest of those limits that applies
+to it. Infino reads the lowest `memory.high` or `memory.max` from the process's cgroup v2
+up to the root. The remaining 10% leaves room for the page cache and for the work already
+in flight when a query is stopped.
+
+<Warning>
+In those environments a SQL query can fail with the connection memory budget's
+error (`ConnectionMemoryBudgetError` in Python, a thrown `Error` with that prefix in
+Node, `InfinoError::OverBudget` in Rust) where the process would otherwise have been
+killed. The message names the process memory limit, which tells it apart from a
+budget refusal. Catch it as you would a budget refusal: narrow the query, or wait for
+other work in the process to finish and retry.
+</Warning>
+
+To set the limit yourself, or turn it off, set `memory.process_limit_bytes` in the
+engine's YAML config. Infino reads `./infino.yaml`, then
+`~/.config/infino/config.yaml` (under `$XDG_CONFIG_HOME` when that is set), then
+`/etc/infino/config.yaml`, and the first file that sets a key wins. Environment variables
+don't override config.
+
+```yaml
+memory:
+  # A positive value is the limit in bytes; 0 turns it off.
+  # Unset (the default) takes 90% of the container's limit, or no limit without one.
+  process_limit_bytes: 6442450944   # 6 GiB
+```
+
+Infino works out the limit once per process, at its first SQL query, and logs it along with
+where it came from, so change it before the process starts.
+
+<Note>
+The limit is for the whole process, not one connection. Memory held by anything else in
+the process counts toward it, so once the process as a whole is over it, every SQL query
+is refused until memory comes back down. It can't interrupt a batch that is already being
+processed, which finishes first, and a spike shorter than the sampling interval can pass
+unseen. It needs Linux (cgroup v2 for the default); on other platforms it is off, even
+when config sets it.
 </Note>
 
 ## Limitations
