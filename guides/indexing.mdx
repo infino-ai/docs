@@ -75,8 +75,8 @@ the same declaration works from thousands of rows to hundreds of millions.
 
 <Note>
 You can index multiple text columns (call `fts` per column) and multiple vector columns.
-**Scalar columns need no index declaration.** Filter them with SQL (`query_sql`) or as
-a pushdown pre-filter on vector search (see [Search](/guides/search#vector-search)).
+**Scalar columns need no index declaration.** Filter them with SQL (`query_sql`); vector search's
+pushdown pre-filter is a text predicate over an FTS-indexed column (see [Search](/guides/search#pushdown-filter)).
 </Note>
 
 ## See also
