@@ -249,7 +249,8 @@ Everything after that line is identical.
 
 <Note>
 Table maintenance (`optimize` and `gc`) is handled for you on Infino Cloud, so you
-never call it from the client.
+never call it from the client. `append_named` (`appendNamed`) is also local-only: it
+names the object key, which the hosted service owns, so it throws on a hosted table.
 </Note>
 
 ## See also
