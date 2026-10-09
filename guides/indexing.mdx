@@ -49,7 +49,7 @@ and the hybrid / pushdown-filter paths. Call `fts` once per text column you want
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `column` | string | the text column to index |
-| `analyzer` | `standard` / `ascii_lower` | tokenizer; default `standard` (Unicode-aware) |
+| `analyzer` | `standard` | tokenizer; `standard` (Unicode-aware) is the only one and the default |
 | `stored` | bool | keep the raw text in the table; default `true`. `false` makes the column searchable but not readable back |
 | `k1` / `b` | float | BM25 term-frequency saturation and length normalization; pass both or neither |
 | `stopwords` | string (`english`) | stopword set removed at index and query time; default none |
