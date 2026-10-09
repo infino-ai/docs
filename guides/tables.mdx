@@ -229,7 +229,7 @@ directly is mainly for reclaiming on a schedule or after bulk deletes.
   single atomic commit (concurrent writers from other processes retry).
 - **`update` is 1:1.** The matched row count must equal the replacement-row count.
 - **`update` / `delete` need durable storage,** not `memory://`.
-- **Schema is fixed at creation.** Adding or changing columns means a new table.
+- **Schema changes go through `schema(name, patch)`** (Rust `apply_schema`): add, rename, retype or drop columns; local connections only for now.
 
 ## See also
 
