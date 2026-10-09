@@ -61,7 +61,7 @@
             "description": "Rows appended. Body is an Arrow IPC row stream (application/vnd.apache.arrow.stream), or a JSON `{\"data\": [...]}` envelope."
           },
           "400": {
-            "description": "Invalid request body, or rows the table refuses. A key the table has no column for adds one, typed from the values; a value whose type disagrees with a column the table already has is refused, naming the column, the type it holds and the one offered. Growing past the table's `max_fields` is refused the same way. Not transient: the same body fails identically. Change the value, or change the column with a `schema` patch first."
+            "description": "Invalid request body, or rows the table refuses. A key the table has no column for adds one, typed from the values; a value whose type disagrees with a column the table already has is refused, naming the column, the type it holds and the one offered. Growing past the table's `max_fields` is refused the same way. A column a write adds is held to the same two rules a declared one is: its values may allocate at most 16384 bytes each even when null (a struct's fixed-width children add up, so `Struct{vector(4096), i32}` is 16388 and refused), and the engine must be able to write its type. Not transient: the same body fails identically. Change the value, or change the column with a `schema` patch first."
           },
           "401": {
             "description": "Missing or invalid API key."
@@ -793,13 +793,16 @@
             }
           },
           "400": {
-            "description": "Invalid request body, an unknown `encoding`, an `encoding` sent together with `patch` (a write always answers the document), or a patch the schema refuses: a type the frozen column disagrees with, a name a live column holds, an id no live column has, a change that needs an empty table, an index the column cannot carry. The message names the remedy."
+            "description": "Invalid request body, an unknown `encoding`, an `encoding` sent together with `patch` (a write always answers the document), a key the patch or one of its fields does not define, half a `k1`/`b` pair, a column over the width limit (values allocating more than 16384 bytes each even when null; a struct's fixed-width children add up, so `Struct{vector(4096), i32}` is 16388 and refused), a type the engine cannot write (a union, a dictionary of a view type, a map whose entries are not a key/value pair), or a patch the schema refuses: a type the frozen column disagrees with, a name a live column holds, an id no live column has, a change that needs an empty table, an index the column cannot carry. The message names the remedy."
           },
           "401": {
             "description": "Missing or invalid API key."
           },
           "403": {
             "description": "Either the body carries `patch` and the key lacks the `manage` capability, or the account is at a storage limit: a patch creates the table when there is none, so it meets the same quota wall a row-adding write does, with the same body naming the limit. A describe is a read and is never refused for either reason."
+          },
+          "404": {
+            "description": "The table does not exist. A describe of a name the database does not hold says so, and so does a patch that set `expected_schema_id`: a compare-and-set names a schema the caller has already read, so a missing table is a mistake rather than a lost race. A patch without the precondition creates the table instead."
           },
           "409": {
             "description": "`expected_schema_id` no longer matches: the schema moved. Describe again and resubmit."
@@ -921,7 +924,7 @@
             "description": "Row counts as JSON `{matched, n_tombstoned, n_not_found}`. Body is the replacement rows as an Arrow IPC stream."
           },
           "400": {
-            "description": "Invalid request body, or rows the table refuses. A key the table has no column for adds one, typed from the values; a value whose type disagrees with a column the table already has is refused, naming the column, the type it holds and the one offered. Growing past the table's `max_fields` is refused the same way. Not transient: the same body fails identically. Change the value, or change the column with a `schema` patch first."
+            "description": "Invalid request body, or rows the table refuses. A key the table has no column for adds one, typed from the values; a value whose type disagrees with a column the table already has is refused, naming the column, the type it holds and the one offered. Growing past the table's `max_fields` is refused the same way. A column a write adds is held to the same two rules a declared one is: its values may allocate at most 16384 bytes each even when null (a struct's fixed-width children add up, so `Struct{vector(4096), i32}` is 16388 and refused), and the engine must be able to write its type. Not transient: the same body fails identically. Change the value, or change the column with a `schema` patch first."
           },
           "401": {
             "description": "Missing or invalid API key."
@@ -1276,7 +1279,7 @@
               "string",
               "null"
             ],
-            "description": "The table's Arrow schema as a base64-encoded Arrow IPC stream carrying\nonly the schema message. Exactly one of `schema` or `schema_ipc` is\nrequired. Carries any Arrow type the engine accepts, nested included."
+            "description": "The table's Arrow schema as a base64-encoded Arrow IPC stream carrying\nonly the schema message. Exactly one of `schema` or `schema_ipc` is\nrequired. Carries any Arrow type the engine accepts, nested included,\nshort of the two the hosted service holds every declaration to: a\ncolumn whose values allocate more than 16384 bytes each even when\nnull, and a type the engine cannot write (a union, a dictionary of a\nview type, a map whose entries are not a key/value pair)."
           },
           "table_name": {
             "type": "string"
@@ -1945,7 +1948,7 @@
               "object",
               "null"
             ],
-            "description": "Free-form column metadata, carried through unchanged. Absent when the\ncolumn has none.",
+            "description": "Free-form column metadata. Absent when the column has none.\n\nCarried through unchanged but for the `infino.` namespace, which the\nservice reserves for its own marks and does not return. Only a schema\nwrite may set metadata at all: an append or update carries none, and a\nbatch that declares some has it dropped rather than refused.",
             "additionalProperties": {
               "type": "string"
             },

@@ -7,7 +7,7 @@
 | Create a table | ✅ | ✅ | Send the Arrow schema as `schema_ipc` for any column type, nested included; the JSON `schema` descriptors cover scalar, vector, and list. |
 | Drop a table | ✅ | ✅ |  |
 | List tables | ✅ | ✅ |  |
-| Describe or change a table's schema | ✅ | ✅ | One op, two shapes: `{table_name}` describes; `{table_name, patch, expected_schema_id?}` adds, renames, retypes or drops columns and sets templates and caps (creating the table when there is none). Both return the schema document. The write needs `manage`. |
+| Describe or change a table's schema | ✅ | ✅ | One op, two shapes: `{table_name}` describes; `{table_name, patch, expected_schema_id?}` adds, renames, retypes or drops columns and sets the caps (creating the table when there is none). Both return the schema document. The write needs `manage`. |
 | Append rows | ✅ | ✅ |  |
 | Update rows | ✅ | ✅ |  |
 | Delete rows | ✅ | ✅ |  |
