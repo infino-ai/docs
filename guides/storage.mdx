@@ -143,12 +143,13 @@ don't re-fetch from object storage.
 
 | Option (Python / Node.js / Rust) | Description |
 | --- | --- |
-| `storage_options` / `storageOptions` / `with_storage_option(k, v)` | cloud credentials & tuning, keyed by `object_store`'s `aws_*` / `azure_*` config strings |
+| `storage_options` / `storageOptions` / `with_storage_option(k, v)` | cloud credentials & tuning, keyed by `object_store`'s `aws_*` / `azure_*` / `google_*` config strings |
 | `validate` / `validate` / `with_validate(bool)` | probe the object store at `connect` to fail fast on bad credentials (default off) |
 | `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables |
 | `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
 | `connection_memory_budget_bytes` / `connectionMemoryBudgetBytes` / `with_connection_memory_budget_bytes` | per-connection heap budget, in bytes (`0` / omitted = measure only) |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
+| `api_key` / `apiKey` / `with_api_key` | API key for a hosted `https://<host>/<database>` connection; falls back to `INFINO_API_KEY` |
 
 ## Connection memory budget
 
