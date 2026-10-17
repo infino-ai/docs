@@ -180,7 +180,9 @@ for a whole corpus use the [CLI](/cli) or an SDK.
 Semantic and hybrid search embed queries **locally** in the server (no embedding API key
 by default), so `INFINO_MCP_EMBED_MODEL` must match the model that produced the table's
 stored vectors — this matters especially on a hosted or shared database that someone else
-ingested. See [Embeddings](/guides/embeddings).
+ingested. To embed with a remote API instead of locally, set `INFINO_MCP_EMBED_PROVIDER`,
+`INFINO_MCP_EMBED_BASE_URL` and `INFINO_MCP_EMBED_API_KEY` (alongside `INFINO_MCP_EMBED_MODEL`).
+See [Embeddings](/guides/embeddings).
 </Note>
 
 ## See also
