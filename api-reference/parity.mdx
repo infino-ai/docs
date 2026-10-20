@@ -27,6 +27,9 @@ what the service actually exposes.
   a local connection, so the same setup code runs either way).
 - **Same call, different runtime** — the Notes column flags these. They share
   one signature; only behavior differs.
+- **Schema describe/change** — this row is available over REST
+  (`POST /v1/schema`), but the SDK's `schema(name[, patch])` currently raises on
+  a hosted connection.
 
 See the hosted [Quickstart](/cloud/quickstart) and
 [Authentication](/cloud/authentication) for the connection details, and the
