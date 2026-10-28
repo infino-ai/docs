@@ -1,0 +1,272 @@
+---
+title: "Customer-Managed Encryption Keys"
+icon: "lock"
+description: Encrypt a bring-your-own-bucket database with a key you own and control in your own cloud KMS — AWS KMS, Google Cloud KMS, or Azure Key Vault — so you can revoke Infino's access to the data at any time, independently of Infino.
+---
+
+Customer-managed encryption keys (CMEK, also called BYOK) let you encrypt a
+[bring-your-own-bucket (BYOB)](/cloud/bring-your-own-bucket) database with a key
+**you own and control** in your own cloud KMS. Because the key is yours, you can
+revoke Infino's ability to read the data at any time, independently of Infino.
+
+CMEK applies only to BYOB databases — databases whose data lives in **your** cloud
+bucket. The key is configured on **your** bucket, in **your** KMS, and Infino is
+only ever granted *use* of it. **Infino never holds your key material.**
+
+<Note>
+Set up the BYOB database first — see [Bring Your Own Bucket](/cloud/bring-your-own-bucket).
+CMEK adds a key to that same storage binding.
+</Note>
+
+<Note>
+CMEK is available for BYOB on **Amazon S3** (AWS KMS), **Google Cloud Storage**
+(Cloud KMS), and **Azure Blob Storage** (Key Vault). One Azure-specific note:
+revoking a key takes effect on a delay, because the storage service caches the
+key for a time — see [What revocation does](#what-revocation-does-and-how-fast).
+</Note>
+
+## How it works
+
+Three things make a CMEK-encrypted BYOB database work, and they are the same on
+every cloud:
+
+1. **Your bucket encrypts with your key.** You configure your bucket's default
+   encryption to use your customer-managed key, so every object written into it is
+   encrypted under that key — including everything Infino writes.
+2. **You grant Infino's identity use of the key.** The same role or grant Infino
+   already uses to read and write your bucket is additionally allowed to *encrypt
+   and decrypt with the key* — nothing more. It can never export the key, change
+   it, or use it for anything but your bucket.
+3. **Infino verifies the key before serving.** When you create the database (or on
+   an explicit re-verify), Infino confirms your bucket's default encryption is the
+   key **you named** and that it can write and read under it. On each later access
+   refresh it re-checks only that the key is still *usable*. If the key cannot be
+   used, Infino refuses to serve the database rather than fall back to a weaker key.
+
+Because the key lives in your KMS, **disabling, deleting, or un-granting it is your
+lever**: it makes the database unavailable to Infino within one access-refresh
+interval, and deleting the key makes the data permanently unreadable by anyone.
+
+## AWS (Amazon S3 + AWS KMS)
+
+<Steps>
+<Step title="Create a customer-managed KMS key">
+In the **same region as your bucket**, create a **customer-managed** symmetric KMS
+key (not an AWS-managed key). Note its **key ARN**:
+
+```
+arn:aws:kms:us-east-1:123456789012:key/abcd1234-5678-90ab-cdef-EXAMPLE11111
+```
+
+<Warning>
+Name the key by its **key ARN**, not an alias ARN. An alias
+(`arn:aws:kms:...:alias/...`) can be repointed to a different key later, so Infino
+scopes access to the key itself and **rejects an alias ARN** at setup. The key and
+the bucket must also be in the **same region** — S3 SSE-KMS requires it, and Infino
+checks the key ARN's region against the bucket's when you create the database.
+</Warning>
+</Step>
+
+<Step title="Set the bucket's default encryption to SSE-KMS">
+On the BYOB bucket, set **default encryption** to **SSE-KMS** and select the key
+from step 1. Every object Infino writes then lands encrypted under your key
+automatically.
+
+**S3 Bucket Keys** collapse per-object key derivations to roughly one per bucket
+and substantially cut your KMS request cost for a write-heavy workload like an
+index, so we recommend enabling them. The tradeoff: with a bucket key, S3 caches a
+bucket-level data key for a short window, so a key *disable* can take effect a
+little later than with per-object derivation. If you need the tightest revocation,
+leave Bucket Keys off and set `bucket_key` to `false` when you create the database;
+Infino honours that choice on every write.
+
+Infino confirms the bucket default at setup by reading your bucket's encryption
+configuration, so the BYOB role also needs **`s3:GetEncryptionConfiguration`** on
+the bucket. This is a configuration read, not an object write.
+</Step>
+
+<Step title="Grant Infino's role use of the key">
+The role Infino assumes for your bucket must be allowed to encrypt and decrypt with
+your key. Add a statement to the **KMS key policy** (or an equivalent grant):
+
+```json
+{
+  "Sid": "AllowInfinoRoleUseOfTheKey",
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::123456789012:role/your-infino-byob-role"
+  },
+  "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": { "kms:ViaService": "s3.us-east-1.amazonaws.com" }
+  }
+}
+```
+
+- `kms:GenerateDataKey` wraps a data key on write; `kms:Decrypt` unwraps it on
+  read. Those two actions are all Infino needs, and all you should grant.
+- `"Resource": "*"` in a **key policy** means *this key* — the policy is attached to
+  the key itself and grants no access to any other key.
+- **Recommended: the `kms:ViaService` condition** (set to your bucket's region). It
+  confines the grant to calls S3 makes on the role's behalf, so a leaked role
+  credential still cannot call KMS outside S3.
+</Step>
+
+<Step title="Add the key to the database's storage binding">
+Create the BYOB database as in
+[Bring Your Own Bucket](/cloud/bring-your-own-bucket), adding an `encryption` block
+to the `storage` object:
+
+```jsonc
+"encryption": {
+  "kind": "aws_kms",
+  "key_arn": "arn:aws:kms:us-east-1:123456789012:key/abcd1234-5678-90ab-cdef-EXAMPLE11111",
+  "bucket_key": true
+}
+```
+
+- `key_arn` — the **key ARN** from step 1 (not an alias), in the bucket's region.
+- `bucket_key` — `true` if you enabled S3 Bucket Keys in step 2.
+
+Infino verifies the key during setup by writing and reading back a probe object and
+confirming it is encrypted under exactly this key. If the grant is missing or the
+key is unusable, verification fails — restore the grant and re-verify.
+</Step>
+</Steps>
+
+## GCP (Google Cloud Storage + Cloud KMS)
+
+<Steps>
+<Step title="Create a Cloud KMS key and set it as the bucket default">
+Create a Cloud KMS key in the **same location as your bucket** and set it as the
+bucket's **default encryption key**.
+</Step>
+
+<Step title="Grant the Cloud Storage service agent use of the key">
+Grant the **Cloud Storage service agent of the bucket's project** the role
+`roles/cloudkms.cryptoKeyEncrypterDecrypter` on that key. On GCS, encryption
+happens service-side — the storage service's own service agent calls KMS, not
+Infino — so this grant is what lets your bucket encrypt and decrypt with your key.
+</Step>
+
+<Step title="Name the key when you create the database">
+```jsonc
+"encryption": {
+  "kind": "gcp_kms",
+  "key_name": "projects/<project>/locations/<location>/keyRings/<ring>/cryptoKeys/<key>"
+}
+```
+
+Infino verifies by reading a probe object's reported KMS key name back and
+confirming it matches the key you named — version-agnostically, so key rotation
+needs no action.
+</Step>
+</Steps>
+
+## Azure (Azure Blob Storage + Key Vault)
+
+<Note>
+On Azure, the storage service caches your key, so a revocation (disable or delete)
+takes effect on a delay of **roughly 7–30 minutes**, not the near-immediate effect
+on AWS and GCP — see [What revocation does](#what-revocation-does-and-how-fast).
+</Note>
+
+Azure CMEK requires a container **default encryption scope** backed by your Key
+Vault key — a storage-account key with no scope is not supported, because Infino
+verifies the key by reading the scope back off the data.
+
+<Steps>
+<Step title="Create a default encryption scope on the container">
+Create a **default encryption scope** on the container, backed by your Key Vault
+key, and **deny per-blob encryption-scope override** so every blob is forced onto
+the scope's key.
+</Step>
+
+<Step title="Grant the storage account's identity access to the key">
+Grant the storage account's identity access to the key in Key Vault (via an access
+policy or Azure RBAC) so the storage service can wrap and unwrap with it. Encryption
+is service-side on Azure, as on GCP.
+</Step>
+
+<Step title="Name the key and scope when you create the database">
+```jsonc
+"encryption": {
+  "kind": "azure_vault",
+  "key_id": "https://<vault>.vault.azure.net/keys/<key-name>",
+  "encryption_scope": "<scope-name>"
+}
+```
+
+Infino verifies by reading a probe blob's reported encryption scope back and
+confirming it matches the scope you named.
+</Step>
+</Steps>
+
+## What revocation does, and how fast
+
+Your key is a control you hold. The **mechanism** is the same on every cloud; the
+**timing** differs: on AWS and GCP a disable or deletion bites on the next access
+refresh (about five minutes), while on **Azure** the storage service caches your
+key, so a revocation takes **roughly 7–30 minutes** to take effect.
+
+### Making the database unavailable (reversible)
+
+Any of the following makes the database **unavailable to Infino** within roughly one
+access-refresh interval — about five minutes on AWS and GCP, roughly 7–30 minutes
+on Azure — plus a brief eviction:
+
+- **Disabling** the key,
+- **Scheduling the key for deletion** (while still within the KMS waiting period), or
+- **Revoking Infino's access** to the key (AWS/GCP: remove the key-policy statement
+  or grant; Azure: remove the storage account identity's Key Vault access).
+
+When this happens, Infino's periodic access refresh **exercises your key** — it
+reads a byte of an object your database already holds, which forces a decrypt (it
+writes nothing). Finding the key can no longer decrypt, it takes the safe path: it
+**stops serving the database and clears its cached data** from Infino's compute —
+including any cache left behind after the database scaled to zero — so nothing the
+key once protected keeps being served from a local copy. **Your data in your bucket
+is untouched**, and so is the database's record in Infino.
+
+<Note>
+Two honest limits. The timing is **bounded by the refresh cadence, not
+instantaneous** — a database serving entirely from its local cache does not touch
+your key until the next refresh (plus, on Azure, the storage service's key-cache
+delay). And the refresh checks that the key still *works*, not that it is still the
+*same key*: key **identity** is verified at create time and on an explicit
+re-verify, not on every refresh.
+</Note>
+
+**To restore service:** re-enable the key (or restore the grant), then re-verify. A
+reserved (always-on) database re-verifies itself on its next refresh. A non-reserved
+database that was evicted is not running, so a plain request to it is refused while
+it is marked unreachable — call
+`POST /v1/databases/{name}/storage/verify` to heal it, and serving resumes. No data
+was lost.
+
+### Deleting the key (the hard kill switch — irreversible)
+
+If you let the key's deletion complete — **past the KMS waiting period** — the data
+encrypted under it becomes **permanently unreadable by everyone, Infino included**.
+There is no recovery, by design, because the key material that could decrypt the
+objects no longer exists. Use the waiting period as your window to change your mind.
+
+### Rotating the key
+
+**Key rotation needs no action.** Objects already written stay readable because each
+was wrapped under the key version in effect when it was written, and that version
+continues to decrypt it. New writes use the current version. You do not need to tell
+Infino, re-verify, or re-create anything when you rotate.
+
+## Summary
+
+| Action on your key | Effect on the database | Your bucket data | Reversible? |
+| --- | --- | --- | --- |
+| Disable, schedule-for-delete, or un-grant | Unavailable within ~one refresh interval (about 5 min on AWS/GCP; roughly 7–30 min on Azure) plus eviction | Untouched | Yes — re-enable or re-grant, then re-verify |
+| Complete key deletion (past the waiting period) | Permanently unreadable, for everyone | Encrypted objects become unrecoverable | **No** |
+| Rotate the key | No effect; keeps serving | Untouched | n/a — no action needed |
+
+For how Infino separates control, compute, and storage, see
+[Architecture](/cloud/architecture). To enable CMEK on AWS, GCP, or Azure, contact
+your Infino representative.

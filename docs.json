@@ -85,6 +85,8 @@
               "cloud/quickstart",
               "cloud/authentication",
               "cloud/architecture",
+              "cloud/bring-your-own-bucket",
+              "cloud/customer-managed-keys",
               "cloud/errors",
               "cloud/limits",
               "cloud/faq"
