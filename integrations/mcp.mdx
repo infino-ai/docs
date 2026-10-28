@@ -50,7 +50,8 @@ credentials are needed, since the platform owns the storage.
 | `INFINO_MCP_URI` | No | `~/.infino/mcp` | Data to serve — see the table above. |
 | `INFINO_API_KEY` | With a hosted URI | — | API key (`inf_…`) for a hosted `https://` endpoint. Ignored for local and bucket connections. |
 | `INFINO_MCP_EMBED_PROVIDER` | No | `local` | Query-embedding provider: `local` (Hugging Face, no key) or `openai` (any OpenAI-compatible `/embeddings` endpoint, including Azure OpenAI). |
-| `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` | The embedding model — **must match the model that produced the table's stored vectors**. |
+| `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` (local) · `text-embedding-3-small` (openai) | The embedding model — **must match the model that produced the table's stored vectors**. |
+| `INFINO_MCP_EMBED_BASE_URL` | With `openai` | — | Base URL of the OpenAI-compatible embeddings API; the server POSTs to `<base>/embeddings`. |
 
 <Note>
 The full list of embedding and validation variables is in the
