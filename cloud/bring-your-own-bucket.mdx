@@ -11,6 +11,13 @@ your account; Infino reaches it through an identity **you authorize** and can
 revoke, and the control plane and serving layer run as usual on top.
 
 <Note>
+**BYOB is an enterprise feature.** It is enabled per account by Infino, not
+self-serve — [contact your Infino representative](https://infino.ai/talk) to turn
+it on. Until it is enabled, creating a database with a storage binding returns a
+`403`.
+</Note>
+
+<Note>
 BYOB is the foundation for
 [Customer-Managed Encryption Keys](/cloud/customer-managed-keys): a key you
 control only encrypts a bucket you own, so CMEK is configured on a BYOB database.
