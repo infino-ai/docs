@@ -4,13 +4,14 @@ icon: "sitemap"
 description: Declare full-text BM25 and vector IVF indexes on your Infino tables, and pick the dimension and distance metric that match your embeddings.
 ---
 
-You declare indexes once, at table creation, with an `IndexSpec`. Two index types,
+You declare indexes once, at table creation, with an `IndexSpec`. Three index types,
 chained fluently.
 
 | Index | Declare with | Powers |
 | --- | --- | --- |
 | Full-text (BM25) | `fts(column)` | keyword search, hybrid, the pushdown filter |
 | Vector (IVF) | `vector(column, dim, metric)` | semantic kNN, hybrid |
+| Range | `range(column)` (Rust SDK and REST; not yet in Python/Node) | range predicates, counts and top-k over a numeric or temporal column |
 
 Declare both on a table to enable [hybrid search](/guides/search#hybrid-search). Scalar columns
 need no index; filter them with [SQL](/sql-reference).
