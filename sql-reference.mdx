@@ -60,7 +60,7 @@ after a join or filter, match the function:
 - **`token_match` / `exact_match`** are unranked: `score` is present (for schema
   uniformity) but constant `0.0`, and order is unspecified, so use `ORDER BY` / `LIMIT`.
   Both read the full-text index, so `column` must be one you declared as an FTS
-  column; naming an unindexed column fails with `unknown FTS column`. To match on
+  column; naming an unindexed column fails with `no full-text index for column`. To match on
   a column without an index, filter it with plain SQL (`WHERE doc_id = '42'`).
 
 ### Examples
