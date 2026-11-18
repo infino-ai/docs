@@ -8,8 +8,8 @@ Common errors you might hit, and how to fix them. Each entry states the cause an
 
 ## `update` / `delete` fails on an in-memory connection
 
-These require **durable storage**. Connect with a path or `s3://` URI, not
-`memory://`:
+These require **durable storage**. Connect with a path or an object-store URI
+(`s3://`, `gs://`, `az://`), not `memory://`:
 
 ```python
 db = infino.connect("./data")   # not "memory://"
@@ -21,26 +21,48 @@ db = infino.connect("./data")   # not "memory://"
 equal the number of replacement rows you pass. Match a specific set (e.g. by `doc_id`)
 and supply exactly that many rows.
 
+## `update` / `delete` fails with "mutation cap is 100000"
+
+A single `update` or `delete` is refused when its predicate matches more than 100,000
+rows; the error reads `predicate matched N rows; mutation cap is 100000`. Narrow the
+predicate and run it in several calls, for example one per date range or id range.
+
 ## "Table already exists" on `create_table`
 
 The table is already in the catalog. Use `open_table` to get a handle to the existing
-table, or `drop_table` first if you mean to recreate it.
+table, or `drop_table` first if you mean to recreate it. In Python this is a `ValueError`
+whose message names the table.
 
 ## "Unknown table" / "not found"
 
 The table name doesn't exist in the catalog (a typo, or it was never created). Check
-`list_tables()`. In SQL, the table name passed to a search function (`bm25_search('docs', …)`)
-must be an existing catalog table.
+`list_tables()`. In Python, `open_table` raises a `KeyError`. In SQL, the table name
+passed to a search function (`bm25_search('docs', …)`) must be an existing catalog table.
 
-## Schema or vector-dimension mismatch on `append`
+## "no full-text index for column" on a search
 
-Appended rows must match the table's declared schema (column names and types). For the
-vector column, **each vector's length must equal the index dimension** you declared in
+`bm25_search`, `token_match` and `exact_match` read the full-text index, so the column
+must be one you declared with `IndexSpec.fts(...)`. The message lists the columns that
+are indexed. To match on a column without an index, filter it in SQL
+(`WHERE doc_id = '42'`).
+
+## Type or vector-dimension mismatch on `append`
+
+A value must fit its column's type: text into an `Int64` column is refused with
+`column ... is Int64 but the batch carries LargeUtf8`. For the vector column, **each
+vector's length must equal the index dimension** you declared in
 `IndexSpec.vector(column, dim, …)`, and that must match your embedding model's output.
+
+## A misspelled key on `append` creates a new column
+
+When you append rows as records (a list of dicts in Python, an array of objects in
+Node.js), a key the table does not have yet is not an error: it adds a column, typed
+from its values. A typo such as `yaer` therefore lands in a new `yaer` column instead of
+`year`. Check the table's columns if a field reads back as null.
 
 ## `append` fails with HTTP 413 on Infino Cloud
 
-The request body went over the hosted data-plane cap of 128 MiB per request. Split the
+The request body went over the hosted data-plane cap of 512 MiB per request. Split the
 load into smaller appends; target 100 MiB or less of Arrow data per batch, sized down
 if rows carry wide vectors. See [Limits](/cloud/limits).
 
@@ -53,10 +75,12 @@ second) and retry the **same** batch unchanged; the pressure drains as other req
 complete. If it recurs, lower ingest concurrency rather than batch size, since parallel
 large appends are what exhaust the budget. See [Limits](/cloud/limits).
 
-## Node.js: an integer column rejects a number
+## Node.js: integer columns read back as `bigint`
 
-Arrow `int64` columns expect a JavaScript **`bigint`**, not a `number`. Pass `2021n`,
-not `2021` (or coerce with `BigInt(x)`).
+An `int64` column accepts a whole JavaScript `number` on `append` (`2021` works; a
+fractional value such as `1.5` is refused). Reads go the other way: `int64` values and
+`_id` come back as **`bigint`**, so compare with `2021n` or convert with `Number(x)`
+before mixing them with ordinary numbers.
 
 ## Rust: "cannot have two global allocators"
 
@@ -64,7 +88,7 @@ Infino installs `mimalloc` by default. If your process already sets a global all
 turn Infino's off:
 
 ```toml
-infino = { version = "0.8", default-features = false }
+infino = { version = "0.11", default-features = false }
 ```
 
 ## A vector query in SQL is rejected

@@ -177,8 +177,9 @@ Two choices here matter for RAG:
 - **The English analyzer.** Questions are written in plain language, and without
   `stopwords="english"` the keyword half matches words like "to", "a", and "do", which
   appear in every chunk and pull unrelated passages up the ranking. `stemmer="english"`
-  lets "claims" match "claim". Identifiers such as `ERR-4012` still index as their own
-  terms.
+  lets "claims" match "claim". An identifier such as `ERR-4012` is split at the hyphen
+  into `err` and `4012`, so a search for it ranks the exact code first and can also
+  return other `ERR-` codes below it.
 - **The embedding text.** Each chunk is embedded with its section heading in front, so a
   short passage under "Travel" still carries what it is about.
 
@@ -211,8 +212,9 @@ my laptop was stolen, who do I tell? -> ['policies/security.md#0', 'handbook/onb
 ```
 
 The first question is an exact identifier. An embedding model has no reliable sense of
-what `ERR-4012` means, and BM25 finds it by the term. The second shares no words with the
-answer ("lost or stolen, report it to security"), and vector search finds it by meaning.
+what `ERR-4012` means, and BM25 finds it by the term. The second is a plain-language
+question that only partly overlaps the wording of the answer ("lost or stolen, report it
+to security"), and vector search matches it by meaning.
 One pipeline answers both, which is the case for hybrid retrieval in RAG.
 
 ### Filter by folder, team, or date in SQL
@@ -307,7 +309,7 @@ def reindex(path: Path):
 
 (DOCS / "policies/expenses.md").write_text(samples["policies/expenses.md"].replace("30 days", "45 days"))
 reindex(DOCS / "policies/expenses.md")
-table.optimize()  # merge small files and rebuild the table-wide vector index
+table.optimize()  # merge small files and fold new vectors into the table-wide index
 print("45 days" in retrieve("travel claim deadline", 1)[0]["body"])
 ```
 
@@ -317,8 +319,9 @@ True
 
 Every `append` is a commit that writes new files, so write in batches, a document or a
 folder at a time rather than a chunk at a time. `optimize()` is where maintenance happens:
-it merges small files and rebuilds the table-wide vector index. Nothing runs in the
-background inside your process, so call it after a batch of changes or on a schedule.
+it merges small files and folds newly written vectors into the table-wide vector index.
+No compaction runs in the background inside your process, so call it after a batch of
+changes or on a schedule.
 
 ## Scaling to a larger archive
 

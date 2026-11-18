@@ -16,28 +16,52 @@ errors are not worth retrying.
 
 ## Transient errors: retry these
 
-<Warning>
-A transient error means the request **did not run**. It is always safe to
-retry, including writes. No data was appended, updated, or deleted.
-</Warning>
+Each of these responses carries a `Retry-After` header telling you how many
+seconds to wait. The request **did not run**, so resending it is safe, including
+writes. The two exceptions are in the warning at the end of this section.
 
 **HTTP `503` (Service Unavailable).** The database's workers are still starting.
 You will see this on the first request after an idle period (a cold start), on
-the first request right after `create_database`, and occasionally while the
-service is adding capacity under a burst. The response carries a `Retry-After`
-header telling you how many seconds to wait. A cold start typically clears
-within a few seconds, on your first retry.
+the first request right after `create_database`, and when the service sheds
+load: too many request-body bytes in flight, or too many concurrent reads on one
+account. A cold start typically clears within a few seconds, on your first
+retry.
 
-**Network and timeout errors.** A dropped connection or a timeout may mean the
-request never reached the service. Retrying with a short backoff is safe.
+**HTTP `409` (Conflict) on `append`, `update` or `delete`.** Another write to the
+same table was in flight. A table takes one write at a time, and the one that
+lost was not applied. Wait the `Retry-After` interval (one second) and resend
+the identical request. If you see this often, send fewer, larger batches rather
+than many writes in parallel.
+
+**HTTP `429` (Too Many Requests).** The account is over its request rate. Back
+off for the `Retry-After` interval and continue.
+
+**HTTP `529`.** No capacity is free to start the database right now. This is
+rarer and takes longer to clear than a cold start: `Retry-After` is in minutes,
+not seconds.
+
+<Warning>
+Two cases are **not** safe to resend blindly, because the write may already
+have been applied: a `503` whose message says the request `may have been
+applied`, and a network error or client timeout that fired after the request was
+sent. Resending an `append` in either case can store the rows twice. Check
+first, for example by counting or looking up the rows you sent, then resend only
+if they are missing.
+</Warning>
 
 ## How to retry
 
 **If you use the SDK**, wrap the call in a short retry with exponential backoff.
 The SDK does not retry automatically, and it does not surface the `Retry-After`
-value, so use your own backoff. A transient unavailability surfaces as an error
-whose message contains `server returned 503`, so you can retry only that and let
-everything else propagate.
+value, so use your own backoff. A `503`, `429` or `529` surfaces as an error
+whose message contains `server returned` and the status, so you can retry only
+those and let everything else propagate.
+
+A `409` on a write is the exception: the SDK reports every `409` the way it
+reports "already exists" (`ValueError` in Python, an `AlreadyExists:` message in
+Node.js, `InfinoError::AlreadyExists` in Rust). `append`, `update` and `delete`
+never create a name, so on those three calls that error means a contended write
+and is safe to retry.
 
 <CodeGroup>
 
@@ -45,12 +69,12 @@ everything else propagate.
 import time
 
 def with_retry(call, attempts=5, base_delay=1.0):
-    """Retry a transient 503 with exponential backoff; re-raise anything else."""
+    """Retry a transient status with exponential backoff; re-raise anything else."""
     for attempt in range(attempts):
         try:
             return call()
         except Exception as e:
-            transient = "server returned 503" in str(e)
+            transient = any(f"server returned {code}" in str(e) for code in (429, 503, 529))
             if transient and attempt < attempts - 1:
                 time.sleep(base_delay * (2 ** attempt))
                 continue
@@ -66,7 +90,8 @@ async function withRetry(call, attempts = 5, baseDelayMs = 1000) {
     try {
       return call();
     } catch (e) {
-      const transient = String(e?.message ?? e).includes("server returned 503");
+      const message = String(e?.message ?? e);
+      const transient = [429, 503, 529].some((code) => message.includes(`server returned ${code}`));
       if (transient && attempt < attempts - 1) {
         await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt));
         continue;
@@ -84,12 +109,17 @@ const results = await withRetry(() => docs.bm25Search("body", "cancel subscripti
 use std::{thread::sleep, time::Duration};
 use infino::InfinoError;
 
+fn is_transient(e: &InfinoError) -> bool {
+    let message = e.to_string();
+    [429, 503, 529].iter().any(|code| message.contains(&format!("server returned {code}")))
+}
+
 fn with_retry<T>(mut call: impl FnMut() -> Result<T, InfinoError>) -> Result<T, InfinoError> {
     let mut attempt: u32 = 0;
     loop {
         match call() {
             Ok(value) => return Ok(value),
-            Err(e) if e.to_string().contains("server returned 503") && attempt < 4 => {
+            Err(e) if is_transient(&e) && attempt < 4 => {
                 sleep(Duration::from_secs(1u64 << attempt)); // 1s, 2s, 4s, 8s
                 attempt += 1;
             }
@@ -107,9 +137,9 @@ let results = with_retry(|| {
 </CodeGroup>
 
 **If you call the REST API directly**, read the `Retry-After` response header on
-a `503`, wait that many seconds, then resend the same request. See the
-[API Reference](/api-reference) for each endpoint's request shape; every data
-endpoint documents its `503` as transient.
+a `503`, `429`, `529`, or a `409` from a write, wait that many seconds, then
+resend the same request. See the [API Reference](/api-reference) for each
+endpoint's request shape and response codes.
 
 ## Errors you should not retry
 
@@ -118,23 +148,23 @@ each surfaces through the SDK.
 
 | Status | Meaning | Python | Node / Rust | What to do |
 |:------:|---------|--------|-------------|------------|
-| `400` | Invalid request (bad body or parameters) | `ValueError` | `Error` | Check the payload and arguments. |
-| `401` / `403` | Missing or invalid API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
+| `400` | Invalid request (bad body, parameters, or SQL) | `RuntimeError` | `Error` | Check the payload and arguments. |
+| `401` | Missing or unknown API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
+| `402` | The account is suspended for non-payment | `RuntimeError` | `Error` | Update billing in the console. |
+| `403` | The key is valid but may not do this: it lacks the capability the call needs, or is not scoped to this database | `RuntimeError` (message names the key) | `Error` | Use a key with the right access. See [Authentication](/cloud/authentication). |
 | `403` | On database create: the account already owns as many databases as its plan allows (3 on the free plan), or requested BYOB storage the plan doesn't include | `RuntimeError` | `Error` | Add a payment method or delete a database. |
 | `403` | On append / update: the account already stores its plan's row or vector limit | `RuntimeError` | `Error` | Delete rows or add a payment method; not transient. |
 | `404` | Database or table does not exist | `KeyError` | `Error` | Check the name, or create it first. |
-| `409` | Already exists (for example `create_database` / `create_table` on an existing name) | `ValueError` | `Error` | Skip creation, or use a different name. |
-| `413` | Request body over the 128 MiB cap (an `append` / `update` batch too large) | `RuntimeError` | `Error` | Permanent for that batch: split it. See [Limits](/cloud/limits). |
-
-There is one conditional case. A write can return **`412` (Conflict)** when a
-concurrent write to the same table wins the race (surfaced as `ConflictError` in
-Python). That is not a transient availability error: re-read the current state
-and reissue the change only if you still want it, rather than blindly retrying.
+| `409` | On `create_database` / `create_table`: the name already exists. (On a write, `409` is transient: see above.) | `ValueError` | `Error` | Skip creation, or use a different name. |
+| `410` | The database is being deleted | `RuntimeError` | `Error` | Use a different database. |
+| `413` | Request body over the 512 MiB cap (an `append` / `update` batch too large), or a query that needs more memory than it is allowed | `RuntimeError` | `Error` | Permanent for that request: split the batch, or narrow the query. See [Limits](/cloud/limits). |
+| `422` | Valid SQL that the engine does not support | `RuntimeError` | `Error` | Rewrite the query. |
+| `504` | The query ran past the time limit | `RuntimeError` | `Error` | Narrow the query. See [Limits](/cloud/limits). |
 
 <Note>
 The [REST API Reference](/api-reference) is generated from the live service
-spec, so each endpoint lists its exact response codes, including the transient
-`503`.
+spec, so each endpoint lists its response codes, including the transient `503`
+and the `409` on writes.
 </Note>
 
 ## See also

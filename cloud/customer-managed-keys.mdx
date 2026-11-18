@@ -17,8 +17,10 @@ only ever granted *use* of it. **Infino never holds your key material.**
 <Note>
 CMEK, like BYOB, is an **enterprise feature** enabled per account by Infino —
 [contact your Infino representative](https://infino.ai/talk) to turn it on. Set up
-the BYOB database first (see [Bring Your Own Bucket](/cloud/bring-your-own-bucket));
-CMEK adds a key to that same storage binding.
+the bucket and its grant first (see [Bring Your Own Bucket](/cloud/bring-your-own-bucket));
+CMEK adds a key to that same storage binding. The key is named when the database is
+created and cannot be added or changed afterwards, so a database that should be
+encrypted with your key has to be created with it.
 </Note>
 
 <Note>
@@ -46,8 +48,8 @@ every cloud:
    refresh it re-checks only that the key is still *usable*. If the key cannot be
    used, Infino refuses to serve the database rather than fall back to a weaker key.
 
-Because the key lives in your KMS, **disabling, deleting, or un-granting it is your
-lever**: it makes the database unavailable to Infino within one access-refresh
+Because the key lives in your KMS, **disabling or deleting it is your lever** (as is
+un-granting it on AWS and Azure): it makes the database unavailable to Infino within one access-refresh
 interval, and deleting the key makes the data permanently unreadable by anyone.
 
 ## AWS (Amazon S3 + AWS KMS)
@@ -132,8 +134,9 @@ to the `storage` object:
 - `key_arn` — the **key ARN** from step 1 (not an alias), in the bucket's region.
 - `bucket_key` — `true` if you enabled S3 Bucket Keys in step 2.
 
-Infino verifies the key during setup by writing and reading back a probe object and
-confirming it is encrypted under exactly this key. If the grant is missing or the
+Infino verifies the key during setup by reading the bucket's default encryption to
+confirm it names exactly this key, then writing and reading back a probe object
+under it. If the grant is missing or the
 key is unusable, verification fails — restore the grant and re-verify.
 </Step>
 </Steps>
@@ -221,8 +224,15 @@ on Azure — plus a brief eviction:
 
 - **Disabling** the key,
 - **Scheduling the key for deletion** (while still within the KMS waiting period), or
-- **Revoking Infino's access** to the key (AWS/GCP: remove the key-policy statement
-  or grant; Azure: remove the storage account identity's Key Vault access).
+- **Revoking access** to the key (AWS: remove the key-policy statement or grant;
+  Azure: remove the storage account identity's Key Vault access).
+
+<Warning>
+On **GCP**, disable the key rather than removing the grant. The grant there is held by
+the Cloud Storage service agent, not by Infino, and removing it propagates slowly:
+objects already written can stay readable for some time. Disabling or destroying
+the key is the prompt cutoff.
+</Warning>
 
 When this happens, Infino's periodic access refresh **exercises your key** — it
 reads a byte of an object your database already holds, which forces a decrypt (it
@@ -266,7 +276,7 @@ Infino, re-verify, or re-create anything when you rotate.
 
 | Action on your key | Effect on the database | Your bucket data | Reversible? |
 | --- | --- | --- | --- |
-| Disable, schedule-for-delete, or un-grant | Unavailable within ~one refresh interval (about 5 min on AWS/GCP; roughly 7–30 min on Azure) plus eviction | Untouched | Yes — re-enable or re-grant, then re-verify |
+| Disable, schedule-for-delete, or un-grant (on GCP, disable: un-granting alone is slow) | Unavailable within ~one refresh interval (about 5 min on AWS/GCP; roughly 7–30 min on Azure) plus eviction | Untouched | Yes — re-enable or re-grant, then re-verify |
 | Complete key deletion (past the waiting period) | Permanently unreadable, for everyone | Encrypted objects become unrecoverable | **No** |
 | Rotate the key | No effect; keeps serving | Untouched | n/a — no action needed |
 

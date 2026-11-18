@@ -41,9 +41,10 @@ isn't.
   commit as the durability boundary; updates and deletes go through tombstones,
   not in-place row mutation. Infino is built for retrieval over largely
   append-only corpora, not high-rate row-level OLTP.
-- **No wire protocol yet.** Infino is embedded: you reach it as a library from
-  your own process. There is no server endpoint for external SQL clients to
-  attach to.
+- **No SQL wire protocol.** The engine is embedded: you reach it as a library from
+  your own process, and external SQL clients (a Postgres or JDBC client, say) cannot
+  attach to it. Network access is through [Infino Cloud](/cloud), over its own HTTPS
+  API rather than a database wire protocol.
 
 The current, full performance picture (warm vs. cold, ingest throughput, index
 size, and the hardware it was recorded on) lives in

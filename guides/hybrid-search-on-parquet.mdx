@@ -156,7 +156,7 @@ user is asking about a card that never arrived, and BM25 anchors on "not shown
 up" and drifts into refund territory by the second hit:
 
 ```python
-table.bm25_search("text", "my new card still has not shown up", 5)
+table.bm25_search("text", "my new card still has not shown up", 5, projection=["text", "score"])
 ```
 
 ```text
@@ -234,9 +234,9 @@ card arrival | Why have I not gotten my new card?
 ```
 
 The filter column must be FTS-indexed, which is why the schema indexed
-`topic`. Predicates on numeric or other scalar columns compose in SQL instead,
-as below. That path filters after the top k rather than inside it, so
-over-fetch when the predicate is selective.
+`topic`. Predicates on numeric or other scalar columns go in SQL instead: a
+`WHERE` on a search function's own columns is applied inside the search too,
+so it returns the top k among the matching rows and needs no over-fetching.
 
 ### Search as a relation in SQL
 

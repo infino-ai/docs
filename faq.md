@@ -12,8 +12,10 @@ short; follow the link for the canonical detail.
 No. Infino runs inside your application as a library. You add it (`cargo add infino`,
 `pip install infino`, or the npm package) and open a connection to a storage root from
 your own code; the engine, including SQL (DataFusion under the hood), runs in your
-process. There is no wire protocol yet, so external SQL clients
-can't attach; SQL is reached through the connection's `query_sql`. See
+process. The embedded engine has no wire protocol, so external SQL clients
+can't attach to it; SQL is reached through the connection's `query_sql`. To reach
+Infino over the network instead, [Infino Cloud](/cloud) serves the same operations
+over HTTPS. See
 [Opening Infino](https://github.com/infino-ai/infino/blob/main/docs/architecture/overview.md#opening-infino).
 
 ## Is Infino a database?
@@ -53,8 +55,9 @@ against search engines, vector databases, lakehouse tables, and warehouses, see
 
 ## How do concurrent writes work?
 
-**One writer is active per table at a time.** Appends, updates, and deletes are
-staged on a writer and made durable by a single atomic commit. Nothing is
+**Appends to a table can run concurrently and publish one at a time; an update,
+delete or schema change takes the table exclusively.** Each write is
+staged and made durable by a single atomic commit. Nothing is
 persisted until the commit succeeds, and a reader sees either the pre-commit or
 the post-commit state, never a partial one. Across processes the commit is
 guarded: the pointer to the current manifest is swapped only if it hasn't moved,
@@ -67,9 +70,11 @@ See [Write](https://github.com/infino-ai/infino/blob/main/docs/architecture/supe
 
 ## How fresh are reads? What is the consistency model?
 
-**Snapshot isolation.** A reader pins the manifest that is current when it opens
-and never observes a partially applied commit; publication is atomic, so a read
-returns the table as of its pinned snapshot. Read freshness under concurrent
+**Snapshot isolation.** Each read runs against one manifest and never observes a
+partially applied commit; publication is atomic, so a read returns the table as of
+that snapshot. By default a reader checks for a newer manifest at most once a
+second, so a commit from another process becomes visible within about a second,
+and a commit from the same process is visible at once. Read freshness under concurrent
 writers is governed by the table's configured consistency policy and applied by
 the engine on every read; callers never refresh by hand. See
 [Manifest](https://github.com/infino-ai/infino/blob/main/docs/architecture/supertable.md#manifest) and
@@ -151,7 +156,7 @@ product). You set the metric on the vector index.
 ## Does Infino do hybrid search?
 
 Yes. BM25 and vector kNN are fused with reciprocal-rank fusion in one query, via the
-`hybrid_search` SQL function. See [Hybrid search](/guides/search#hybrid-search).
+`hybrid_search` method or the SQL function of the same name. See [Hybrid search](/guides/search#hybrid-search).
 
 ## Can I filter vector search by other fields?
 
@@ -162,7 +167,7 @@ rows), or filter with SQL. See [Vector search](/guides/search#vector-search) and
 ## Can I update and delete data?
 
 Yes. Match rows by a predicate and `update` (1:1 replacement) or `delete`. Both require
-durable storage (a path or `s3://`, not `memory://`). See [Tables](/guides/tables).
+durable storage (a path or an object-storage URI, not `memory://`). See [Tables](/guides/tables).
 
 ## Which languages can I use Infino from?
 

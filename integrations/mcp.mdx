@@ -49,8 +49,8 @@ credentials are needed, since the platform owns the storage.
 | --- | --- | --- | --- |
 | `INFINO_MCP_URI` | No | `~/.infino/mcp` | Data to serve — see the table above. |
 | `INFINO_API_KEY` | With a hosted URI | — | API key (`inf_…`) for a hosted `https://` endpoint. Ignored for local and bucket connections. |
-| `INFINO_MCP_EMBED_PROVIDER` | No | `local` | Query-embedding provider: `local` (Hugging Face, no key) or `openai` (any OpenAI-compatible `/embeddings` endpoint, including Azure OpenAI). |
-| `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` | The embedding model — **must match the model that produced the table's stored vectors**. |
+| `INFINO_MCP_EMBED_PROVIDER` | No | `local` (`openai` when `INFINO_MCP_EMBED_BASE_URL` is set) | Query-embedding provider: `local` (Hugging Face, no key), `openai` (any OpenAI-compatible `/embeddings` endpoint) or `azure` (Azure OpenAI). |
+| `INFINO_MCP_EMBED_MODEL` | No | `Xenova/all-MiniLM-L6-v2` (local) / `text-embedding-3-small` (remote) | The embedding model — **must match the model that produced the table's stored vectors**. |
 | `INFINO_MCP_EMBED_BASE_URL` | When provider is `openai` | — | The OpenAI-compatible endpoint to send query embeddings to. |
 | `INFINO_MCP_EMBED_API_KEY` | No | — | API key for the `INFINO_MCP_EMBED_BASE_URL` endpoint. |
 | `INFINO_MCP_VALIDATE` | No | — | Set to `1`, `true` or `yes` to probe storage at startup. |
@@ -183,7 +183,9 @@ for a whole corpus use the [CLI](/cli) or an SDK.
 Semantic and hybrid search embed queries **locally** in the server (no embedding API key
 by default), so `INFINO_MCP_EMBED_MODEL` must match the model that produced the table's
 stored vectors — this matters especially on a hosted or shared database that someone else
-ingested. See [Embeddings](/guides/embeddings).
+ingested. To embed with a remote API instead of locally, set `INFINO_MCP_EMBED_PROVIDER`,
+`INFINO_MCP_EMBED_BASE_URL` and `INFINO_MCP_EMBED_API_KEY` (alongside `INFINO_MCP_EMBED_MODEL`).
+See [Embeddings](/guides/embeddings).
 </Note>
 
 ## See also

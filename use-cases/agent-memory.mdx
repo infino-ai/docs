@@ -16,7 +16,7 @@ history rather than a fixed cluster.
 | --- | --- |
 | Recall by meaning and by exact terms | Hybrid search fuses BM25 and vector matches with reciprocal-rank fusion, in one query |
 | Structured questions over history | SQL over the same table: filter by session or date, `GROUP BY`, `COUNT` |
-| Forgetting | `delete` by id, or find-and-delete by query |
+| Forgetting | `delete` with a SQL predicate: one id, a whole session, or a date range |
 
 A plain vector store gives you the first of these and nothing else. Keeping keyword search,
 semantic search, and SQL in one engine is what removes the separate keyword index, the

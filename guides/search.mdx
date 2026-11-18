@@ -6,7 +6,9 @@ description: Search Infino five ways from one table, BM25 full-text, vector kNN,
 
 Infino retrieves from the same table several ways. Pick the mode that matches the
 question; you can also compose any of them in [SQL](/sql-reference). Every search returns
-Arrow rows, and you can pass a `projection` to choose which columns come back.
+rows: an Arrow table in Python, record batches in Rust, and plain objects in Node.js (pass
+`{ arrow: true }` there for an Arrow table). Pass a `projection` to choose which columns
+come back.
 
 ## Choose a search mode
 
@@ -20,9 +22,9 @@ Arrow rows, and you can pass a `projection` to choose which columns come back.
 
 | Mode | Ranked | Text pre-filter | Compose in SQL |
 | --- | --- | --- | --- |
-| BM25 | ✓ | n/a | ✓ (`bm25_search`) |
-| Vector kNN | ✓ | ✓ (pushdown) | ✓ (`vector_search`) |
-| Hybrid | ✓ (RRF) | n/a | ✓ (`hybrid_search`) |
+| BM25 | ✓ | SQL `WHERE` | ✓ (`bm25_search`) |
+| Vector kNN | ✓ | ✓ (`filter`, or SQL `WHERE`) | ✓ (`vector_search`) |
+| Hybrid | ✓ (RRF) | SQL `WHERE` | ✓ (`hybrid_search`) |
 | `token_match` / `exact_match` | n/a | n/a | ✓ |
 | SQL | n/a | n/a | native |
 
@@ -61,7 +63,7 @@ let hits = docs.bm25_search(
 | `query` | string | required | query terms, tokenized by the index |
 | `k` | int | required | number of top results |
 | `mode` | `or` / `and` | `or` | match any term (`or`) or require all terms (`and`) |
-| `k1` / `b` | float | column's values | per-search BM25 override; pass both or neither |
+| `k1` / `b` | float | column's values | per-search BM25 override; pass both or neither. Not yet applied over a hosted (https://) connection, which scores with the column's declared values. |
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 <Note>BM25 `score` is a **similarity** — higher is better. (Vector `score` is a distance; the two run in opposite directions.)</Note>
@@ -148,8 +150,9 @@ let hits = docs.vector_search("embedding", &q, 5, None, None)?;
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 <Note>
-Vector `score` is a **distance**: `0.0` is a perfect match and larger is farther. This is
-the opposite direction from BM25's `score` (a similarity, higher is better). Don't compare
+Vector `score` is a **distance**, so lower is closer. For `cosine` and `l2sq`, `0.0` is a
+perfect match; for `negdot` it is the negated dot product, so similar vectors score below
+zero. This is the opposite direction from BM25's `score` (a similarity, higher is better). Don't compare
 the two raw scores — [hybrid search](#hybrid-search) fuses them for you by rank.
 </Note>
 
@@ -179,15 +182,27 @@ let hits = docs.vector_search("embedding", &q, 5,
 
 </CodeGroup>
 
-For scalar filtering (such as `WHERE source = '...'`) or filtering the results of a
-search, query with [SQL](/sql-reference).
+### Filtering BM25, hybrid, or by a scalar column
+
+`filter` is specific to the `vector_search` method. To filter a BM25 or hybrid search, or
+to filter any search by a scalar column such as a tenant id, call the search as a
+[SQL](/sql-reference#composing-search-with-sql) table function and add a `WHERE`:
+
+```sql
+SELECT _id, score
+FROM hybrid_search('docs', 'body', 'billing', 'embedding', '0.1,0.2, ...', 5)
+WHERE tenant_id = 'acme';
+```
+
+This is a pre-filter as well: the search ranks only the rows that match the `WHERE` and
+returns the top `k` of those.
 
 ## Hybrid search
 
 Hybrid search runs BM25 and vector kNN over the same table and fuses their rankings with
 **reciprocal-rank fusion (RRF)**, which is strong when a query has both keyword and
 semantic intent. It's a first-class method — pass the text query and the query vector,
-and it returns ranked Arrow rows like the other searches:
+and it returns ranked rows like the other searches:
 
 <CodeGroup>
 
@@ -238,8 +253,9 @@ the `hybrid_search` table function, where you can compose it with joins and filt
   tuning knobs to set.
 - **Bring your own embeddings.** Embed queries with the same model and dimension you
   indexed with.
-- **Filters in vector search are text predicates** over an FTS-indexed column. For scalar
-  filters, use SQL.
+- **The `filter` option exists on vector search only**, and takes a text predicate over an
+  FTS-indexed column. For BM25, hybrid, or scalar filters, use a SQL `WHERE`, which is
+  also applied inside the search.
 - **`exact_match` and `token_match` need an FTS-indexed column.**
 
 ## See also

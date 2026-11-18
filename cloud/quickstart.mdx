@@ -251,9 +251,10 @@ Everything after that line is identical.
 Table maintenance (`optimize` and `gc`) is handled for you on Infino Cloud, so you
 never call it from the client. `append_named` (`appendNamed`) is also local-only: it
 names the object key, which the hosted service owns, so it throws on a hosted table.
-`schema(name, patch)` and the reindex calls (`reindex`, `reindex_plan`/`reindexPlan`,
+The reindex calls (`reindex`, `reindex_plan`/`reindexPlan`,
 `index_staleness`/`indexStaleness`) are also not yet available on a hosted connection
-and raise an error.
+and raise an error. `schema(name)` and `schema(name, patch)` work on a hosted connection
+as they do locally; changing a schema needs an API key with the `manage` capability.
 </Note>
 
 ## See also
