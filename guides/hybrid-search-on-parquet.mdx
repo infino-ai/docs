@@ -403,8 +403,9 @@ The indexes persist in the files, so a query reads only the index regions and
 byte ranges it cannot prune, not the whole dataset. Warm queries run from
 cached bytes: a warm single-term BM25 query on a 1-million-document index
 returns in the microsecond range. The first query to touch a file on object
-storage pays a round trip of hundreds of milliseconds. Each table has one
-active writer at a time. [Tradeoffs](/tradeoffs) states the full envelope, and
+storage pays a round trip of hundreds of milliseconds. Appends to a table can
+run concurrently and publish one at a time; an update or delete takes the table
+to itself. [Tradeoffs](/tradeoffs) states the full envelope, and
 the engine's
 [benchmarks](https://github.com/infino-ai/infino/blob/main/benches/README.md)
 record ingest, cold, and warm numbers with the hardware they ran on.

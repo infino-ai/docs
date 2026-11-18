@@ -150,8 +150,15 @@ println!("{} matched, {} tombstoned", stats.matched(), stats.n_tombstoned());
 </CodeGroup>
 
 <Warning>
-`update` and `delete` require **durable storage**: a path or `s3://` URI, not
+`update` and `delete` require **durable storage**: a path or an object-storage URI, not
 `memory://`. `update` is 1:1, so the matched row count must equal the replacement count.
+</Warning>
+
+<Warning>
+**`update` replaces the whole row. There is no partial update.** Supply every column,
+including the embedding. A nullable column you leave out is stored as null, and a
+non-nullable one you leave out is an error. Infino cannot return a stored vector (it is
+not a readable column), so keep the embedding or recompute it when you update a row.
 </Warning>
 
 ## Compact, list, and drop
@@ -231,7 +238,8 @@ delete.
   concurrently and publish one at a time; an `update`, `delete` or schema change needs the
   table to itself. A write that still loses after the engine's own retries raises a
   conflict error that is safe to retry: `ConflictError` in Python, an error whose message
-  starts `ConflictError:` in Node.js, `InfinoError::Conflict` in Rust.
+  starts `ConflictError:` in Node.js, `InfinoError::Conflict` in Rust. On Infino Cloud a
+  contended write surfaces differently; see [Errors & retries](/cloud/errors).
 - **One `update` or `delete` can match at most 100,000 rows.** Past that it is refused
   with `mutation cap is 100000`; split the predicate into ranges and run it in several
   calls.

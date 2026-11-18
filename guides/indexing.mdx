@@ -4,17 +4,28 @@ icon: "sitemap"
 description: Declare full-text BM25 and vector IVF indexes on your Infino tables, and pick the dimension and distance metric that match your embeddings.
 ---
 
-You declare indexes once, at table creation, with an `IndexSpec`. Three index types,
+You declare indexes at table creation with an `IndexSpec`. Three index types,
 chained fluently.
 
 | Index | Declare with | Powers |
 | --- | --- | --- |
 | Full-text (BM25) | `fts(column)` | keyword search, hybrid, the pushdown filter |
 | Vector (IVF) | `vector(column, dim, metric)` | semantic kNN, hybrid |
-| Range | `range(column)` (Rust and REST only for now) | range predicates, counts and top-k ordered by a numeric or temporal column |
+| Range | `range(column)` in Rust; in Python and Node.js, a schema patch (below) | range predicates, counts and top-k ordered by a numeric or temporal column |
 
-Declare both on a table to enable [hybrid search](/guides/search#hybrid-search). Scalar columns
-need no index; filter them with [SQL](/sql-reference).
+Declare a full-text and a vector index on a table to enable
+[hybrid search](/guides/search#hybrid-search). Scalar columns need no index; filter them
+with [SQL](/sql-reference).
+
+**An index is part of a column's identity.** You cannot add an index to an existing
+column, change its options, or change a vector column's metric or dimension: create a new
+table and re-ingest. What you can do after creation is add a *new* column that carries a
+full-text or range index, with a schema patch on the connection (a vector index can only
+be declared at creation):
+
+```python
+db.schema("docs", {"fields": [{"name": "price", "type": "i64", "index": {"kind": "range"}}]})
+```
 
 <CodeGroup>
 

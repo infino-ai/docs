@@ -11,7 +11,7 @@
   "rules": [
     "Infino runs embedded (connect to memory://, a filesystem path, or an s3://, az://, or gs:// URI — in-process, no server) or hosted on Infino Cloud; connect / create-table / append / search / query_sql work the same in both.",
     "Connect to Infino Cloud with an https URI: connect(\"https://api.platform.infino.ws/<database>\") — the https scheme switches the same SDK to the hosted transport.",
-    "Install the same SDK for local and Cloud: 'pip install infino' (Python), 'npm install @infino-ai/infino' (Node.js), or 'cargo add infino' (Rust).",
+    "Install the same SDK for local and Cloud: 'pip install infino' (Python), 'npm install @infino-ai/infino' (Node.js), or 'cargo add infino' (Rust). In Rust, connecting to Infino Cloud needs the remote feature: 'cargo add infino --features remote'.",
     "Infino Cloud authenticates with an API key beginning inf_, minted only in the console at platform.infino.ws; pass it to connect (api_key / apiKey / with_api_key) or set the INFINO_API_KEY environment variable.",
     "A single Infino Cloud request body is capped at 512 MiB (HTTP 413 over it, nothing written); aim for at most 100 MiB of Arrow data per append batch. Embedded use has no request cap.",
     "One append is one atomic commit, so batch size is the main ingest-throughput knob: prefer batches near the 100 MiB target over many small appends, and split large loads into a loop.",

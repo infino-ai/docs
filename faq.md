@@ -150,8 +150,9 @@ and pass them in alongside your rows. See [Embeddings](/guides/embeddings).
 
 ## Which distance metrics does vector search support?
 
-`cosine` (for normalized embeddings), `l2sq` (squared Euclidean), and `negdot` (dot
-product). You set the metric on the vector index.
+`cosine` (vectors are normalized for you), `l2sq` (squared Euclidean), and `negdot` (dot
+product). You set the metric on the vector index when you create the table, and it cannot
+be changed afterwards.
 
 ## Does Infino do hybrid search?
 
