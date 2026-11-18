@@ -48,8 +48,8 @@ are indexed. To match on a column without an index, filter it in SQL
 
 ## Type or vector-dimension mismatch on `append`
 
-A value must fit its column's type: text into an `Int64` column is refused with
-`column ... is Int64 but the batch carries LargeUtf8`. For the vector column, **each
+A value must fit its column's type: text into an `Int64` column is refused with an
+error saying the column is `Int64` but the batch carries `LargeUtf8`. For the vector column, **each
 vector's length must equal the index dimension** you declared in
 `IndexSpec.vector(column, dim, …)`, and that must match your embedding model's output.
 

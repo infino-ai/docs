@@ -175,7 +175,7 @@ print(len(rows), "chunks indexed")
 Two choices here matter for RAG:
 
 - **The English analyzer.** Questions are written in plain language, and without
-  `stopwords="english"` the keyword half matches words like "to", "a", and "do", which
+  `stopwords="english"` the keyword half matches words like "to", "a", and "the", which
   appear in every chunk and pull unrelated passages up the ranking. `stemmer="english"`
   lets "claims" match "claim". An identifier such as `ERR-4012` is split at the hyphen
   into `err` and `4012`, so a search for it ranks the exact code first and can also

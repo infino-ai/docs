@@ -152,7 +152,7 @@ object-storage connection that serves repeated queries, so hot data stays on loc
 | `storage_options` / `storageOptions` / `with_storage_option(k, v)` | cloud credentials & tuning, keyed by `object_store`'s `aws_*` / `azure_*` / `google_*` config strings |
 | `validate` / `validate` / `with_validate(bool)` | probe the object store at `connect` to fail fast on bad credentials (default off) |
 | `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables; unset (the default) means no disk cache |
-| `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget in bytes, **per table**; needs `cache_dir`. Omitted, the engine sizes each table's cache to that table's stored size |
+| `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget in bytes, **per table**; needs `cache_dir`. Omitted, each table's cache may use up to 10 GiB, or the table's stored size when that is larger |
 | `connection_memory_budget_bytes` / `connectionMemoryBudgetBytes` / `with_connection_memory_budget_bytes` | per-connection heap budget, in bytes (`0` / omitted = measure only) |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
 | `api_key` / `apiKey` / `with_api_key` | API key for a hosted `https://<host>/<database>` connection; falls back to `INFINO_API_KEY` |

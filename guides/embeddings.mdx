@@ -69,7 +69,7 @@ Match the index metric to how your embeddings are produced:
 
 | Metric | Use when |
 | --- | --- |
-| `cosine` | embeddings are normalized (most sentence-transformer and OpenAI models) |
+| `cosine` | you want cosine distance (most sentence-transformer and OpenAI models). Infino normalizes stored and query vectors for you, so they need not be unit length |
 | `l2sq` | you want squared Euclidean distance |
 | `negdot` | you want dot-product similarity over unnormalized vectors |
 
