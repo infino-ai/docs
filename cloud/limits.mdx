@@ -1,15 +1,15 @@
 ---
 title: "Limits"
 icon: "gauge-high"
-description: Request-size limits on Infino Cloud, what happens when you exceed them, and how to size append batches.
+description: Request size, write concurrency, request rate and query time limits on Infino Cloud, what happens when you exceed them, and how to size append batches.
 ---
 
 Limits that apply to Infino Cloud connections. The open-source engine running locally
 has no request cap, because there is no request: writes go straight to storage.
 
-## Request body: 128 MiB
+## Request body: 512 MiB
 
-A single data-plane request body is capped at **128 MiB**. In practice this applies to
+A single data-plane request body is capped at **512 MiB**. In practice this applies to
 `append` and `update`, whose bodies carry your rows as Arrow IPC; a request over the
 cap is rejected with HTTP `413` and nothing is written.
 
@@ -17,10 +17,11 @@ A `413` is permanent. Retrying the same batch will fail the same way, so split i
 
 ## Target 100 MiB or less per batch
 
-The SDK re-encodes rows before sending, so the bytes on the wire are not the bytes you
-measured client-side, and the difference can run to tens of percent. A batch sized
-right at the cap can pass or fail on that difference. Keep a margin: **aim for at most
-100 MiB of Arrow data per append**, and treat the rest as headroom rather than budget.
+The cap is a ceiling, not a target. **Aim for at most 100 MiB of Arrow data per
+append.** Two reasons. The SDK re-encodes rows before sending, so the bytes on the wire
+are not the bytes you measured client-side, and the difference can run to tens of
+percent. And every in-flight body counts against a shared budget (below), so very large
+batches are the first to be shed when several run at once.
 
 Rough row budgets, dominated by the vector column (4 bytes per dimension):
 
@@ -50,6 +51,30 @@ Practical consequence: raising concurrency past a handful of in-flight 100 MiB a
 buys throughput you cannot use. Prefer fewer, larger batches over many large ones in
 parallel.
 
+## One write per table at a time
+
+A table takes one write at a time. An `append`, `update` or `delete` that arrives while
+another write to the same table is in flight is refused with HTTP `409` and a
+`Retry-After: 1` header, and is not applied. It is transient: resend the identical
+request after the interval. Writes to different tables do not contend.
+
+This is the second reason to prefer fewer, larger batches: parallel writers to one table
+mostly wait on each other. See [Errors & retries](/cloud/errors) for how a `409` surfaces
+through the SDK.
+
+## Request rate: HTTP 429
+
+Requests are rate limited per account. Over the limit, a request is refused with HTTP
+`429` and a `Retry-After: 1` header. Back off for that interval and continue.
+
+Reads have a second bound: an account can only have so many read requests in flight at
+once, and one over that is shed with HTTP `503` and `Retry-After: 1`.
+
+## Query time
+
+A query that runs longer than 540 seconds is cancelled and returns HTTP `504`. Narrow it
+with a filter, a smaller `k`, or a `LIMIT`.
+
 ## Batching and throughput
 
 One `append` is one atomic commit, so batch size is the main ingest-throughput knob:
@@ -74,7 +99,8 @@ for (let i = 0; i < rows.length; i += BATCH) {
 </CodeGroup>
 
 If you load with the [CLI](/cli), bulk ingest is already streamed and committed in
-windows: size them with `--batch-size-mb` and keep the value under the cap.
+windows. Size them with `--batch-size-mb`; on a hosted connection the CLI holds each
+window to 100 MiB whatever value you pass.
 
 ## See also
 
