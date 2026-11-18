@@ -130,6 +130,10 @@
       "mode": "sql-functions"
     },
     {
+      "page": "guides/search.mdx",
+      "mode": "sql-functions"
+    },
+    {
       "page": "quickstart.mdx",
       "mode": "typecheck-rust-program"
     },

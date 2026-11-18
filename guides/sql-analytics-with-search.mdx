@@ -208,9 +208,12 @@ The money that I have transferred hasn't arrived yet. balance not updated after 
                  Why has my transfer not arrived yet?      transfer not received by recipient 0.022160
 ```
 
-A `WHERE` clause on a joined table filters after the top `k` is chosen, so fetch more than
-you keep when the filter is selective. For a filter pushed into the vector search itself,
-use `filter_column` on `vector_search` in the [search guide](/guides/search#vector-search).
+Where a `WHERE` clause applies depends on which table its column belongs to. A predicate
+on the searched table's own columns is applied inside the search, so
+`FROM vector_search('questions', 'embedding', '...', 5) WHERE topic = 'card arrival'`
+returns the 5 nearest rows within that topic. A predicate on a joined table, like
+`t.team = 'transfers'` above, runs after the top `k` is chosen, so fetch more than you keep when
+that filter is selective.
 
 Score directions differ by function. BM25 and hybrid scores are higher for a better match,
 while a vector `score` is a distance, lower for a closer match. The
@@ -276,10 +279,12 @@ on `_id` to see where they agree.
 
 ### Does a WHERE clause filter before or after the search?
 
-After. The search returns its top `k` hits and SQL filters those, so a selective filter
-needs a larger `k`. A text predicate can instead be pushed into the vector search itself
-with `filter_column`, which returns the nearest rows that match rather than a thinned
-slice of the global top `k`.
+It depends on which table the column belongs to. A predicate on the searched table's own
+columns is applied inside the search: `bm25_search`, `vector_search` and `hybrid_search`
+each rank only the rows that match and return the top `k` of those, so there is no need
+to raise `k` for a selective filter. That is how to scope a search to one tenant, folder
+or date range. A predicate on a table you joined to the results runs after the top `k`
+is chosen, so fetch more than you keep in that case.
 
 ### Do I need to move data out of Parquet to query it this way?
 

@@ -20,9 +20,9 @@ Arrow rows, and you can pass a `projection` to choose which columns come back.
 
 | Mode | Ranked | Text pre-filter | Compose in SQL |
 | --- | --- | --- | --- |
-| BM25 | ✓ | n/a | ✓ (`bm25_search`) |
-| Vector kNN | ✓ | ✓ (pushdown) | ✓ (`vector_search`) |
-| Hybrid | ✓ (RRF) | n/a | ✓ (`hybrid_search`) |
+| BM25 | ✓ | SQL `WHERE` | ✓ (`bm25_search`) |
+| Vector kNN | ✓ | ✓ (`filter`, or SQL `WHERE`) | ✓ (`vector_search`) |
+| Hybrid | ✓ (RRF) | SQL `WHERE` | ✓ (`hybrid_search`) |
 | `token_match` / `exact_match` | n/a | n/a | ✓ |
 | SQL | n/a | n/a | native |
 
@@ -179,8 +179,20 @@ let hits = docs.vector_search("embedding", &q, 5,
 
 </CodeGroup>
 
-For scalar filtering (such as `WHERE source = '...'`) or filtering the results of a
-search, query with [SQL](/sql-reference).
+### Filtering BM25, hybrid, or by a scalar column
+
+`filter` is specific to the `vector_search` method. To filter a BM25 or hybrid search, or
+to filter any search by a scalar column such as a tenant id, call the search as a
+[SQL](/sql-reference#composing-search-with-sql) table function and add a `WHERE`:
+
+```sql
+SELECT _id, score
+FROM hybrid_search('docs', 'body', 'billing', 'embedding', '0.1,0.2, ...', 5)
+WHERE tenant_id = 'acme';
+```
+
+This is a pre-filter as well: the search ranks only the rows that match the `WHERE` and
+returns the top `k` of those.
 
 ## Hybrid search
 
@@ -238,8 +250,9 @@ the `hybrid_search` table function, where you can compose it with joins and filt
   tuning knobs to set.
 - **Bring your own embeddings.** Embed queries with the same model and dimension you
   indexed with.
-- **Filters in vector search are text predicates** over an FTS-indexed column. For scalar
-  filters, use SQL.
+- **The `filter` option exists on vector search only**, and takes a text predicate over an
+  FTS-indexed column. For BM25, hybrid, or scalar filters, use a SQL `WHERE`, which is
+  also applied inside the search.
 - **`exact_match` and `token_match` need an FTS-indexed column.**
 
 ## See also

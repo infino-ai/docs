@@ -93,12 +93,11 @@ SELECT _id, body FROM exact_match('docs', 'doc_id', '42');
 Each function returns a relation, so you can filter, join, and aggregate over its results:
 
 ```sql
--- post-filter BM25 hits by a scalar column
+-- top 10 BM25 hits among the rows of one source
 SELECT s._id, s.score
-FROM bm25_search('docs', 'body', 'billing', 50) AS s
+FROM bm25_search('docs', 'body', 'billing', 10) AS s
 WHERE s.source = 'help-center'
-ORDER BY s.score DESC
-LIMIT 10;
+ORDER BY s.score DESC;
 
 -- join search hits to another table
 SELECT h._id, u.name
@@ -106,11 +105,15 @@ FROM hybrid_search('docs', 'body', 'refund', 'embedding', '0.1,0.2, ...', 20) AS
 JOIN users AS u ON u.id = h.author_id;
 ```
 
+A `WHERE` on the search function's own columns, like `s.source` above, is applied inside
+the search: the function ranks only the matching rows and returns the top `k` of those.
+This holds for `bm25_search`, `vector_search` and `hybrid_search`, and it is how to scope
+a search to one tenant or category. A predicate on a joined table such as `users` runs
+after the top `k` is chosen, so raise `k` when that filter is selective.
+
 <Note>
 SQL is read-only. `INSERT` / `UPDATE` / `DELETE` / `CREATE` are not available; create
 tables and mutate rows through the API (`create_table`, `append`, `update`, `delete`).
-For a pushdown text pre-filter on vector search (rather than a SQL post-filter), see the
-`filter` option in the [Search guide](/guides/search#vector-search).
 </Note>
 
 ## See also
