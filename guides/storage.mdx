@@ -30,19 +30,20 @@ let db = connect("s3://bucket/prefix")?;      // object storage (durable)
 
 </CodeGroup>
 
-Data is stored as standard Apache Parquet at that location, so anything that reads Parquet
-can read it.
+The object-storage schemes are `s3://` (Amazon S3 and S3-compatible stores), `gs://`
+(Google Cloud Storage) and `az://` (Azure Blob). Data is stored as standard Apache Parquet
+at that location, so anything that reads Parquet can read it.
 
 <Warning>
 `memory://` is in-process and ephemeral. `update` and `delete` require **durable**
-storage (a path or `s3://` URI).
+storage (a path or an object-storage URI).
 </Warning>
 
 ## Object-storage configuration
 
 Credentials go in `storage_options` (`storageOptions` in Node.js), keyed by the
 standard [`object_store`](https://docs.rs/object_store) config strings — `aws_*`
-for S3, `azure_*` for Azure Blob (the same names the AWS and Azure SDKs use).
+for S3, `azure_*` for Azure Blob, `google_*` for Google Cloud Storage.
 Infino reads no credentials from the environment; omit them to use ambient cloud
 identity (an IAM instance role or Azure managed identity).
 
@@ -135,9 +136,14 @@ credentials.
 <Note>
 Pass `validate` (`with_validate(true)` in Rust) to probe the backend during
 `connect`, so wrong credentials or an unreachable bucket fail there instead of
-on the first query. The local cache keeps hot superfiles on disk so warm queries
-don't re-fetch from object storage.
+on the first query.
 </Note>
+
+<Warning>
+The local disk cache is **off unless you set `cache_dir`**. Without it, every cold read
+goes to object storage, and `cache_budget_bytes` has no effect. Set `cache_dir` for any
+object-storage connection that serves repeated queries, so hot data stays on local disk.
+</Warning>
 
 ## Connect options
 
@@ -145,8 +151,8 @@ don't re-fetch from object storage.
 | --- | --- |
 | `storage_options` / `storageOptions` / `with_storage_option(k, v)` | cloud credentials & tuning, keyed by `object_store`'s `aws_*` / `azure_*` / `google_*` config strings |
 | `validate` / `validate` / `with_validate(bool)` | probe the object store at `connect` to fail fast on bad credentials (default off) |
-| `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables |
-| `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget, in bytes |
+| `cache_dir` / `cacheDir` / `with_cache_dir` | local disk-cache directory for remote-backed tables; unset (the default) means no disk cache |
+| `cache_budget_bytes` / `cacheBudgetBytes` / `with_cache_budget_bytes` | disk-cache budget in bytes, **per table**; needs `cache_dir`. Omitted, the engine sizes each table's cache to that table's stored size |
 | `connection_memory_budget_bytes` / `connectionMemoryBudgetBytes` / `with_connection_memory_budget_bytes` | per-connection heap budget, in bytes (`0` / omitted = measure only) |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
 | `api_key` / `apiKey` / `with_api_key` | API key for a hosted `https://<host>/<database>` connection; falls back to `INFINO_API_KEY` |
@@ -191,16 +197,16 @@ in Python, a thrown `Error` in Node, and `InfinoError::OverBudget` in Rust. Catc
 narrow the query, split the ingest, or raise the budget.
 
 <Note>
-This budget is RAM only. It is separate from `cache_budget_bytes`, which bounds the local
-disk cache, and it does not cap memory-mapped reads (the OS reclaims those on its own).
+This budget is RAM only. It is separate from `cache_budget_bytes`, which bounds each
+table's local disk cache, and it does not cap memory-mapped reads (the OS reclaims those on its own).
 Give each independent workload its own connection so their budgets stay isolated rather
 than sharing one ceiling. Omit it (or pass `0`) to only measure usage, never enforce.
 </Note>
 
 ## Limitations
 
-- **`memory://` is ephemeral** and can't be mutated. `update`/`delete` need a path or `s3://` URI.
-- **Object-storage reads are cached locally.** Cold queries fetch from the store; size the cache (`cache_budget_bytes`) for your working set.
+- **`memory://` is ephemeral** and can't be mutated. `update`/`delete` need a path or an object-storage URI.
+- **Object-storage reads are cached locally only when `cache_dir` is set.** Cold queries fetch from the store. `cache_budget_bytes` applies to each table separately, so ten tables can use ten times the budget on disk.
 
 ## See also
 

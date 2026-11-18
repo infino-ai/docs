@@ -196,8 +196,9 @@ db.drop_table("docs", true)?;                 // true reclaims storage; false un
 
 Compaction and interrupted writes can leave behind storage objects that the
 table no longer references. `gc` deletes them and reports what it reclaimed. It
-only removes objects older than a grace window (in seconds), so it never races a
-concurrent reader or writer; requires durable storage.
+only removes objects older than a grace window (in seconds), which is what keeps it
+from deleting the files of a commit still in progress: choose a window longer than
+your longest write. Requires durable storage.
 
 <CodeGroup>
 
@@ -220,13 +221,20 @@ println!("{} {}", report.bytes_freed, report.objects_deleted);
 
 </CodeGroup>
 
-`optimize` already runs a best-effort `gc` after compacting, so calling `gc`
-directly is mainly for reclaiming on a schedule or after bulk deletes.
+`optimize` already runs `gc` after compacting, with a 24-hour grace window. Call `gc`
+directly to reclaim sooner than that, for example with a one-hour window after a large
+delete.
 
 ## Limitations
 
-- **One writer per table at a time.** Appends/updates/deletes are serialized through a
-  single atomic commit (concurrent writers from other processes retry).
+- **Writes to one table are coordinated, and can be refused.** Appends can run
+  concurrently and publish one at a time; an `update`, `delete` or schema change needs the
+  table to itself. A write that still loses after the engine's own retries raises a
+  conflict error that is safe to retry: `ConflictError` in Python, an error whose message
+  starts `ConflictError:` in Node.js, `InfinoError::Conflict` in Rust.
+- **One `update` or `delete` can match at most 100,000 rows.** Past that it is refused
+  with `mutation cap is 100000`; split the predicate into ranges and run it in several
+  calls.
 - **`update` is 1:1.** The matched row count must equal the replacement-row count.
 - **`update` / `delete` need durable storage,** not `memory://`.
 - **Schema changes go through `schema(name, patch)`** — add, rename, retype or drop columns on a local connection; see the binding reference.
