@@ -18,7 +18,7 @@ errors are not worth retrying.
 
 Each of these responses carries a `Retry-After` header telling you how many
 seconds to wait. The request **did not run**, so resending it is safe, including
-writes. The two exceptions are in the warning at the end of this section.
+writes. The exceptions are in the warning at the end of this section.
 
 **HTTP `503` (Service Unavailable).** The database's workers are still starting.
 You will see this on the first request after an idle period (a cold start), on
@@ -41,10 +41,11 @@ rarer and takes longer to clear than a cold start: `Retry-After` is in minutes,
 not seconds.
 
 <Warning>
-Two cases are **not** safe to resend blindly, because the write may already
+Three cases are **not** safe to resend blindly, because the write may already
 have been applied: a `503` whose message says the request `may have been
-applied`, and a network error or client timeout that fired after the request was
-sent. Resending an `append` in either case can store the rows twice. Check
+applied`, a `503` with no `Retry-After` header (a storage fault partway through
+the request), and a network error or client timeout that fired after the request
+was sent. Resending an `append` in any of these can store the rows twice. Check
 first, for example by counting or looking up the rows you sent, then resend only
 if they are missing.
 </Warning>
@@ -61,7 +62,10 @@ A `409` on a write is the exception: the SDK reports every `409` the way it
 reports "already exists" (`ValueError` in Python, an `AlreadyExists:` message in
 Node.js, `InfinoError::AlreadyExists` in Rust). `append`, `update` and `delete`
 never create a name, so on those three calls that error means a contended write
-and is safe to retry.
+and is safe to retry. The one other case is a database on
+[your own bucket](/cloud/bring-your-own-bucket) whose storage binding has not been
+verified yet: it answers every data call with a `409` whose message says so.
+Retrying does not clear that one; verify the binding.
 
 <CodeGroup>
 
@@ -152,19 +156,20 @@ each surfaces through the SDK.
 | `401` | Missing or unknown API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
 | `402` | The account is suspended for non-payment | `RuntimeError` | `Error` | Update billing in the console. |
 | `403` | The key is valid but may not do this: it lacks the capability the call needs, or is not scoped to this database | `RuntimeError` (message names the key) | `Error` | Use a key with the right access. See [Authentication](/cloud/authentication). |
-| `403` | On database create: the account already owns as many databases as its plan allows (3 on the free plan), or requested BYOB storage the plan doesn't include | `RuntimeError` | `Error` | Add a payment method or delete a database. |
+| `403` | On database create: the account already owns as many databases as its plan allows (3 on the free plan), or requested BYOB storage the account is not enabled for | `RuntimeError` | `Error` | For the database limit, add a payment method or delete a database. BYOB is enabled per account by Infino. |
 | `403` | On append / update: the account already stores its plan's row or vector limit | `RuntimeError` | `Error` | Delete rows or add a payment method; not transient. |
 | `404` | Database or table does not exist | `KeyError` | `Error` | Check the name, or create it first. |
-| `409` | On `create_database` / `create_table`: the name already exists. (On a write, `409` is transient: see above.) | `ValueError` | `Error` | Skip creation, or use a different name. |
+| `409` | On `create_database` / `create_table`: the name already exists. On `create_table` or `drop_table` it can also mean another change to the database's tables was in flight. (On a write, `409` is transient: see above.) | `ValueError` | `Error` | Skip creation, or use a different name. If the table is not there afterwards, the call lost a race: retry it. |
 | `410` | The database is being deleted | `RuntimeError` | `Error` | Use a different database. |
 | `413` | Request body over the 512 MiB cap (an `append` / `update` batch too large), or a query that needs more memory than it is allowed | `RuntimeError` | `Error` | Permanent for that request: split the batch, or narrow the query. See [Limits](/cloud/limits). |
 | `422` | Valid SQL that the engine does not support | `RuntimeError` | `Error` | Rewrite the query. |
-| `504` | The query ran past the time limit | `RuntimeError` | `Error` | Narrow the query. See [Limits](/cloud/limits). |
+| `504` | The query ran past the time limit. Through the SDK you will usually see a timeout error first, because the SDK stops waiting after 300 seconds | `RuntimeError` | `Error` | Narrow the query. See [Limits](/cloud/limits). |
 
 <Note>
-The [REST API Reference](/api-reference) is generated from the live service
-spec, so each endpoint lists its response codes, including the transient `503`
-and the `409` on writes.
+The [REST API Reference](/api-reference) is generated from the service's spec.
+Each endpoint there lists its main response codes, including the transient `503`
+and the `409` on writes. The statuses that apply to every endpoint (`402`, `413`,
+`429`, `504`, `529`) are described on this page rather than repeated per endpoint.
 </Note>
 
 ## See also

@@ -68,6 +68,22 @@ let hits = docs.bm25_search(
 
 <Note>BM25 `score` is a **similarity** — higher is better. (Vector `score` is a distance; the two run in opposite directions.)</Note>
 
+### Query syntax
+
+The `query` string accepts three operators besides plain terms. They work the same in the
+`bm25_search` SQL function.
+
+| Write | Meaning | Example |
+| --- | --- | --- |
+| `term` | optional or required according to `mode` | `quick fox` |
+| `+term` | the row must contain this term | `+fox quick` |
+| `-term` | the row must not contain this term | `quick -brown` |
+| `"some words"` | the words must appear together, in order | `"quick brown"` |
+
+A phrase needs the column indexed with `positions=True` (see
+[Indexing](/guides/indexing)); on a column without positions it is an error. A query made
+only of excluded terms is also an error: give at least one positive term.
+
 ### Counting matches
 
 `count` returns how many rows match a BM25 keyword query, without fetching or ranking
@@ -245,6 +261,25 @@ let hits = docs.hybrid_search(
 Hybrid search needs both indexes on the table: an `fts` index on the text column and a
 `vector` index on the embedding column. It's also available in [SQL](/sql-reference) via
 the `hybrid_search` table function, where you can compose it with joins and filters.
+
+## Pagination
+
+Searches return the top `k`; there is no offset argument and no cursor. To page through
+results:
+
+- **In the SDK**, ask for enough rows to cover the page you want (`k = page * page_size`)
+  and slice off the last `page_size`.
+- **In SQL**, use `LIMIT` and `OFFSET` over the search function. `k` still bounds what the
+  search returns, so it must be at least `OFFSET + LIMIT`, or the later pages come back
+  empty.
+
+```sql
+-- page 2, 10 rows per page
+SELECT _id, score
+FROM bm25_search('docs', 'body', 'billing', 20)
+ORDER BY score DESC
+LIMIT 10 OFFSET 10;
+```
 
 ## Limitations
 
