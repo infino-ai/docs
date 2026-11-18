@@ -79,6 +79,15 @@ point your code generator or client tooling at it as the source of truth.
 
 ## Local vs Cloud
 
-The SDKs connect to both local and Infino Cloud with the same calls. For the exact list of
-where the two differ — the handful of local-only and Cloud-only operations — see
-[Local vs Infino Cloud](/api-reference/parity).
+The SDKs connect to both local and Infino Cloud with the same calls. For where the two
+differ — the handful of local-only and Cloud-only operations, and the behaviour around
+them — see [Local vs Infino Cloud](/api-reference/parity).
+
+## Upgrading
+
+What changed in each version is on the GitHub releases page of each project:
+[engine and SDKs](https://github.com/infino-ai/infino/releases),
+[CLI](https://github.com/infino-ai/infino-cli/releases) and
+[MCP server](https://github.com/infino-ai/infino-mcp/releases). While Infino is pre-1.0, a
+breaking change bumps the minor version (`0.11` to `0.12`), so a patch upgrade within a
+minor is safe to take.

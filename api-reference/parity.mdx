@@ -8,8 +8,9 @@ import DataPlaneParity from "/snippets/data-plane-parity.mdx";
 
 The same SDK serves both a local connection (`./data`, `s3://…`) and the hosted
 service — you switch by changing only the `connect` target. Almost every
-operation is identical on both. This page is the exact list of where they
-differ, so you know before you deploy.
+operation is identical on both. This page lists where they differ, so you know
+before you deploy: first the operations themselves, then the
+[behaviour around them](#also-different-on-infino-cloud).
 
 The matrix is generated from the hosted API's contract, so it always reflects
 what the service actually exposes.
@@ -27,6 +28,26 @@ what the service actually exposes.
   a local connection, so the same setup code runs either way).
 - **Same call, different runtime** — the Notes column flags these. They share
   one signature; only behavior differs.
+
+## Also different on Infino Cloud
+
+The matrix covers the operations the REST API exposes. A few SDK-level differences sit
+outside it:
+
+- **Calls that raise on a hosted connection:** `append_named`, `reindex`,
+  `reindex_plan` and `index_staleness`. See the note in the
+  [Quickstart](/cloud/quickstart).
+- **Per-search `k1` / `b` on BM25 are not applied.** A hosted search scores with the
+  values declared on the column.
+- **Concurrent writes.** Locally, appends to a table run concurrently and a losing
+  write raises `ConflictError`. On Infino Cloud a table takes one write at a time, and a
+  contended write comes back as a `409` that the SDK reports like "already exists". See
+  [Errors & retries](/cloud/errors).
+- **Requests can fail transiently.** A cold start, a rate limit or load shedding returns
+  a retryable status, so hosted calls need a retry loop that local ones do not. Request
+  size, rate and query time are bounded: see [Limits](/cloud/limits).
+- **Rust needs the `remote` feature** (`cargo add infino --features remote`). Python and
+  Node.js need nothing extra.
 
 See the hosted [Quickstart](/cloud/quickstart) and
 [Authentication](/cloud/authentication) for the connection details, and the

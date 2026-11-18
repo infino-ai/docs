@@ -199,6 +199,26 @@ db.drop_table("docs", true)?;                 // true reclaims storage; false un
 | `stale_seal_timeout_ms` / `staleSealTimeoutMs` | how old a sealed tombstone sidecar must be, in ms, before compaction treats its owner as dead |
 | `recalibrate` | vector probe-law recalibration: `auto` (default), `force`, or `skip` |
 
+## Change the schema
+
+Read a table's schema with `schema(name)` and change it with `schema(name, patch)`. Both
+are on the **connection**, not the table (in Rust the write is `apply_schema`).
+
+```python Python icon="python"
+db.schema("docs")                                              # the schema document
+db.schema("docs", {"fields": [{"name": "rating", "type": "i64"}]})   # add a column
+```
+
+A patch can add, rename, retype or drop columns; the SDK reference linked from
+[API Reference](/api-reference) has the full patch shape. Existing rows read back null
+for a column added later.
+
+Appending records with a key the table does not have also adds a column, typed from its
+values. That is convenient for document-shaped data, and it means a misspelled key creates
+a column rather than raising an error.
+
+An index is fixed once a column exists: see [Indexing](/guides/indexing).
+
 ## Reclaim storage (gc)
 
 Compaction and interrupted writes can leave behind storage objects that the

@@ -72,8 +72,9 @@ once, and one over that is shed with HTTP `503` and `Retry-After: 1`.
 
 ## Query time
 
-A query that runs longer than 540 seconds is cancelled and returns HTTP `504`. Narrow it
-with a filter, a smaller `k`, or a `LIMIT`.
+A query that runs longer than 540 seconds returns HTTP `504`. The SDK gives up sooner: it
+stops waiting for a response after 300 seconds and raises a timeout error. Either way,
+narrow the query with a filter, a smaller `k`, or a `LIMIT`.
 
 ## Batching and throughput
 
@@ -100,7 +101,7 @@ for (let i = 0; i < rows.length; i += BATCH) {
 
 If you load with the [CLI](/cli), bulk ingest is already streamed and committed in
 windows. Size them with `--batch-size-mb`; on a hosted connection the CLI holds each
-window to 100 MiB whatever value you pass.
+window to at most 100 MiB, even if you pass a larger value.
 
 ## See also
 

@@ -177,7 +177,7 @@ at the top level, since those are what a session mostly runs.
 | `table ls` / `table describe` | List tables / show a table's schema |
 | `table rm` | Remove a table and reclaim its storage (`--keep-storage` leaves the bytes) |
 | `table optimize` | Compact a table |
-| `table gc` | Reclaim orphaned storage objects (requires durable storage) |
+| `table gc` | Reclaim orphaned storage objects (requires durable storage). Pass `--older-than-secs`, for example `3600`, when anything may be writing to the table: the default of `0` applies no safety window |
 | `row insert` | Append rows from Parquet or NDJSON (file or stdin) |
 | `row update` / `row delete` | Change or remove rows matching a `--where` SQL predicate |
 | `database create` | Provision an [Infino Cloud](/cloud/quickstart) database (a no-op for local backends) |
