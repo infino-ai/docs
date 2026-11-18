@@ -3,8 +3,7 @@
 Source for the Infino documentation site, served at **infino.ai/docs** and built
 with [Mintlify](https://mintlify.com).
 
-- Prose pages are plain `.md`; pages that use components (Quickstart, Install,
-  landing) are `.mdx`.
+- Pages are `.mdx`, except `faq.md` and `tradeoffs.md`, which are plain Markdown.
 - Concept / FAQ / tradeoffs prose is seeded from the
   [infino](https://github.com/infino-ai/infino) repo's `docs/`.
 - The Rust API reference lives on [docs.rs/infino](https://docs.rs/infino); runnable
