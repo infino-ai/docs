@@ -6,7 +6,9 @@ description: Search Infino five ways from one table, BM25 full-text, vector kNN,
 
 Infino retrieves from the same table several ways. Pick the mode that matches the
 question; you can also compose any of them in [SQL](/sql-reference). Every search returns
-Arrow rows, and you can pass a `projection` to choose which columns come back.
+rows: an Arrow table in Python, record batches in Rust, and plain objects in Node.js (pass
+`{ arrow: true }` there for an Arrow table). Pass a `projection` to choose which columns
+come back.
 
 ## Choose a search mode
 
@@ -148,8 +150,9 @@ let hits = docs.vector_search("embedding", &q, 5, None, None)?;
 | `projection` | string[] | `_id` + `score` | columns to return |
 
 <Note>
-Vector `score` is a **distance**: `0.0` is a perfect match and larger is farther. This is
-the opposite direction from BM25's `score` (a similarity, higher is better). Don't compare
+Vector `score` is a **distance**, so lower is closer. For `cosine` and `l2sq`, `0.0` is a
+perfect match; for `negdot` it is the negated dot product, so similar vectors score below
+zero. This is the opposite direction from BM25's `score` (a similarity, higher is better). Don't compare
 the two raw scores — [hybrid search](#hybrid-search) fuses them for you by rank.
 </Note>
 
@@ -187,7 +190,7 @@ search, query with [SQL](/sql-reference).
 Hybrid search runs BM25 and vector kNN over the same table and fuses their rankings with
 **reciprocal-rank fusion (RRF)**, which is strong when a query has both keyword and
 semantic intent. It's a first-class method — pass the text query and the query vector,
-and it returns ranked Arrow rows like the other searches:
+and it returns ranked rows like the other searches:
 
 <CodeGroup>
 

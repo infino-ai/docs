@@ -38,7 +38,8 @@ df = table.to_pandas()
 A standard reader gets the **`_id` column and your scalar / text columns**, and ignores
 the index regions. One thing to know: the **vector column is consumed into the embedded
 index, not stored as a Parquet column**, so it won't appear in the read-back (you'll see
-`_id`, `source`, `body`, but not `embedding`).
+`_id`, `source`, `body`, but not `embedding`). The same goes for a text column you
+declared with `stored=false`: it is searchable, but not a Parquet column.
 
 <Note>
 A raw Parquet read returns the rows as written to the superfiles. For Infino's **live

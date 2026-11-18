@@ -156,7 +156,7 @@ user is asking about a card that never arrived, and BM25 anchors on "not shown
 up" and drifts into refund territory by the second hit:
 
 ```python
-table.bm25_search("text", "my new card still has not shown up", 5)
+table.bm25_search("text", "my new card still has not shown up", 5, projection=["text", "score"])
 ```
 
 ```text
