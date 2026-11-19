@@ -86,7 +86,7 @@ per table and per `k` at query time. There are no partition or probe knobs to se
 the same declaration works from thousands of rows to hundreds of millions.
 
 <Note>
-You can index multiple text columns (call `fts` per column) and multiple vector columns.
+You can index multiple text columns (call `fts` per column); a table currently supports only one vector column.
 **Scalar columns need no index declaration.** Filter them with SQL (`query_sql`); vector search's
 pushdown pre-filter is a text predicate over an FTS-indexed column (see [Search](/guides/search#pushdown-filter)).
 </Note>
