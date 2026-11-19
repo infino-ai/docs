@@ -47,6 +47,19 @@ Infino Cloud is usage-based: you pay for the storage your data occupies and the 
 usage you drive, rather than for always-on provisioned capacity. See
 [Architecture](/cloud/architecture#scale-to-zero-economics).
 
+## Is there a free period?
+
+Yes. A new account is free for 7 days and needs no payment method. During that time it
+is held to the free plan's storage and database limits. The console shows how many days
+are left.
+
+When the 7 days are up, API requests return `402` until you add a payment method in the
+console under **Settings**. The console stays available so you can do that, and access
+comes back as soon as the payment method is added. Your data is kept for 30 days after
+the free period ends. If no payment method has been added by then, the account and its
+data are deleted. Owners and admins of the organization are emailed before the free
+period ends, when it ends, and again a week before any deletion.
+
 ## See also
 
 - [Overview](/cloud) — what Infino Cloud is.
