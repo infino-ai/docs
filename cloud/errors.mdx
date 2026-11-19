@@ -154,7 +154,7 @@ each surfaces through the SDK.
 |:------:|---------|--------|-------------|------------|
 | `400` | Invalid request (bad body, parameters, or SQL) | `RuntimeError` | `Error` | Check the payload and arguments. |
 | `401` | Missing or unknown API key | `RuntimeError` (message names the key) | `Error` | Check `INFINO_API_KEY`. See [Authentication](/cloud/authentication). |
-| `402` | The account is suspended for non-payment | `RuntimeError` | `Error` | Update billing in the console. |
+| `402` | The account's 7 day free period has ended and it has no payment method, or the account is suspended for non-payment | `RuntimeError` | `Error` | Add a payment method, or update billing, in the console. See the [FAQ](/cloud/faq#is-there-a-free-period). |
 | `403` | The key is valid but may not do this: it lacks the capability the call needs, or is not scoped to this database | `RuntimeError` (message names the key) | `Error` | Use a key with the right access. See [Authentication](/cloud/authentication). |
 | `403` | On database create: the account already owns as many databases as its plan allows (3 on the free plan), or requested BYOB storage the account is not enabled for | `RuntimeError` | `Error` | For the database limit, add a payment method or delete a database. BYOB is enabled per account by Infino. |
 | `403` | On append / update: the account already stores its plan's row or vector limit | `RuntimeError` | `Error` | Delete rows or add a payment method; not transient. |
