@@ -1,0 +1,93 @@
+---
+title: "Connect a coding agent"
+icon: "plug"
+description: Connect Claude Code, Cursor, Codex, or any MCP client to an Infino Cloud database with the Infino MCP server, so the agent can create a table, load your files, and query them with SQL and hybrid search.
+---
+
+The [Infino MCP server](/integrations/mcp) lets a coding agent work with an
+[Infino Cloud](/cloud/quickstart) database directly. Once it is connected, you can ask
+the agent to create a table from your files, load them, and query them, without
+writing any client code yourself.
+
+## What you need
+
+- **Your endpoint**, in the form `https://api.platform.infino.ws/<database>`. The last path
+  segment is the database the agent works in.
+- **An API key** that starts with `inf_`. The agent creates tables and writes data, so use a
+  key with read, write and manage capabilities; a new key from the console has all three by
+  default. Creating a table needs manage, and adding documents needs write. A read-only key
+  can search and run SQL reads but is refused every write. For key basics, see
+  [Authentication](/cloud/authentication).
+- **Node.js 20 or later**, because the server runs through `npx`.
+
+## Claude Code
+
+Export your key, then add the server with one command. Replace `<database>` with your
+database name.
+
+```bash
+export INFINO_API_KEY=inf_…
+
+claude mcp add infino -e INFINO_MCP_URI=https://api.platform.infino.ws/<database> \
+  -e INFINO_API_KEY=$INFINO_API_KEY -- npx -y @infino-ai/mcp-server
+```
+
+Run `claude mcp list` to confirm the server is registered.
+
+## Other MCP clients
+
+Any client that runs MCP servers over stdio can use the same three pieces: the command
+`npx`, the arguments `-y @infino-ai/mcp-server`, and two environment variables.
+
+```json
+{
+  "mcpServers": {
+    "infino": {
+      "command": "npx",
+      "args": ["-y", "@infino-ai/mcp-server"],
+      "env": {
+        "INFINO_MCP_URI": "https://api.platform.infino.ws/<database>",
+        "INFINO_API_KEY": "inf_…"
+      }
+    }
+  }
+}
+```
+
+Cursor reads this block from `~/.cursor/mcp.json` (all projects) or
+`<project>/.cursor/mcp.json` (one project). For Codex and other clients, put it in your
+client's MCP config. Some clients use a different top-level key than `mcpServers`, so
+check your client's documentation for the exact shape. Restart the client after you edit
+the file.
+
+## What the agent can do
+
+With the server connected, the agent can:
+
+- create the database if it does not exist yet (`infino_create_database`) and create a
+  table (`infino_create_table`), optionally with a vector column for semantic search
+- load rows from your files (`infino_add_documents`), embedding the text for you
+- run SQL (`infino_sql`) for counts, filters, joins, and aggregates
+- search by keyword (`infino_keyword_search`), by meaning (`infino_semantic_search`), or
+  both at once (`infino_hybrid_search`)
+
+Each tool call carries tens of rows, which suits a folder of documents or a small export.
+To load a whole corpus, use the [CLI](/cli) or an SDK against the same endpoint. The full
+tool list and configuration options are on the [MCP server](/integrations/mcp) page.
+
+## Try it
+
+Paste this into your agent, and replace the path with a folder or file you want to load:
+
+```text
+Set up the Infino MCP server for my database. Load the files in ./my-files into a new
+table, then run one SQL query over it and one hybrid search, and show me the results.
+```
+
+The agent will create the table, load the files, and report what it found.
+
+## Next
+
+- [MCP server](/integrations/mcp): every tool and setting, including local and bucket storage.
+- [Authentication](/cloud/authentication): create and rotate API keys.
+- [Search](/guides/search): how keyword, vector, hybrid, and SQL queries work.
