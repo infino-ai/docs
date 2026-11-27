@@ -54,6 +54,7 @@ credentials are needed, since the platform owns the storage.
 | `INFINO_MCP_EMBED_BASE_URL` | When provider is `openai` or `azure` | — | The OpenAI-compatible endpoint to send query embeddings to. |
 | `INFINO_MCP_EMBED_API_KEY` | No | — | API key for the `INFINO_MCP_EMBED_BASE_URL` endpoint. |
 | `INFINO_MCP_VALIDATE` | No | — | Set to `1`, `true` or `yes` to probe storage at startup. |
+| `INFINO_MCP_ASK` | No | off | Set to `1`, `true` or `yes` to offer `infino_ask` on an Infino Cloud account with the agent tools on; each ask runs a model loop billed to the account. |
 
 <Note>
 The full list of embedding and validation variables is in the
@@ -172,6 +173,8 @@ steer the model to the right one by question shape.
 | `infino_sql` | Counts, joins, aggregates, and filtering by column value; any single statement. |
 | `infino_create_database` / `infino_create_table` / `infino_drop_table` | Provision the database, create a table from a `{column: type}` descriptor (with `vector: true` the server adds an `embedding` column sized to its embedder), drop a table. |
 | `infino_add_documents` / `infino_update_documents` / `infino_delete_documents` | Writes: appended, replaced, or deleted rows. Rows without a vector are embedded from their text in one batch. |
+| `infino_describe_columns` / `infino_join_keys` | Describe a table's columns and find keys to join tables on. Infino Cloud accounts with the agent tools on. |
+| `infino_ask` | Answer a question with a model loop over your data, billed to the account. Offered when `INFINO_MCP_ASK` is set. |
 
 The full toolset is always available; there is no server-side write gate. Who may write is
 decided by the API key's capabilities on Infino Cloud and by which path or bucket you point
