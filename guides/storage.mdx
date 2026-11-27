@@ -156,6 +156,7 @@ object-storage connection that serves repeated queries, so hot data stays on loc
 | `connection_memory_budget_bytes` / `connectionMemoryBudgetBytes` / `with_connection_memory_budget_bytes` | per-connection heap budget, in bytes (`0` / omitted = measure only) |
 | `cold_fetch_mode` / `coldFetchMode` / `with_cold_fetch_mode` | how cold-cache misses are serviced |
 | `api_key` / `apiKey` / `with_api_key` | API key for a hosted `https://<host>/<database>` connection; falls back to `INFINO_API_KEY` |
+| `request_timeout` / `requestTimeoutMs` / `with_request_timeout` | deadline for each request on a hosted `https://` connection (default 620 s); ignored by local backends |
 
 ## Connection memory budget
 
