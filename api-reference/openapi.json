@@ -1668,7 +1668,7 @@
               "string",
               "null"
             ],
-            "description": "Analyzer name. `\"standard\"` — the Unicode-aware UAX #29 tokenizer —\nis the only analyzer, and what an omitted field means; any other name\nis refused."
+            "description": "Analyzer name. `\"standard\"` (the default) splits text into words.\n`\"keyword\"` indexes each value whole as one term, for exact-value\nfields; a `keyword` value over 32,766 bytes is refused. Any other name\nis refused."
           },
           "b": {
             "type": [
